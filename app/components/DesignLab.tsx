@@ -26,7 +26,6 @@ export default function DesignLab() {
     }
   };
 
-  // Helper jarak untuk Pinch Zoom (2 jari)
   const getTouchDistance = (touches: React.TouchList) => {
     return Math.hypot(
       touches[0].clientX - touches[1].clientX,
@@ -64,7 +63,6 @@ export default function DesignLab() {
     initialTouchDistance.current = null;
   };
 
-  // Mouse Support untuk Laptop / PC (Drag & Scroll Zoom)
   const handleMouseDown = (e: React.MouseEvent) => {
     isDragging.current = true;
     dragStart.current = { x: e.clientX - position.x, y: e.clientY - position.y };
@@ -114,72 +112,62 @@ export default function DesignLab() {
           
           <div style={{ width: "170px", height: "340px", backgroundColor: "#09090b", borderRadius: "24px", border: "2px solid rgba(255,255,255,0.15)", position: "relative", margin: "20px 0 10px 0", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
             
+            {/* 1. LAYER BAWAH: Background Template (Render stabil tanpa key glitch) */}
+            <img 
+              src={`/template-${selectedTemplate}.png`} 
+              alt="Template Background" 
+              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", zIndex: 10, pointerEvents: "none" }}
+            />
+
+            {/* 2. LAYER TENGAH: Foto Customer / Hero Collage */}
             {activeTab === "edit" ? (
-              <>
-                {/* 1. LAYER BAWAH (z-10): Background Template */}
-                <img 
-                  key={selectedTemplate}
-                  src={`/template-${selectedTemplate}.png`} 
-                  alt="Template Background" 
-                  style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", zIndex: 10, pointerEvents: "none" }}
-                />
+              uploadedImage ? (
+                <div 
+                  style={{ position: "absolute", inset: 0, zIndex: 20, overflow: "hidden", cursor: "grab", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#18181b", touchAction: "none" }}
+                  onMouseDown={handleMouseDown}
+                  onMouseMove={handleMouseMove}
+                  onMouseUp={handleMouseUp}
+                  onMouseLeave={handleMouseUp}
+                  onWheel={handleWheel}
+                  onTouchStart={handleTouchStart}
+                  onTouchMove={handleTouchMove}
+                  onTouchEnd={handleTouchEnd}
+                >
+                  <img 
+                    src={uploadedImage} 
+                    alt="Uploaded Custom" 
+                    style={{
+                      transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                      pointerEvents: "none",
+                      userSelect: "none"
+                    }}
+                  />
+                </div>
+              ) : (
+                <div style={{ position: "absolute", inset: 0, zIndex: 20, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+                  <img 
+                    src="/hero-collage.png" 
+                    alt="Hero Collage Default" 
+                    style={{ width: "100%", height: "100%", objectFit: "cover", pointerEvents: "none" }}
+                  />
+                </div>
+              )
+            ) : null}
 
-                {/* 2. LAYER TENGAH (z-20): Foto Customer yang bisa digeser & dicubit untuk zoom */}
-                {uploadedImage ? (
-                  <div 
-                    style={{ position: "absolute", inset: 0, zIndex: 20, overflow: "hidden", cursor: "grab", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#18181b", touchAction: "none" }}
-                    onMouseDown={handleMouseDown}
-                    onMouseMove={handleMouseMove}
-                    onMouseUp={handleMouseUp}
-                    onMouseLeave={handleMouseUp}
-                    onWheel={handleWheel}
-                    onTouchStart={handleTouchStart}
-                    onTouchMove={handleTouchMove}
-                    onTouchEnd={handleTouchEnd}
-                  >
-                    <img 
-                      src={uploadedImage} 
-                      alt="Uploaded Custom" 
-                      style={{
-                        transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                        pointerEvents: "none",
-                        userSelect: "none"
-                      }}
-                    />
-                  </div>
-                ) : (
-                  <div style={{ position: "absolute", inset: 0, zIndex: 20, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-                    <img 
-                      src="/hero-collage.png" 
-                      alt="Hero Collage Default" 
-                      style={{ width: "100%", height: "100%", objectFit: "cover", pointerEvents: "none" }}
-                    />
-                  </div>
-                )}
-
-                {/* 3. LAYER ATAS (z-30): Mockup Frame Transparan */}
-                <img 
-                  src="/mockup-case-transparent.png" 
-                  alt="Mockup Frame" 
-                  style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", zIndex: 30, pointerEvents: "none" }}
-                />
-              </>
-            ) : (
-              <img 
-                key={selectedTemplate}
-                src={`/template-${selectedTemplate}.png`} 
-                alt={`Template ${selectedTemplate}`} 
-                style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", zIndex: 20 }}
-              />
-            )}
+            {/* 3. LAYER ATAS: Mockup Frame Transparan */}
+            <img 
+              src="/mockup-case-transparent.png" 
+              alt="Mockup Frame" 
+              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", zIndex: 30, pointerEvents: "none" }}
+            />
 
           </div>
           
           <span style={{ fontSize: "10px", fontWeight: "900", color: "#f472b6", textTransform: "uppercase", letterSpacing: "1px", marginTop: "10px" }}>
-            {activeTab === "edit" ? "✨ Geser & Cubit untuk Zoom" : `✨ Template ${selectedTemplate}`}
+            {activeTab === "edit" ? "Live Editor" : `Template ${selectedTemplate}`}
           </span>
         </div>
 
@@ -202,7 +190,7 @@ export default function DesignLab() {
                 transition: "all 0.2s"
               }}
             >
-              1. Upload & Atur Foto 🖼️
+              Upload Foto
             </button>
             <button
               onClick={() => setActiveTab("template")}
@@ -219,14 +207,13 @@ export default function DesignLab() {
                 transition: "all 0.2s"
               }}
             >
-              2. Pilih Template ✨
+              Pilih Template
             </button>
           </div>
 
           {activeTab === "edit" && (
             <div style={{ backgroundColor: "#121318", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "14px", padding: "16px" }}>
-              <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase", marginBottom: "10px" }}>
-                <span style={{ fontSize: "14px" }}>🎀</span>
+              <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase", marginBottom: "10px" }}>
                 Upload Foto Kamu
               </label>
               <input 
@@ -240,8 +227,7 @@ export default function DesignLab() {
 
           {activeTab === "template" && (
             <div style={{ backgroundColor: "#121318", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "14px", padding: "16px" }}>
-              <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase", marginBottom: "10px" }}>
-                <span style={{ fontSize: "14px" }}>🎀</span>
+              <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase", marginBottom: "10px" }}>
                 Pilih Template (1 - 4)
               </label>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "8px" }}>
@@ -269,8 +255,7 @@ export default function DesignLab() {
           )}
 
           <div style={{ backgroundColor: "#121318", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "14px", padding: "16px" }}>
-            <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase", marginBottom: "10px" }}>
-              <span style={{ fontSize: "14px" }}>🎀</span>
+            <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase", marginBottom: "10px" }}>
               Catatan / Tipe HP
             </label>
             <input 
@@ -286,7 +271,7 @@ export default function DesignLab() {
             onClick={handleWhatsAppOrder}
             style={{ width: "100%", background: "linear-gradient(to right, #f4f4f5, #f472b6, #f4f4f5)", color: "#09090b", fontWeight: "900", padding: "14px", borderRadius: "14px", fontSize: "11px", textTransform: "uppercase", letterSpacing: "1px", border: "none", cursor: "pointer", boxShadow: "0 0 20px rgba(244,114,182,0.3)" }}
           >
-            🚀 Pesan via WhatsApp Sekarang
+            Pesan via WhatsApp Sekarang
           </button>
 
         </div>
