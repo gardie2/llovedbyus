@@ -123,29 +123,7 @@ export default function Home() {
           will-change: transform;
           animation: marquee 20s linear infinite;
         }
-
-        /* Posisi acak elemen dekorasi latar belakang */
-        .icon-pos-1 { top: 8%; left: 3%; }
-        .icon-pos-2 { top: 12%; right: 5%; }
-        .icon-pos-3 { top: 32%; left: 2%; }
-        .icon-pos-4 { top: 45%; right: 4%; }
-        .icon-pos-5 { top: 62% ; left: 4%; }
-        .icon-pos-6 { top: 78%; right: 3%; }
-        .icon-pos-7 { bottom: 15%; left: 5%; }
-        .icon-pos-8 { bottom: 8%; right: 8%; }
       `}</style>
-
-      {/* ELEMEN DEKORASI ACAK DI LATAR BELAKANG */}
-      <div className="fixed inset-0 pointer-events-none z-10 opacity-30 overflow-hidden">
-        <div className="absolute w-10 h-10 icon-pos-1 animate-bounce"><img src="/icon2.png" alt="decor" className="w-full h-full object-contain" /></div>
-        <div className="absolute w-12 h-12 icon-pos-2 animate-pulse"><img src="/icon3.png" alt="decor" className="w-full h-full object-contain" /></div>
-        <div className="absolute w-10 h-10 icon-pos-3 animate-pulse"><img src="/icon4.png" alt="decor" className="w-full h-full object-contain" /></div>
-        <div className="absolute w-11 h-11 icon-pos-4 animate-bounce"><img src="/icon5.png" alt="decor" className="w-full h-full object-contain" /></div>
-        <div className="absolute w-10 h-10 icon-pos-5 animate-bounce"><img src="/icon7.png" alt="decor" className="w-full h-full object-contain" /></div>
-        <div className="absolute w-12 h-12 icon-pos-6 animate-pulse"><img src="/icon8.png" alt="decor" className="w-full h-full object-contain" /></div>
-        <div className="absolute w-10 h-10 icon-pos-7 animate-pulse"><img src="/icon9.png" alt="decor" className="w-full h-full object-contain" /></div>
-        <div className="absolute w-11 h-11 icon-pos-8 animate-bounce"><img src="/icon11.jpg" alt="decor" className="w-full h-full object-contain" /></div>
-      </div>
 
       {/* NAVBAR */}
       <nav className="bg-[#0d0e12]/90 backdrop-blur-xl border-b border-zinc-800/80 sticky top-0 z-50 py-4 px-6">
@@ -210,13 +188,13 @@ export default function Home() {
           </div>
         </div>
 
-        {/* KOLASE PRODUK (ICON 1 DI ATAS KANAN, ICON 10 DI BAWAH KIRI) */}
+        {/* KOLASE PRODUK DENGAN 2 ICON PILIHAN (ICON 1 & ICON 6) */}
         <div className="flex justify-center md:justify-end relative">
-          <div className="absolute -top-5 -right-5 w-12 h-12 animate-bounce pointer-events-none z-30 hidden sm:block rotate-12">
+          <div className="absolute -top-6 -right-6 w-14 h-14 animate-bounce pointer-events-none z-30 hidden sm:block rotate-12">
             <img src="/icon1.png" alt="decor" className="w-full h-full object-contain" />
           </div>
           <div className="absolute -bottom-6 -left-6 w-14 h-14 animate-pulse pointer-events-none z-30 hidden sm:block -rotate-12">
-            <img src="/icon10.png" alt="decor" className="w-full h-full object-contain drop-shadow-[0_0_10px_rgba(255,255,255,0.6)]" />
+            <img src="/icon6.png" alt="decor" className="w-full h-full object-contain drop-shadow-[0_0_12px_rgba(255,255,255,0.7)]" />
           </div>
           <div className="relative w-[320px] h-[520px] bg-zinc-900/40 rounded-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.9)] overflow-hidden border border-zinc-800/80 flex items-center justify-center p-2 group hover:border-pink-500/40 transition duration-500">
             <img 
@@ -228,7 +206,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* INFINITE MARQUEE SLOGAN (100% MULUS SEMPURNA TANPA GLITCH) */}
+      {/* INFINITE MARQUEE SLOGAN (CLEAN, 100% MULUS) */}
       <div className="py-6 bg-zinc-950 border-y border-zinc-800/80 overflow-hidden relative z-20 flex whitespace-nowrap shadow-xl">
         <div className="animate-marquee flex items-center">
           {[...Array(2)].map((_, groupIndex) => (
