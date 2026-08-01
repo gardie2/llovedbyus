@@ -42,7 +42,7 @@ export default function Home() {
 
   const [showDesignLab, setShowDesignLab] = useState(false);
 
-  // KUNCI LAYAR BELAKANG DI HP/IPAD SAAT MODAL KBUKA
+  // KUNCI LAYAR BELAKANG DI HP/IPAD SAAT MODAL KEBUKA
   useEffect(() => {
     if (showDesignLab || activeProduct) {
       document.body.style.overflow = 'hidden';
@@ -102,8 +102,12 @@ export default function Home() {
       {/* BACKGROUND GRADASI HITAM ABU-ABU */}
       <div className="fixed inset-0 w-full h-full -z-10 pointer-events-none bg-[#050507] bg-[radial-gradient(circle_at_20%_20%,rgba(100,100,100,0.12)_0%,transparent_50%),radial-gradient(circle_at_80%_80%,rgba(50,50,70,0.15)_0%,transparent_60%)]"></div>
 
-      {/* GLOBAL CSS: CHROME, SMOOTH TRANSITION & CUTE BOUNCE ANIMATION */}
+      {/* GLOBAL CSS: CHROME, SMOOTH SCROLL, & CLEAN TRANSITION */}
       <style jsx global>{`
+        html {
+          scroll-behavior: smooth;
+        }
+
         .chrome-text {
           font-weight: 900;
           text-transform: uppercase;
@@ -136,22 +140,20 @@ export default function Home() {
           animation: marquee 20s linear infinite;
         }
 
-        /* EFEK KENYAL / BOUNCE LUCU SAAT DIKLIK */
         .cute-click {
           transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
         }
         .cute-click:active {
-          transform: scale(0.92);
+          transform: scale(0.95);
         }
 
-        /* ANIMASI MUNCUL HALUS (FADE & SLIDE) */
         @keyframes fadeIn {
-          from { opacity: 0; transform: scale(0.95) translateY(10px); }
+          from { opacity: 0; transform: scale(0.97) translateY(8px); }
           to { opacity: 1; transform: scale(1) translateY(0); }
         }
 
         .animate-smooth-modal {
-          animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
       `}</style>
 
@@ -178,7 +180,7 @@ export default function Home() {
             onClick={() => setShowDesignLab(true)}
             className="cute-click bg-gradient-to-r from-zinc-200 via-pink-200 to-zinc-300 hover:from-white hover:to-pink-100 text-zinc-950 font-black px-6 py-2 rounded-full text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(244,114,182,0.3)] z-20 cursor-pointer"
           >
-            Start ✦
+            Start
           </button>
         </div>
       </nav>
@@ -191,8 +193,8 @@ export default function Home() {
         }`}
       >
         <div className="space-y-6 relative">
-          <span className="inline-block text-[11px] font-extrabold tracking-[0.3em] bg-gradient-to-r from-pink-300 via-zinc-200 to-pink-400 bg-clip-text text-transparent uppercase border border-pink-500/20 px-3 py-1 rounded-full bg-pink-500/5 animate-pulse">
-            ✦ LLOVEDBYUS STUDIO
+          <span className="inline-block text-[11px] font-extrabold tracking-[0.3em] bg-gradient-to-r from-pink-300 via-zinc-200 to-pink-400 bg-clip-text text-transparent uppercase border border-pink-500/20 px-3 py-1 rounded-full bg-pink-500/5">
+            LLOVEDBYUS STUDIO
           </span>
 
           <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tight leading-[0.95] chrome-text italic">
@@ -210,7 +212,7 @@ export default function Home() {
               onClick={() => setShowDesignLab(true)}
               className="cute-click bg-gradient-to-r from-zinc-100 via-pink-200 to-zinc-200 hover:from-white hover:to-pink-100 text-zinc-950 font-black px-8 py-4 rounded-full text-xs uppercase tracking-widest shadow-[0_0_25px_rgba(244,114,182,0.3)] cursor-pointer"
             >
-              Start Designing ✨
+              Start Designing
             </button>
             <a href="#products" className="cute-click border border-zinc-700/80 hover:border-pink-400/50 text-zinc-300 font-bold px-8 py-4 rounded-full text-xs uppercase tracking-widest bg-zinc-900/60 backdrop-blur-md hover:bg-zinc-800 transition text-center">
               Explore Products
@@ -288,11 +290,11 @@ export default function Home() {
               
               {item.id === 1 ? (
                 <span className="mt-3 text-[10px] font-extrabold bg-pink-500/10 text-pink-300 border border-pink-500/30 px-3 py-1 rounded-full uppercase tracking-widest group-hover:bg-pink-500 group-hover:text-zinc-950 transition">
-                  Buka Studio Design ✦
+                  Buka Studio Design
                 </span>
               ) : (
                 <span className="mt-3 text-[10px] font-extrabold bg-zinc-900/80 text-zinc-500 border border-zinc-800 px-3 py-1 rounded-full uppercase tracking-widest cursor-not-allowed">
-                  Coming Soon ⏳
+                  Coming Soon
                 </span>
               )}
             </div>
@@ -367,7 +369,7 @@ export default function Home() {
         <p>© 2026 LLOVEDBYUS. All Rights Reserved.</p>
       </footer>
 
-      {/* MODAL ZOOM PRODUK LAIN (DENGAN TRANSISI HALUS) */}
+      {/* MODAL ZOOM PRODUK LAIN */}
       {activeProduct && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 transition-opacity duration-300">
           <div className="animate-smooth-modal bg-[#13141a]/95 backdrop-blur-xl border border-zinc-700/80 rounded-3xl max-w-md w-full p-6 relative shadow-[0_0_50px_rgba(244,114,182,0.3)] flex flex-col items-center">
@@ -396,13 +398,13 @@ export default function Home() {
               onClick={() => setActiveProduct(null)}
               className="cute-click w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-bold py-3 rounded-xl text-center text-xs uppercase tracking-widest transition cursor-pointer"
             >
-              Tutup ✨
+              Tutup
             </button>
           </div>
         </div>
       )}
 
-      {/* MODAL DESIGN LAB (DENGAN TRANSISI HALUS) */}
+      {/* MODAL DESIGN LAB */}
       {showDesignLab && (
         <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-xl flex flex-col overflow-y-auto animate-smooth-modal">
           <div className="sticky top-0 z-50 bg-[#0d0e12]/90 backdrop-blur-md border-b border-zinc-800 px-6 py-4 flex items-center justify-between shadow-lg">
