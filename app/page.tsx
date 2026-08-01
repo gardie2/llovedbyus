@@ -102,7 +102,7 @@ export default function Home() {
       {/* BACKGROUND GRADASI HITAM ABU-ABU */}
       <div className="fixed inset-0 w-full h-full -z-10 pointer-events-none bg-[#050507] bg-[radial-gradient(circle_at_20%_20%,rgba(100,100,100,0.12)_0%,transparent_50%),radial-gradient(circle_at_80%_80%,rgba(50,50,70,0.15)_0%,transparent_60%)]"></div>
 
-      {/* GLOBAL CSS: CHROME, SMOOTH SCROLL, & CLEAN TRANSITION */}
+      {/* GLOBAL CSS: CHROME, SMOOTH SCROLL, & OUTLINE MARQUEE TEXT */}
       <style jsx global>{`
         html {
           scroll-behavior: smooth;
@@ -128,6 +128,20 @@ export default function Home() {
           letter-spacing: -0.02em;
         }
 
+        /* GAYA TEKS BERJALAN TRANSPARAN DENGAN GARIS TEPI (OUTLINE) */
+        .outline-marquee-text {
+          font-weight: 900;
+          text-transform: uppercase;
+          color: transparent;
+          -webkit-text-stroke: 1.5px rgba(244, 244, 245, 0.4);
+          letter-spacing: 0.05em;
+          transition: -webkit-text-stroke 0.3s ease, color 0.3s ease;
+        }
+        .outline-marquee-text:hover {
+          -webkit-text-stroke: 1.5px #f472b6;
+          color: rgba(244, 114, 182, 0.15);
+        }
+
         @keyframes marquee {
           0% { transform: translateX(0); }
           100% { transform: translateX(-50%); }
@@ -137,7 +151,7 @@ export default function Home() {
           display: flex;
           width: max-content;
           will-change: transform;
-          animation: marquee 20s linear infinite;
+          animation: marquee 25s linear infinite;
         }
 
         .cute-click {
@@ -238,15 +252,15 @@ export default function Home() {
         </div>
       </section>
 
-      {/* INFINITE MARQUEE SLOGAN */}
-      <div className="py-6 bg-zinc-950/80 backdrop-blur-md border-y border-zinc-800/80 overflow-hidden relative z-20 flex whitespace-nowrap shadow-xl">
+      {/* INFINITE MARQUEE SLOGAN (OUTLINE & TRANSPARENT STYLE) */}
+      <div className="py-5 bg-zinc-950/80 backdrop-blur-md border-y border-zinc-800/80 overflow-hidden relative z-20 flex whitespace-nowrap shadow-xl">
         <div className="animate-marquee flex items-center">
           {[...Array(2)].map((_, groupIndex) => (
             <div key={groupIndex} className="flex items-center shrink-0">
               {[...Array(4)].map((_, i) => (
-                <div key={i} className="flex items-center gap-8 mx-6 text-xl md:text-3xl italic chrome-text">
+                <div key={i} className="flex items-center gap-8 mx-6 text-xl md:text-2xl italic outline-marquee-text">
                   <span>DESIGN YOUR OWN STUFF</span>
-                  <span className="text-pink-400">✦</span>
+                  <span className="text-pink-400/60 not-italic">✦</span>
                 </div>
               ))}
             </div>
