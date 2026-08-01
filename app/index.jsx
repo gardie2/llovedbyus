@@ -15,7 +15,7 @@
 
         body {
             /* Background gambar bola disko */
-            background-image: url('../background-image.jpg'); /* Pastikan nama file gambarmu sesuai */
+            background-image: url('/background-image.jpg'); /* Pastikan nama file gambarmu sesuai */
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
