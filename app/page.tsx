@@ -1,8 +1,37 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import DesignLab from "./components/DesignLab";
+
+// Custom hook buat efek animasi muncul pas di-scroll (fade-in scroll)
+function useScrollReveal() {
+  const ref = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (ref.current) {
+      observer.observe(ref.current);
+    }
+
+    return () => {
+      if (ref.current) {
+        observer.unobserve(ref.current);
+      }
+    };
+  }, []);
+
+  return { ref, isVisible };
+}
 
 export default function Home() {
   const [activeProduct, setActiveProduct] = useState<{
@@ -55,6 +84,11 @@ export default function Home() {
     }
   };
 
+  // Scroll reveal references
+  const heroReveal = useScrollReveal();
+  const productsReveal = useScrollReveal();
+  const socialsReveal = useScrollReveal();
+
   return (
     <main className="bg-[#090a0d] text-zinc-100 min-h-screen selection:bg-pink-500 selection:text-white font-sans relative overflow-hidden">
       
@@ -90,8 +124,13 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* HERO SECTION */}
-      <section className="relative py-20 px-6 max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center z-20">
+      {/* HERO SECTION DENGAN ANIMASI MUNCUL */}
+      <section 
+        ref={heroReveal.ref}
+        className={`relative py-20 px-6 max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center z-20 transition-all duration-1000 transform ${
+          heroReveal.isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
+        }`}
+      >
         <div className="space-y-6">
           <span className="inline-block text-[11px] font-extrabold tracking-[0.3em] bg-gradient-to-r from-pink-300 via-zinc-200 to-pink-400 bg-clip-text text-transparent uppercase border border-pink-500/20 px-3 py-1 rounded-full bg-pink-500/5 animate-pulse">
             ✦ LLOVEDBYUS STUDIO
@@ -134,8 +173,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* INFINITE MARQUEE SLOGAN BERGERAK KE KIRI */}
-      <div className="py-6 bg-zinc-950 border-y border-zinc-800/80 overflow-hidden relative z-20 flex whitespace-nowrap">
+      {/* INFINITE MARQUEE SLOGAN BERGERAK KE KIRI (TIDAK IKUT ANIMASI SCROLL, TETAP MULUS) */}
+      <div className="py-6 bg-zinc-950 border-y border-zinc-800/80 overflow-hidden relative z-20 flex whitespace-nowrap shadow-xl">
         <style dangerouslySetInnerHTML={{__html: `
           @keyframes marquee {
             0% { transform: translateX(0%); }
@@ -161,8 +200,14 @@ export default function Home() {
         </div>
       </div>
 
-      {/* PRODUCTS PREVIEW GRID */}
-      <section id="products" className="py-20 px-6 max-w-7xl mx-auto relative z-20">
+      {/* PRODUCTS PREVIEW GRID DENGAN ANIMASI MUNCUL */}
+      <section 
+        id="products" 
+        ref={productsReveal.ref}
+        className={`py-20 px-6 max-w-7xl mx-auto relative z-20 transition-all duration-1000 transform ${
+          productsReveal.isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
+        }`}
+      >
         <div className="text-center mb-12">
           <span className="text-xs font-bold tracking-[0.25em] bg-gradient-to-r from-zinc-300 via-pink-300 to-zinc-400 bg-clip-text text-transparent uppercase">
             PRODUCTS
@@ -177,7 +222,7 @@ export default function Home() {
             <div 
               key={item.id}
               onClick={() => handleProductClick(item)}
-              className="group bg-[#121318] border border-zinc-800 rounded-3xl p-5 cursor-pointer hover:border-pink-500/50 transition-all duration-300 hover:shadow-[0_0_30px_rgba(244,114,182,0.15)] flex flex-col items-center"
+              className="group bg-[#121318] border border-zinc-800 rounded-3xl p-5 cursor-pointer hover:border-pink-500/50 transition-all duration-300 hover:shadow-[0_0_30px_rgba(244,114,182,0.15)] flex flex-col items-center transform hover:-translate-y-1"
             >
               <div className="w-full aspect-[4/5] bg-zinc-950 rounded-2xl overflow-hidden relative flex items-center justify-center border border-zinc-800/60 mb-4">
                 <img 
@@ -203,8 +248,14 @@ export default function Home() {
         </div>
       </section>
 
-      {/* SECTION LINK RESMI */}
-      <section id="socials" className="py-20 px-6 max-w-4xl mx-auto border-t border-zinc-800/85 text-center relative z-20">
+      {/* SECTION LINK RESMI DENGAN ANIMASI MUNCUL */}
+      <section 
+        id="socials" 
+        ref={socialsReveal.ref}
+        className={`py-20 px-6 max-w-4xl mx-auto border-t border-zinc-800/85 text-center relative z-20 transition-all duration-1000 transform ${
+          socialsReveal.isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
+        }`}
+      >
         <span className="text-xs font-bold tracking-[0.25em] bg-gradient-to-r from-zinc-300 via-pink-300 to-zinc-400 bg-clip-text text-transparent uppercase">
           CONNECT WITH US
         </span>
