@@ -90,7 +90,7 @@ export default function Home() {
   return (
     <main className="bg-[#090a0d] text-zinc-100 min-h-screen selection:bg-pink-500 selection:text-white font-sans relative overflow-hidden">
       
-      {/* GLOBAL CSS UNTUK EFEK CHROME 3D METALIK */}
+      {/* GLOBAL CSS CHROME TEXT & MARQUEE */}
       <style jsx global>{`
         .chrome-text {
           font-weight: 900;
@@ -110,6 +110,15 @@ export default function Home() {
                   drop-shadow(0 0 15px rgba(255,255,255,0.4))
                   drop-shadow(0 5px 10px rgba(0,0,0,0.6));
           letter-spacing: -0.02em;
+        }
+        @keyframes marquee {
+          0% { transform: translateX(0%); }
+          100% { transform: translateX(-50%); }
+        }
+        .animate-marquee {
+          display: flex;
+          width: max-content;
+          animation: marquee 16s linear infinite;
         }
       `}</style>
 
@@ -141,14 +150,18 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* HERO SECTION */}
+      {/* HERO SECTION DENGAN DEKORASI ICON 1 & 8 */}
       <section 
         ref={heroReveal.ref}
         className={`relative py-20 px-6 max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center z-20 transition-all duration-1000 transform ${
           heroReveal.isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
         }`}
       >
-        <div className="space-y-6">
+        <div className="space-y-6 relative">
+          <div className="absolute -top-10 -left-6 w-12 h-12 opacity-80 animate-bounce pointer-events-none hidden sm:block">
+            <img src="/icon1.png" alt="decor" className="w-full h-full object-contain" />
+          </div>
+
           <span className="inline-block text-[11px] font-extrabold tracking-[0.3em] bg-gradient-to-r from-pink-300 via-zinc-200 to-pink-400 bg-clip-text text-transparent uppercase border border-pink-500/20 px-3 py-1 rounded-full bg-pink-500/5 animate-pulse">
             ✦ LLOVEDBYUS STUDIO
           </span>
@@ -176,8 +189,14 @@ export default function Home() {
           </div>
         </div>
 
-        {/* KOLASE PRODUK */}
-        <div className="flex justify-center md:justify-end">
+        {/* KOLASE PRODUK DENGAN DEKORASI ICON 6 & 10 */}
+        <div className="flex justify-center md:justify-end relative">
+          <div className="absolute -bottom-6 -right-6 w-14 h-14 animate-pulse pointer-events-none z-30 hidden sm:block">
+            <img src="/icon6.png" alt="decor" className="w-full h-full object-contain drop-shadow-[0_0_10px_rgba(255,255,255,0.6)]" />
+          </div>
+          <div className="absolute -top-6 -right-4 w-12 h-12 animate-bounce pointer-events-none z-30 hidden sm:block">
+            <img src="/icon10.png" alt="decor" className="w-full h-full object-contain" />
+          </div>
           <div className="relative w-[320px] h-[520px] bg-zinc-900/40 rounded-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.9)] overflow-hidden border border-zinc-800/80 flex items-center justify-center p-2 group hover:border-pink-500/40 transition duration-500">
             <img 
               src="/hero-collage.png" 
@@ -188,67 +207,19 @@ export default function Home() {
         </div>
       </section>
 
-      {/* INFINITE MARQUEE SLOGAN BERGERAK DENGAN ICON CUSTOM TRANSPARAN */}
+      {/* INFINITE MARQUEE SLOGAN BERGERAK (MURNI DESIGN YOUR OWN STUFF) */}
       <div className="py-6 bg-zinc-950 border-y border-zinc-800/80 overflow-hidden relative z-20 flex whitespace-nowrap shadow-xl">
-        <style dangerouslySetInnerHTML={{__html: `
-          @keyframes marquee {
-            0% { transform: translateX(0%); }
-            100% { transform: translateX(-50%); }
-          }
-          .animate-marquee {
-            display: flex;
-            width: max-content;
-            animation: marquee 22s linear infinite;
-          }
-        `}} />
         <div className="animate-marquee flex items-center gap-10">
-          {/* Blok 1 */}
-          <div className="flex items-center gap-8 text-xl md:text-3xl italic chrome-text">
-            <span>DESIGN YOUR OWN STUFF</span>
-            <div className="flex items-center gap-3">
-              <img src="/icon1.png" alt="icon" className="w-9 h-9 object-contain animate-bounce" />
-              <img src="/icon2.png" alt="icon" className="w-9 h-9 object-contain animate-pulse" />
-              <img src="/icon3.png" alt="icon" className="w-9 h-9 object-contain" />
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="flex items-center gap-8 text-xl md:text-3xl italic chrome-text">
+              <span>DESIGN YOUR OWN STUFF</span>
+              <span className="text-pink-400">✦</span>
             </div>
-            <span className="text-zinc-600">✦</span>
-          </div>
-
-          {/* Blok 2 */}
-          <div className="flex items-center gap-8 text-xl md:text-3xl italic chrome-text">
-            <span>LLOVEDBYUS STUDIO</span>
-            <div className="flex items-center gap-3">
-              <img src="/icon4.png" alt="icon" className="w-9 h-9 object-contain animate-bounce" />
-              <img src="/icon5.png" alt="icon" className="w-9 h-9 object-contain animate-pulse" />
-              <img src="/icon6.png" alt="icon" className="w-9 h-9 object-contain" />
-            </div>
-            <span className="text-zinc-600">✦</span>
-          </div>
-
-          {/* Blok 3 */}
-          <div className="flex items-center gap-8 text-xl md:text-3xl italic chrome-text">
-            <span>CUSTOM STREETWEAR</span>
-            <div className="flex items-center gap-3">
-              <img src="/icon8.png" alt="icon" className="w-9 h-9 object-contain animate-bounce" />
-              <img src="/icon7.png" alt="icon" className="w-9 h-9 object-contain animate-pulse" />
-              <img src="/icon9.png" alt="icon" className="w-9 h-9 object-contain" />
-            </div>
-            <span className="text-zinc-600">✦</span>
-          </div>
-
-          {/* Blok 4 (Pengaman Looping) */}
-          <div className="flex items-center gap-8 text-xl md:text-3xl italic chrome-text">
-            <span>DESIGN YOUR OWN STUFF</span>
-            <div className="flex items-center gap-3">
-              <img src="/icon10.png" alt="icon" className="w-9 h-9 object-contain animate-bounce" />
-              <img src="/icon11.png" alt="icon" className="w-9 h-9 object-contain animate-pulse" />
-              <img src="/icon1.png" alt="icon" className="w-9 h-9 object-contain" />
-            </div>
-            <span className="text-zinc-600">✦</span>
-          </div>
+          ))}
         </div>
       </div>
 
-      {/* PRODUCTS PREVIEW GRID */}
+      {/* PRODUCTS PREVIEW GRID DENGAN DEKORASI ICON 2, 3 & 7 */}
       <section 
         id="products" 
         ref={productsReveal.ref}
@@ -256,6 +227,12 @@ export default function Home() {
           productsReveal.isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
         }`}
       >
+        <div className="flex justify-center items-center gap-6 mb-4">
+          <img src="/icon2.png" alt="decor" className="w-8 h-8 object-contain animate-bounce opacity-90" />
+          <img src="/icon3.png" alt="decor" className="w-10 h-10 object-contain animate-pulse opacity-90" />
+          <img src="/icon7.png" alt="decor" className="w-9 h-9 object-contain animate-bounce opacity-90" />
+        </div>
+
         <div className="text-center mb-12">
           <span className="text-xs font-bold tracking-[0.25em] bg-gradient-to-r from-zinc-300 via-pink-300 to-zinc-400 bg-clip-text text-transparent uppercase">
             PRODUCTS
@@ -296,7 +273,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* SECTION LINK RESMI */}
+      {/* SECTION LINK RESMI DENGAN DEKORASI ICON 4, 5, 8, 9, 11 */}
       <section 
         id="socials" 
         ref={socialsReveal.ref}
@@ -304,6 +281,14 @@ export default function Home() {
           socialsReveal.isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
         }`}
       >
+        <div className="flex justify-center items-center gap-6 mb-4">
+          <img src="/icon4.png" alt="decor" className="w-9 h-9 object-contain animate-bounce" />
+          <img src="/icon5.png" alt="decor" className="w-9 h-9 object-contain animate-pulse" />
+          <img src="/icon8.png" alt="decor" className="w-9 h-9 object-contain animate-bounce" />
+          <img src="/icon9.png" alt="decor" className="w-9 h-9 object-contain animate-pulse" />
+          <img src="/icon11.jpg" alt="decor" className="w-9 h-9 object-contain animate-bounce" />
+        </div>
+
         <span className="text-xs font-bold tracking-[0.25em] bg-gradient-to-r from-zinc-300 via-pink-300 to-zinc-400 bg-clip-text text-transparent uppercase">
           CONNECT WITH US
         </span>
