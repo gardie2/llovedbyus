@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import DesignLab from "./components/DesignLab";
 
-// Custom hook buat efek animasi muncul pas di-scroll (fade-in scroll)
 function useScrollReveal() {
   const ref = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
@@ -84,7 +83,6 @@ export default function Home() {
     }
   };
 
-  // Scroll reveal references
   const heroReveal = useScrollReveal();
   const productsReveal = useScrollReveal();
   const socialsReveal = useScrollReveal();
@@ -92,17 +90,36 @@ export default function Home() {
   return (
     <main className="bg-[#090a0d] text-zinc-100 min-h-screen selection:bg-pink-500 selection:text-white font-sans relative overflow-hidden">
       
+      {/* GLOBAL CSS UNTUK EFEK CHROME 3D METALIK */}
+      <style jsx global>{`
+        .chrome-text {
+          font-weight: 900;
+          text-transform: uppercase;
+          background: linear-gradient(
+            to bottom,
+            #ffffff 0%,
+            #e2e8f0 35%,
+            #94a3b8 50%,
+            #cbd5e1 55%,
+            #475569 80%,
+            #f8fafc 100%
+          );
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          filter: drop-shadow(0 2px 2px rgba(0,0,0,0.9)) 
+                  drop-shadow(0 0 15px rgba(255,255,255,0.4))
+                  drop-shadow(0 5px 10px rgba(0,0,0,0.6));
+          letter-spacing: -0.02em;
+        }
+      `}</style>
+
       {/* NAVBAR */}
       <nav className="bg-[#0d0e12]/90 backdrop-blur-xl border-b border-zinc-800/80 sticky top-0 z-50 py-4 px-6">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Link href="/" className="flex flex-col group">
             <div className="flex items-center gap-1 font-black text-2xl tracking-tighter uppercase italic">
-              <span className="bg-gradient-to-r from-zinc-100 via-zinc-300 to-zinc-400 bg-clip-text text-transparent drop-shadow-[0_2px_10px_rgba(255,255,255,0.2)]">
-                LL
-              </span>
-              <span className="bg-gradient-to-r from-pink-300 via-zinc-200 to-pink-400 bg-clip-text text-transparent drop-shadow-[0_0_12px_rgba(244,114,182,0.4)]">
-                OVEDBYUS
-              </span>
+              <span className="chrome-text">LL</span>
+              <span className="chrome-text text-pink-300">OVEDBYUS</span>
             </div>
             <span className="text-[8px] font-bold tracking-[0.3em] text-zinc-400 -mt-1 uppercase">
               STORE
@@ -124,7 +141,7 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* HERO SECTION DENGAN ANIMASI MUNCUL */}
+      {/* HERO SECTION */}
       <section 
         ref={heroReveal.ref}
         className={`relative py-20 px-6 max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center z-20 transition-all duration-1000 transform ${
@@ -136,12 +153,10 @@ export default function Home() {
             ✦ LLOVEDBYUS STUDIO
           </span>
 
-          <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tight leading-[0.95] italic">
+          <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tight leading-[0.95] italic chrome-text">
             Create <br />
             Something <br />
-            <span className="bg-gradient-to-r from-zinc-100 via-pink-200 via-50% to-zinc-300 bg-clip-text text-transparent drop-shadow-[0_0_35px_rgba(244,114,182,0.35)]">
-              That's Yours.
-            </span>
+            <span className="text-pink-300">That's Yours.</span>
           </h1>
 
           <p className="text-zinc-400 text-sm md:text-base max-w-md font-medium leading-relaxed">
@@ -173,7 +188,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* INFINITE MARQUEE SLOGAN BERGERAK KE KIRI (TIDAK IKUT ANIMASI SCROLL, TETAP MULUS) */}
+      {/* INFINITE MARQUEE SLOGAN BERGERAK (CHROME TEXT STYLE) */}
       <div className="py-6 bg-zinc-950 border-y border-zinc-800/80 overflow-hidden relative z-20 flex whitespace-nowrap shadow-xl">
         <style dangerouslySetInnerHTML={{__html: `
           @keyframes marquee {
@@ -188,19 +203,19 @@ export default function Home() {
         `}} />
         <div className="animate-marquee flex items-center gap-8">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="flex items-center gap-8 text-xl md:text-3xl font-black uppercase tracking-wider italic text-transparent bg-clip-text bg-gradient-to-r from-pink-300 via-zinc-100 to-pink-400">
+            <div key={i} className="flex items-center gap-8 text-xl md:text-3xl italic chrome-text">
               <span>DESIGN YOUR OWN STUFF</span>
               <span className="flex items-center gap-1.5">
                 <span className="text-xl animate-bounce select-none">🩷</span>
                 <span className="text-xl animate-pulse select-none">💖</span>
               </span>
-              <span className="text-zinc-700">✦</span>
+              <span className="text-zinc-600">✦</span>
             </div>
           ))}
         </div>
       </div>
 
-      {/* PRODUCTS PREVIEW GRID DENGAN ANIMASI MUNCUL */}
+      {/* PRODUCTS PREVIEW GRID */}
       <section 
         id="products" 
         ref={productsReveal.ref}
@@ -212,8 +227,8 @@ export default function Home() {
           <span className="text-xs font-bold tracking-[0.25em] bg-gradient-to-r from-zinc-300 via-pink-300 to-zinc-400 bg-clip-text text-transparent uppercase">
             PRODUCTS
           </span>
-          <h2 className="text-3xl md:text-4xl font-black uppercase tracking-wider mt-1 text-zinc-100 italic">
-            Explore Our <span className="bg-gradient-to-r from-zinc-100 via-pink-300 to-zinc-300 bg-clip-text text-transparent">Products</span>
+          <h2 className="text-3xl md:text-4xl font-black uppercase tracking-wider mt-1 italic chrome-text">
+            Explore Our Products
           </h2>
         </div>
 
@@ -248,7 +263,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* SECTION LINK RESMI DENGAN ANIMASI MUNCUL */}
+      {/* SECTION LINK RESMI */}
       <section 
         id="socials" 
         ref={socialsReveal.ref}
@@ -259,8 +274,8 @@ export default function Home() {
         <span className="text-xs font-bold tracking-[0.25em] bg-gradient-to-r from-zinc-300 via-pink-300 to-zinc-400 bg-clip-text text-transparent uppercase">
           CONNECT WITH US
         </span>
-        <h2 className="text-3xl md:text-4xl font-black uppercase tracking-wider mt-1 text-zinc-100 italic mb-10">
-          Official <span className="bg-gradient-to-r from-zinc-100 via-pink-300 to-zinc-300 bg-clip-text text-transparent">Links</span>
+        <h2 className="text-3xl md:text-4xl font-black uppercase tracking-wider mt-1 italic chrome-text mb-10">
+          Official Links
         </h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
