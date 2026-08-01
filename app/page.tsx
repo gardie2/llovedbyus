@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useState } from "react";
 import DesignLab from "./components/DesignLab";
-import SparklesAnimation from "./components/SparklesAnimation";
 
 export default function Home() {
   const [activeProduct, setActiveProduct] = useState<{
@@ -59,9 +58,6 @@ export default function Home() {
   return (
     <main className="bg-[#090a0d] text-zinc-100 min-h-screen selection:bg-pink-500 selection:text-white font-sans relative overflow-hidden">
       
-      {/* ANIMASI BACKGROUND SPARKLES */}
-      <SparklesAnimation />
-
       {/* NAVBAR */}
       <nav className="bg-[#0d0e12]/90 backdrop-blur-xl border-b border-zinc-800/80 sticky top-0 z-50 py-4 px-6">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -240,9 +236,7 @@ export default function Home() {
       <section className="py-16 px-6 text-center border-t border-zinc-900 relative z-20 overflow-hidden">
         <div className="max-w-4xl mx-auto flex flex-col items-center justify-center space-y-3">
           <div className="flex items-center justify-center gap-3">
-            {/* Love Pertama */}
             <span className="text-2xl md:text-3xl animate-ping select-none">🩷</span>
-            {/* Love Kedua (berdenyut kembang kempis) */}
             <span className="text-3xl md:text-4xl animate-pulse select-none">💖</span>
           </div>
           <h2 className="text-2xl md:text-4xl font-black tracking-[0.2em] uppercase italic bg-gradient-to-r from-pink-300 via-zinc-100 to-pink-400 bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(244,114,182,0.3)]">
