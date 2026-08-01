@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import DesignLab from "./components/DesignLab";
+import SparklesAnimation from "./components/SparklesAnimation";
 
 export default function Home() {
   const [activeProduct, setActiveProduct] = useState<{
@@ -56,8 +57,11 @@ export default function Home() {
   };
 
   return (
-    <main className="bg-[#090a0d] text-zinc-100 min-h-screen selection:bg-pink-500 selection:text-white font-sans relative">
+    <main className="bg-[#090a0d] text-zinc-100 min-h-screen selection:bg-pink-500 selection:text-white font-sans relative overflow-hidden">
       
+      {/* ANIMASI BACKGROUND SPARKLES */}
+      <SparklesAnimation />
+
       {/* NAVBAR */}
       <nav className="bg-[#0d0e12]/90 backdrop-blur-xl border-b border-zinc-800/80 sticky top-0 z-50 py-4 px-6">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -83,7 +87,7 @@ export default function Home() {
 
           <button 
             onClick={() => setShowDesignLab(true)}
-            className="bg-gradient-to-r from-zinc-200 via-pink-200 to-zinc-300 hover:from-white hover:to-pink-100 text-zinc-950 font-black px-6 py-2 rounded-full text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(244,114,182,0.3)] transition-all active:scale-95"
+            className="bg-gradient-to-r from-zinc-200 via-pink-200 to-zinc-300 hover:from-white hover:to-pink-100 text-zinc-950 font-black px-6 py-2 rounded-full text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(244,114,182,0.3)] transition-all active:scale-95 z-20"
           >
             Start
           </button>
@@ -91,9 +95,9 @@ export default function Home() {
       </nav>
 
       {/* HERO SECTION */}
-      <section className="relative py-20 px-6 max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+      <section className="relative py-20 px-6 max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center z-20">
         <div className="space-y-6">
-          <span className="inline-block text-[11px] font-extrabold tracking-[0.3em] bg-gradient-to-r from-pink-300 via-zinc-200 to-pink-400 bg-clip-text text-transparent uppercase border border-pink-500/20 px-3 py-1 rounded-full bg-pink-500/5">
+          <span className="inline-block text-[11px] font-extrabold tracking-[0.3em] bg-gradient-to-r from-pink-300 via-zinc-200 to-pink-400 bg-clip-text text-transparent uppercase border border-pink-500/20 px-3 py-1 rounded-full bg-pink-500/5 animate-pulse">
             ✦ LLOVEDBYUS STUDIO
           </span>
 
@@ -124,18 +128,18 @@ export default function Home() {
 
         {/* KOLASE PRODUK */}
         <div className="flex justify-center md:justify-end">
-          <div className="relative w-[320px] h-[520px] bg-zinc-900/40 rounded-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.9)] overflow-hidden border border-zinc-800/80 flex items-center justify-center p-2">
+          <div className="relative w-[320px] h-[520px] bg-zinc-900/40 rounded-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.9)] overflow-hidden border border-zinc-800/80 flex items-center justify-center p-2 group hover:border-pink-500/40 transition duration-500">
             <img 
               src="/hero-collage.png" 
               alt="LLOVEDBYUS Product Collage" 
-              className="w-full h-full object-cover rounded-2xl"
+              className="w-full h-full object-cover rounded-2xl group-hover:scale-105 transition-transform duration-700"
             />
           </div>
         </div>
       </section>
 
       {/* PRODUCTS PREVIEW GRID */}
-      <section id="products" className="py-20 px-6 max-w-7xl mx-auto border-t border-zinc-800/80">
+      <section id="products" className="py-20 px-6 max-w-7xl mx-auto border-t border-zinc-800/80 relative z-20">
         <div className="text-center mb-12">
           <span className="text-xs font-bold tracking-[0.25em] bg-gradient-to-r from-zinc-300 via-pink-300 to-zinc-400 bg-clip-text text-transparent uppercase">
             PRODUCTS
@@ -177,7 +181,7 @@ export default function Home() {
       </section>
 
       {/* SECTION LINK RESMI */}
-      <section id="socials" className="py-20 px-6 max-w-4xl mx-auto border-t border-zinc-800/85 text-center">
+      <section id="socials" className="py-20 px-6 max-w-4xl mx-auto border-t border-zinc-800/85 text-center relative z-20">
         <span className="text-xs font-bold tracking-[0.25em] bg-gradient-to-r from-zinc-300 via-pink-300 to-zinc-400 bg-clip-text text-transparent uppercase">
           CONNECT WITH US
         </span>
@@ -233,7 +237,7 @@ export default function Home() {
       </section>
 
       {/* FOOTER */}
-      <footer className="py-8 text-center text-zinc-600 text-xs border-t border-zinc-900">
+      <footer className="py-8 text-center text-zinc-600 text-xs border-t border-zinc-900 relative z-20">
         <p>© 2026 LLOVEDBYUS. All Rights Reserved.</p>
       </footer>
 
