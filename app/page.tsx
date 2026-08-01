@@ -88,8 +88,19 @@ export default function Home() {
   const socialsReveal = useScrollReveal();
 
   return (
-    <main className="bg-[#090a0d] text-zinc-100 min-h-screen selection:bg-pink-500 selection:text-white font-sans relative overflow-hidden">
+    <main className="text-zinc-100 min-h-screen selection:bg-pink-500 selection:text-white font-sans relative overflow-hidden">
       
+      {/* BACKGROUND DISCO BALL + OVERLAY BURAM */}
+      <div className="fixed inset-0 w-full h-full -z-10 pointer-events-none">
+        <img 
+          src="/background-image.jpg" 
+          alt="Disco Background" 
+          className="w-full h-full object-cover"
+        />
+        {/* Lapisan gelap transparan & efek blur agar teks tetap terbaca */}
+        <div className="absolute inset-0 bg-black/55 backdrop-blur-[8px]"></div>
+      </div>
+
       {/* GLOBAL CSS: CHROME & PERFECT SMOOTH MARQUEE */}
       <style jsx global>{`
         .chrome-text {
@@ -126,7 +137,7 @@ export default function Home() {
       `}</style>
 
       {/* NAVBAR */}
-      <nav className="bg-[#0d0e12]/90 backdrop-blur-xl border-b border-zinc-800/80 sticky top-0 z-50 py-4 px-6">
+      <nav className="bg-[#0d0e12]/80 backdrop-blur-xl border-b border-zinc-800/80 sticky top-0 z-50 py-4 px-6">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Link href="/" className="flex flex-col group">
             <div className="flex items-center gap-1 font-black text-2xl tracking-tighter uppercase italic">
@@ -171,7 +182,7 @@ export default function Home() {
             <span className="text-pink-300">That's Yours.</span>
           </h1>
 
-          <p className="text-zinc-400 text-sm md:text-base max-w-md font-medium leading-relaxed">
+          <p className="text-zinc-300 text-sm md:text-base max-w-md font-medium leading-relaxed drop-shadow">
             Design custom phone cases, sweatshirts, hoodies, t-shirts, tote bags, and more products the way you want.
           </p>
 
@@ -182,13 +193,13 @@ export default function Home() {
             >
               Start Designing
             </button>
-            <a href="#products" className="border border-zinc-700/80 hover:border-pink-400/50 text-zinc-300 font-bold px-8 py-4 rounded-full text-xs uppercase tracking-widest bg-zinc-900/50 hover:bg-zinc-800 transition active:scale-95 text-center">
+            <a href="#products" className="border border-zinc-700/80 hover:border-pink-400/50 text-zinc-300 font-bold px-8 py-4 rounded-full text-xs uppercase tracking-widest bg-zinc-900/60 backdrop-blur-md hover:bg-zinc-800 transition active:scale-95 text-center">
               Explore Products
             </a>
           </div>
         </div>
 
-        {/* KOLASE PRODUK DENGAN 2 ICON PILIHAN (ICON 1 & ICON 6) */}
+        {/* KOLASE PRODUK */}
         <div className="flex justify-center md:justify-end relative">
           <div className="absolute -top-6 -right-6 w-14 h-14 animate-bounce pointer-events-none z-30 hidden sm:block rotate-12">
             <img src="/icon1.png" alt="decor" className="w-full h-full object-contain" />
@@ -196,7 +207,7 @@ export default function Home() {
           <div className="absolute -bottom-6 -left-6 w-14 h-14 animate-pulse pointer-events-none z-30 hidden sm:block -rotate-12">
             <img src="/icon6.png" alt="decor" className="w-full h-full object-contain drop-shadow-[0_0_12px_rgba(255,255,255,0.7)]" />
           </div>
-          <div className="relative w-[320px] h-[520px] bg-zinc-900/40 rounded-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.9)] overflow-hidden border border-zinc-800/80 flex items-center justify-center p-2 group hover:border-pink-500/40 transition duration-500">
+          <div className="relative w-[320px] h-[520px] bg-zinc-900/60 backdrop-blur-md rounded-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.9)] overflow-hidden border border-zinc-800/80 flex items-center justify-center p-2 group hover:border-pink-500/40 transition duration-500">
             <img 
               src="/hero-collage.png" 
               alt="LLOVEDBYUS Product Collage" 
@@ -206,8 +217,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* INFINITE MARQUEE SLOGAN (CLEAN, 100% MULUS) */}
-      <div className="py-6 bg-zinc-950 border-y border-zinc-800/80 overflow-hidden relative z-20 flex whitespace-nowrap shadow-xl">
+      {/* INFINITE MARQUEE SLOGAN */}
+      <div className="py-6 bg-zinc-950/80 backdrop-blur-md border-y border-zinc-800/80 overflow-hidden relative z-20 flex whitespace-nowrap shadow-xl">
         <div className="animate-marquee flex items-center">
           {[...Array(2)].map((_, groupIndex) => (
             <div key={groupIndex} className="flex items-center shrink-0">
@@ -244,7 +255,7 @@ export default function Home() {
             <div 
               key={item.id}
               onClick={() => handleProductClick(item)}
-              className="group bg-[#121318] border border-zinc-800 rounded-3xl p-5 cursor-pointer hover:border-pink-500/50 transition-all duration-300 hover:shadow-[0_0_30px_rgba(244,114,182,0.15)] flex flex-col items-center transform hover:-translate-y-1"
+              className="group bg-[#121318]/80 backdrop-blur-md border border-zinc-800 rounded-3xl p-5 cursor-pointer hover:border-pink-500/50 transition-all duration-300 hover:shadow-[0_0_30px_rgba(244,114,182,0.15)] flex flex-col items-center transform hover:-translate-y-1"
             >
               <div className="w-full aspect-[4/5] bg-zinc-950 rounded-2xl overflow-hidden relative flex items-center justify-center border border-zinc-800/60 mb-4">
                 <img 
@@ -254,14 +265,14 @@ export default function Home() {
                 />
               </div>
               <h3 className="text-sm font-black uppercase tracking-wide text-zinc-200 group-hover:text-pink-300 transition text-center">{item.name}</h3>
-              <p className="text-xs text-zinc-500 text-center mt-1">{item.desc}</p>
+              <p className="text-xs text-zinc-400 text-center mt-1">{item.desc}</p>
               
               {item.id === 1 ? (
                 <span className="mt-3 text-[10px] font-extrabold bg-pink-500/10 text-pink-300 border border-pink-500/30 px-3 py-1 rounded-full uppercase tracking-widest group-hover:bg-pink-500 group-hover:text-zinc-950 transition">
                   Buka Studio Design ✦
                 </span>
               ) : (
-                <span className="mt-3 text-[10px] font-extrabold bg-zinc-900 text-zinc-500 border border-zinc-800 px-3 py-1 rounded-full uppercase tracking-widest cursor-not-allowed">
+                <span className="mt-3 text-[10px] font-extrabold bg-zinc-900/80 text-zinc-500 border border-zinc-800 px-3 py-1 rounded-full uppercase tracking-widest cursor-not-allowed">
                   Coming Soon ⏳
                 </span>
               )}
@@ -292,13 +303,13 @@ export default function Home() {
             href="https://shopee.co.id/llovedbyus" 
             target="_blank" 
             rel="noopener noreferrer"
-            className="group bg-[#121318] border border-zinc-800 hover:border-pink-500/60 rounded-3xl p-6 flex flex-col items-center transition-all duration-300 hover:shadow-[0_0_30px_rgba(244,114,182,0.15)]"
+            className="group bg-[#121318]/80 backdrop-blur-md border border-zinc-800 hover:border-pink-500/60 rounded-3xl p-6 flex flex-col items-center transition-all duration-300 hover:shadow-[0_0_30px_rgba(244,114,182,0.15)]"
           >
             <div className="w-14 h-14 bg-zinc-900 rounded-2xl flex items-center justify-center border border-zinc-800 mb-4 group-hover:scale-110 transition overflow-hidden p-2">
               <img src="/shopee.png" alt="Shopee Logo" className="w-full h-full object-contain" />
             </div>
             <h3 className="text-sm font-black uppercase tracking-wide text-zinc-200 group-hover:text-pink-300 transition">Shopee Store</h3>
-            <p className="text-[11px] text-zinc-500 mt-1">Belanja via e-commerce</p>
+            <p className="text-[11px] text-zinc-400 mt-1">Belanja via e-commerce</p>
           </a>
 
           {/* Instagram */}
@@ -306,13 +317,13 @@ export default function Home() {
             href="https://instagram.com/prellovedbyus" 
             target="_blank" 
             rel="noopener noreferrer"
-            className="group bg-[#121318] border border-zinc-800 hover:border-pink-500/60 rounded-3xl p-6 flex flex-col items-center transition-all duration-300 hover:shadow-[0_0_30px_rgba(244,114,182,0.15)]"
+            className="group bg-[#121318]/80 backdrop-blur-md border border-zinc-800 hover:border-pink-500/60 rounded-3xl p-6 flex flex-col items-center transition-all duration-300 hover:shadow-[0_0_30px_rgba(244,114,182,0.15)]"
           >
             <div className="w-14 h-14 bg-zinc-900 rounded-2xl flex items-center justify-center border border-zinc-800 mb-4 group-hover:scale-110 transition overflow-hidden p-2">
               <img src="/instagram.png" alt="Instagram Logo" className="w-full h-full object-contain" />
             </div>
             <h3 className="text-sm font-black uppercase tracking-wide text-zinc-200 group-hover:text-pink-300 transition">Instagram</h3>
-            <p className="text-[11px] text-zinc-500 mt-1">Lihat katalog & testimoni</p>
+            <p className="text-[11px] text-zinc-400 mt-1">Lihat katalog & testimoni</p>
           </a>
 
           {/* WhatsApp Admin */}
@@ -320,27 +331,27 @@ export default function Home() {
             href="https://wa.me/62881025376311" 
             target="_blank" 
             rel="noopener noreferrer"
-            className="group bg-[#121318] border border-zinc-800 hover:border-pink-500/60 rounded-3xl p-6 flex flex-col items-center transition-all duration-300 hover:shadow-[0_0_30px_rgba(244,114,182,0.15)]"
+            className="group bg-[#121318]/80 backdrop-blur-md border border-zinc-800 hover:border-pink-500/60 rounded-3xl p-6 flex flex-col items-center transition-all duration-300 hover:shadow-[0_0_30px_rgba(244,114,182,0.15)]"
           >
             <div className="w-14 h-14 bg-zinc-900 rounded-2xl flex items-center justify-center border border-zinc-800 mb-4 group-hover:scale-110 transition overflow-hidden p-2">
               <img src="/whatsapp.png" alt="WhatsApp Logo" className="w-full h-full object-contain" />
             </div>
             <h3 className="text-sm font-black uppercase tracking-wide text-zinc-200 group-hover:text-pink-300 transition">WhatsApp Admin</h3>
-            <p className="text-[11px] text-zinc-500 mt-1">Chat & konsultasi pesanan</p>
+            <p className="text-[11px] text-zinc-400 mt-1">Chat & konsultasi pesanan</p>
           </a>
 
         </div>
       </section>
 
       {/* FOOTER */}
-      <footer className="py-8 text-center text-zinc-600 text-xs border-t border-zinc-900 relative z-20">
+      <footer className="py-8 text-center text-zinc-500 text-xs border-t border-zinc-900/80 relative z-20 bg-black/40 backdrop-blur-md">
         <p>© 2026 LLOVEDBYUS. All Rights Reserved.</p>
       </footer>
 
       {/* MODAL ZOOM PRODUK LAIN */}
       {activeProduct && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-[#13141a] border border-zinc-700/80 rounded-3xl max-w-md w-full p-6 relative shadow-[0_0_50px_rgba(244,114,182,0.2)] flex flex-col items-center">
+          <div className="bg-[#13141a]/95 backdrop-blur-xl border border-zinc-700/80 rounded-3xl max-w-md w-full p-6 relative shadow-[0_0_50px_rgba(244,114,182,0.2)] flex flex-col items-center">
             
             <button 
               onClick={() => setActiveProduct(null)}
