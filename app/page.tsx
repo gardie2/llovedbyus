@@ -31,7 +31,7 @@ export default function Home() {
       id: 3, 
       name: "Custom Hoodie", 
       desc: "Cozy fleece hoodie with custom print.", 
-      image: "/hoodie.JPG" 
+      image: "/hoodie.png" 
     },
     { 
       id: 4, 
