@@ -26,7 +26,7 @@
 
         /* OVERLAY GELAP & BLUR DI ATAS BACKGROUND */
         .bg-overlay {
-            background: rgba(0, 0, 0, 0.75); /* Hitam transparan biar teks makin terbaca */
+            background: rgba(0, 0, 0, 0.45); /* Hitam transparan biar teks makin terbaca */
             backdrop-filter: blur(8px);        /* Efek buram pada gambar disko di belakang */
             -webkit-backdrop-filter: blur(8px);
             min-height: 100vh;
