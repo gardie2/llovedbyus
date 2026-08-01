@@ -90,16 +90,8 @@ export default function Home() {
   return (
     <main className="text-zinc-100 min-h-screen selection:bg-pink-500 selection:text-white font-sans relative overflow-hidden">
       
-      {/* BACKGROUND DISCO BALL + OVERLAY BURAM */}
-      <div className="fixed inset-0 w-full h-full -z-10 pointer-events-none">
-        <img 
-          src="/background-image.jpg" 
-          alt="Disco Background" 
-          className="w-full h-full object-cover"
-        />
-        {/* Lapisan gelap transparan & efek blur agar teks tetap terbaca */}
-        <div className="absolute inset-0 bg-black/55 backdrop-blur-[8px]"></div>
-      </div>
+      {/* BACKGROUND GRADASI HITAM ABU-ABU (SUPER RINGAN & ANTI NGELAG) */}
+      <div className="fixed inset-0 w-full h-full -z-10 pointer-events-none bg-[#050507] bg-[radial-gradient(circle_at_20%_20%,rgba(100,100,100,0.12)_0%,transparent_50%),radial-gradient(circle_at_80%_80%,rgba(50,50,70,0.15)_0%,transparent_60%)]"></div>
 
       {/* GLOBAL CSS: CHROME & PERFECT SMOOTH MARQUEE */}
       <style jsx global>{`
