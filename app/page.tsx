@@ -212,9 +212,9 @@ export default function Home() {
           </span>
 
           <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tight leading-[0.95] chrome-text italic">
-            Create <br />
-            Something <br />
-            <span className="text-pink-300">That's Yours.</span>
+            Design It, <br />
+            Wear It, <br />
+            <span className="text-pink-300">Own It.</span>
           </h1>
 
           <p className="text-zinc-300 text-sm md:text-base max-w-md font-medium leading-relaxed drop-shadow">
