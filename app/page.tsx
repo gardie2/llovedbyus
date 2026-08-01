@@ -42,6 +42,15 @@ export default function Home() {
 
   const [showDesignLab, setShowDesignLab] = useState(false);
 
+  // KUNCI LAYAR BELAKANG SUPAYA TIDAK IKUT KEGESER DI HP/IPAD
+  useEffect(() => {
+    if (showDesignLab || activeProduct) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+  }, [showDesignLab, activeProduct]);
+
   const productList = [
     { 
       id: 1, 
@@ -90,7 +99,7 @@ export default function Home() {
   return (
     <main className="text-zinc-100 min-h-screen selection:bg-pink-500 selection:text-white font-sans relative overflow-hidden">
       
-      {/* BACKGROUND GRADASI HITAM ABU-ABU (SUPER RINGAN & ANTI NGELAG) */}
+      {/* BACKGROUND GRADASI HITAM ABU-ABU */}
       <div className="fixed inset-0 w-full h-full -z-10 pointer-events-none bg-[#050507] bg-[radial-gradient(circle_at_20%_20%,rgba(100,100,100,0.12)_0%,transparent_50%),radial-gradient(circle_at_80%_80%,rgba(50,50,70,0.15)_0%,transparent_60%)]"></div>
 
       {/* GLOBAL CSS: CHROME & PERFECT SMOOTH MARQUEE */}
