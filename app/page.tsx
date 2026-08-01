@@ -188,7 +188,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* INFINITE MARQUEE SLOGAN BERGERAK (CHROME TEXT STYLE) */}
+      {/* INFINITE MARQUEE SLOGAN BERGERAK DENGAN ICON CUSTOM TRANSPARAN */}
       <div className="py-6 bg-zinc-950 border-y border-zinc-800/80 overflow-hidden relative z-20 flex whitespace-nowrap shadow-xl">
         <style dangerouslySetInnerHTML={{__html: `
           @keyframes marquee {
@@ -198,20 +198,53 @@ export default function Home() {
           .animate-marquee {
             display: flex;
             width: max-content;
-            animation: marquee 18s linear infinite;
+            animation: marquee 22s linear infinite;
           }
         `}} />
-        <div className="animate-marquee flex items-center gap-8">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="flex items-center gap-8 text-xl md:text-3xl italic chrome-text">
-              <span>DESIGN YOUR OWN STUFF</span>
-              <span className="flex items-center gap-1.5">
-                <span className="text-xl animate-bounce select-none">🩷</span>
-                <span className="text-xl animate-pulse select-none">💖</span>
-              </span>
-              <span className="text-zinc-600">✦</span>
+        <div className="animate-marquee flex items-center gap-10">
+          {/* Blok 1 */}
+          <div className="flex items-center gap-8 text-xl md:text-3xl italic chrome-text">
+            <span>DESIGN YOUR OWN STUFF</span>
+            <div className="flex items-center gap-3">
+              <img src="/icon1.png" alt="icon" className="w-9 h-9 object-contain animate-bounce" />
+              <img src="/icon2.png" alt="icon" className="w-9 h-9 object-contain animate-pulse" />
+              <img src="/icon3.png" alt="icon" className="w-9 h-9 object-contain" />
             </div>
-          ))}
+            <span className="text-zinc-600">✦</span>
+          </div>
+
+          {/* Blok 2 */}
+          <div className="flex items-center gap-8 text-xl md:text-3xl italic chrome-text">
+            <span>LLOVEDBYUS STUDIO</span>
+            <div className="flex items-center gap-3">
+              <img src="/icon4.png" alt="icon" className="w-9 h-9 object-contain animate-bounce" />
+              <img src="/icon5.png" alt="icon" className="w-9 h-9 object-contain animate-pulse" />
+              <img src="/icon6.png" alt="icon" className="w-9 h-9 object-contain" />
+            </div>
+            <span className="text-zinc-600">✦</span>
+          </div>
+
+          {/* Blok 3 */}
+          <div className="flex items-center gap-8 text-xl md:text-3xl italic chrome-text">
+            <span>CUSTOM STREETWEAR</span>
+            <div className="flex items-center gap-3">
+              <img src="/icon8.png" alt="icon" className="w-9 h-9 object-contain animate-bounce" />
+              <img src="/icon7.png" alt="icon" className="w-9 h-9 object-contain animate-pulse" />
+              <img src="/icon9.png" alt="icon" className="w-9 h-9 object-contain" />
+            </div>
+            <span className="text-zinc-600">✦</span>
+          </div>
+
+          {/* Blok 4 (Pengaman Looping) */}
+          <div className="flex items-center gap-8 text-xl md:text-3xl italic chrome-text">
+            <span>DESIGN YOUR OWN STUFF</span>
+            <div className="flex items-center gap-3">
+              <img src="/icon10.png" alt="icon" className="w-9 h-9 object-contain animate-bounce" />
+              <img src="/icon11.png" alt="icon" className="w-9 h-9 object-contain animate-pulse" />
+              <img src="/icon1.png" alt="icon" className="w-9 h-9 object-contain" />
+            </div>
+            <span className="text-zinc-600">✦</span>
+          </div>
         </div>
       </div>
 
