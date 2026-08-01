@@ -51,12 +51,19 @@ export default function Home() {
     }
   }, [showDesignLab, activeProduct]);
 
+  // URUTAN PRODUK DENGAN T-SHIRT DI POSISI KEDUA
   const productList = [
     { 
       id: 1, 
       name: "Custom Phone Case", 
       desc: "Protection case with custom photo support.", 
       image: "/case.png" 
+    },
+    { 
+      id: 4, 
+      name: "Custom T-Shirt", 
+      desc: "Boxy fit premium cotton material.", 
+      image: "/t-shirt.png" 
     },
     { 
       id: 2, 
@@ -69,12 +76,6 @@ export default function Home() {
       name: "Custom Hoodie", 
       desc: "Cozy fleece hoodie with custom print.", 
       image: "/hoodie.PNG" 
-    },
-    { 
-      id: 4, 
-      name: "Custom T-Shirt", 
-      desc: "Boxy fit premium cotton material.", 
-      image: "/t-shirt.png" 
     },
     { 
       id: 5, 
@@ -128,7 +129,6 @@ export default function Home() {
           letter-spacing: -0.02em;
         }
 
-        /* GAYA TEKS BERJALAN TRANSPARAN DENGAN GARIS TEPI (OUTLINE) */
         .outline-marquee-text {
           font-weight: 900;
           text-transform: uppercase;
@@ -252,7 +252,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* INFINITE MARQUEE SLOGAN (OUTLINE & TRANSPARENT STYLE) */}
+      {/* INFINITE MARQUEE SLOGAN */}
       <div className="py-5 bg-zinc-950/80 backdrop-blur-md border-y border-zinc-800/80 overflow-hidden relative z-20 flex whitespace-nowrap shadow-xl">
         <div className="animate-marquee flex items-center">
           {[...Array(2)].map((_, groupIndex) => (
