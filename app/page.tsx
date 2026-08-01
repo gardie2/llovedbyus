@@ -42,7 +42,7 @@ export default function Home() {
 
   const [showDesignLab, setShowDesignLab] = useState(false);
 
-  // KUNCI LAYAR BELAKANG SUPAYA TIDAK IKUT KEGESER DI HP/IPAD
+  // KUNCI LAYAR BELAKANG DI HP/IPAD SAAT MODAL KBUKA
   useEffect(() => {
     if (showDesignLab || activeProduct) {
       document.body.style.overflow = 'hidden';
@@ -102,7 +102,7 @@ export default function Home() {
       {/* BACKGROUND GRADASI HITAM ABU-ABU */}
       <div className="fixed inset-0 w-full h-full -z-10 pointer-events-none bg-[#050507] bg-[radial-gradient(circle_at_20%_20%,rgba(100,100,100,0.12)_0%,transparent_50%),radial-gradient(circle_at_80%_80%,rgba(50,50,70,0.15)_0%,transparent_60%)]"></div>
 
-      {/* GLOBAL CSS: CHROME & PERFECT SMOOTH MARQUEE */}
+      {/* GLOBAL CSS: CHROME, SMOOTH TRANSITION & CUTE BOUNCE ANIMATION */}
       <style jsx global>{`
         .chrome-text {
           font-weight: 900;
@@ -135,6 +135,24 @@ export default function Home() {
           will-change: transform;
           animation: marquee 20s linear infinite;
         }
+
+        /* EFEK KENYAL / BOUNCE LUCU SAAT DIKLIK */
+        .cute-click {
+          transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+        }
+        .cute-click:active {
+          transform: scale(0.92);
+        }
+
+        /* ANIMASI MUNCUL HALUS (FADE & SLIDE) */
+        @keyframes fadeIn {
+          from { opacity: 0; transform: scale(0.95) translateY(10px); }
+          to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .animate-smooth-modal {
+          animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
       `}</style>
 
       {/* NAVBAR */}
@@ -158,9 +176,9 @@ export default function Home() {
 
           <button 
             onClick={() => setShowDesignLab(true)}
-            className="bg-gradient-to-r from-zinc-200 via-pink-200 to-zinc-300 hover:from-white hover:to-pink-100 text-zinc-950 font-black px-6 py-2 rounded-full text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(244,114,182,0.3)] transition-all active:scale-95 z-20"
+            className="cute-click bg-gradient-to-r from-zinc-200 via-pink-200 to-zinc-300 hover:from-white hover:to-pink-100 text-zinc-950 font-black px-6 py-2 rounded-full text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(244,114,182,0.3)] z-20 cursor-pointer"
           >
-            Start
+            Start ✦
           </button>
         </div>
       </nav>
@@ -190,11 +208,11 @@ export default function Home() {
           <div className="flex items-center gap-4 pt-2">
             <button 
               onClick={() => setShowDesignLab(true)}
-              className="bg-gradient-to-r from-zinc-100 via-pink-200 to-zinc-200 hover:from-white hover:to-pink-100 text-zinc-950 font-black px-8 py-4 rounded-full text-xs uppercase tracking-widest shadow-[0_0_25px_rgba(244,114,182,0.3)] transition-all active:scale-95"
+              className="cute-click bg-gradient-to-r from-zinc-100 via-pink-200 to-zinc-200 hover:from-white hover:to-pink-100 text-zinc-950 font-black px-8 py-4 rounded-full text-xs uppercase tracking-widest shadow-[0_0_25px_rgba(244,114,182,0.3)] cursor-pointer"
             >
-              Start Designing
+              Start Designing ✨
             </button>
-            <a href="#products" className="border border-zinc-700/80 hover:border-pink-400/50 text-zinc-300 font-bold px-8 py-4 rounded-full text-xs uppercase tracking-widest bg-zinc-900/60 backdrop-blur-md hover:bg-zinc-800 transition active:scale-95 text-center">
+            <a href="#products" className="cute-click border border-zinc-700/80 hover:border-pink-400/50 text-zinc-300 font-bold px-8 py-4 rounded-full text-xs uppercase tracking-widest bg-zinc-900/60 backdrop-blur-md hover:bg-zinc-800 transition text-center">
               Explore Products
             </a>
           </div>
@@ -256,7 +274,7 @@ export default function Home() {
             <div 
               key={item.id}
               onClick={() => handleProductClick(item)}
-              className="group bg-[#121318]/80 backdrop-blur-md border border-zinc-800 rounded-3xl p-5 cursor-pointer hover:border-pink-500/50 transition-all duration-300 hover:shadow-[0_0_30px_rgba(244,114,182,0.15)] flex flex-col items-center transform hover:-translate-y-1"
+              className="cute-click group bg-[#121318]/80 backdrop-blur-md border border-zinc-800 rounded-3xl p-5 cursor-pointer hover:border-pink-500/50 transition-all duration-300 hover:shadow-[0_0_30px_rgba(244,114,182,0.2)] flex flex-col items-center transform hover:-translate-y-1"
             >
               <div className="w-full aspect-[4/5] bg-zinc-950 rounded-2xl overflow-hidden relative flex items-center justify-center border border-zinc-800/60 mb-4">
                 <img 
@@ -304,7 +322,7 @@ export default function Home() {
             href="https://shopee.co.id/llovedbyus" 
             target="_blank" 
             rel="noopener noreferrer"
-            className="group bg-[#121318]/80 backdrop-blur-md border border-zinc-800 hover:border-pink-500/60 rounded-3xl p-6 flex flex-col items-center transition-all duration-300 hover:shadow-[0_0_30px_rgba(244,114,182,0.15)]"
+            className="cute-click group bg-[#121318]/80 backdrop-blur-md border border-zinc-800 hover:border-pink-500/60 rounded-3xl p-6 flex flex-col items-center transition-all duration-300 hover:shadow-[0_0_30px_rgba(244,114,182,0.15)]"
           >
             <div className="w-14 h-14 bg-zinc-900 rounded-2xl flex items-center justify-center border border-zinc-800 mb-4 group-hover:scale-110 transition overflow-hidden p-2">
               <img src="/shopee.png" alt="Shopee Logo" className="w-full h-full object-contain" />
@@ -318,7 +336,7 @@ export default function Home() {
             href="https://instagram.com/prellovedbyus" 
             target="_blank" 
             rel="noopener noreferrer"
-            className="group bg-[#121318]/80 backdrop-blur-md border border-zinc-800 hover:border-pink-500/60 rounded-3xl p-6 flex flex-col items-center transition-all duration-300 hover:shadow-[0_0_30px_rgba(244,114,182,0.15)]"
+            className="cute-click group bg-[#121318]/80 backdrop-blur-md border border-zinc-800 hover:border-pink-500/60 rounded-3xl p-6 flex flex-col items-center transition-all duration-300 hover:shadow-[0_0_30px_rgba(244,114,182,0.15)]"
           >
             <div className="w-14 h-14 bg-zinc-900 rounded-2xl flex items-center justify-center border border-zinc-800 mb-4 group-hover:scale-110 transition overflow-hidden p-2">
               <img src="/instagram.png" alt="Instagram Logo" className="w-full h-full object-contain" />
@@ -332,7 +350,7 @@ export default function Home() {
             href="https://wa.me/62881025376311" 
             target="_blank" 
             rel="noopener noreferrer"
-            className="group bg-[#121318]/80 backdrop-blur-md border border-zinc-800 hover:border-pink-500/60 rounded-3xl p-6 flex flex-col items-center transition-all duration-300 hover:shadow-[0_0_30px_rgba(244,114,182,0.15)]"
+            className="cute-click group bg-[#121318]/80 backdrop-blur-md border border-zinc-800 hover:border-pink-500/60 rounded-3xl p-6 flex flex-col items-center transition-all duration-300 hover:shadow-[0_0_30px_rgba(244,114,182,0.15)]"
           >
             <div className="w-14 h-14 bg-zinc-900 rounded-2xl flex items-center justify-center border border-zinc-800 mb-4 group-hover:scale-110 transition overflow-hidden p-2">
               <img src="/whatsapp.png" alt="WhatsApp Logo" className="w-full h-full object-contain" />
@@ -349,14 +367,14 @@ export default function Home() {
         <p>© 2026 LLOVEDBYUS. All Rights Reserved.</p>
       </footer>
 
-      {/* MODAL ZOOM PRODUK LAIN */}
+      {/* MODAL ZOOM PRODUK LAIN (DENGAN TRANSISI HALUS) */}
       {activeProduct && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-[#13141a]/95 backdrop-blur-xl border border-zinc-700/80 rounded-3xl max-w-md w-full p-6 relative shadow-[0_0_50px_rgba(244,114,182,0.2)] flex flex-col items-center">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 transition-opacity duration-300">
+          <div className="animate-smooth-modal bg-[#13141a]/95 backdrop-blur-xl border border-zinc-700/80 rounded-3xl max-w-md w-full p-6 relative shadow-[0_0_50px_rgba(244,114,182,0.3)] flex flex-col items-center">
             
             <button 
               onClick={() => setActiveProduct(null)}
-              className="absolute top-4 right-4 bg-zinc-800 hover:bg-pink-500 hover:text-zinc-950 text-zinc-300 w-8 h-8 rounded-full font-bold flex items-center justify-center transition"
+              className="cute-click absolute top-4 right-4 bg-zinc-800 hover:bg-pink-500 hover:text-zinc-950 text-zinc-300 w-8 h-8 rounded-full font-bold flex items-center justify-center transition cursor-pointer"
             >
               ✕
             </button>
@@ -376,22 +394,22 @@ export default function Home() {
 
             <button 
               onClick={() => setActiveProduct(null)}
-              className="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-bold py-3 rounded-xl text-center text-xs uppercase tracking-widest transition"
+              className="cute-click w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-bold py-3 rounded-xl text-center text-xs uppercase tracking-widest transition cursor-pointer"
             >
-              Tutup
+              Tutup ✨
             </button>
           </div>
         </div>
       )}
 
-      {/* MODAL DESIGN LAB */}
+      {/* MODAL DESIGN LAB (DENGAN TRANSISI HALUS) */}
       {showDesignLab && (
-        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-xl flex flex-col overflow-y-auto">
-          <div className="sticky top-0 z-50 bg-[#0d0e12]/90 backdrop-blur-md border-b border-zinc-800 px-6 py-4 flex items-center justify-between">
+        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-xl flex flex-col overflow-y-auto animate-smooth-modal">
+          <div className="sticky top-0 z-50 bg-[#0d0e12]/90 backdrop-blur-md border-b border-zinc-800 px-6 py-4 flex items-center justify-between shadow-lg">
             <span className="text-xs font-black tracking-widest text-pink-400 uppercase">✦ LLOVEDBYUS DESIGN STUDIO</span>
             <button 
               onClick={() => setShowDesignLab(false)}
-              className="bg-zinc-800 hover:bg-pink-500 hover:text-zinc-950 text-zinc-300 px-4 py-2 rounded-full font-bold text-xs uppercase tracking-widest transition"
+              className="cute-click bg-zinc-800 hover:bg-pink-500 hover:text-zinc-950 text-zinc-300 px-4 py-2 rounded-full font-bold text-xs uppercase tracking-widest transition cursor-pointer"
             >
               ✕ Tutup Studio
             </button>
