@@ -134,8 +134,35 @@ export default function Home() {
         </div>
       </section>
 
+      {/* INFINITE MARQUEE SLOGAN BERGERAK KE KIRI */}
+      <div className="py-6 bg-zinc-950 border-y border-zinc-800/80 overflow-hidden relative z-20 flex whitespace-nowrap">
+        <style dangerouslySetInnerHTML={{__html: `
+          @keyframes marquee {
+            0% { transform: translateX(0%); }
+            100% { transform: translateX(-50%); }
+          }
+          .animate-marquee {
+            display: flex;
+            width: max-content;
+            animation: marquee 18s linear infinite;
+          }
+        `}} />
+        <div className="animate-marquee flex items-center gap-8">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="flex items-center gap-8 text-xl md:text-3xl font-black uppercase tracking-wider italic text-transparent bg-clip-text bg-gradient-to-r from-pink-300 via-zinc-100 to-pink-400">
+              <span>DESIGN YOUR OWN STUFF</span>
+              <span className="flex items-center gap-1.5">
+                <span className="text-xl animate-bounce select-none">🩷</span>
+                <span className="text-xl animate-pulse select-none">💖</span>
+              </span>
+              <span className="text-zinc-700">✦</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* PRODUCTS PREVIEW GRID */}
-      <section id="products" className="py-20 px-6 max-w-7xl mx-auto border-t border-zinc-800/80 relative z-20">
+      <section id="products" className="py-20 px-6 max-w-7xl mx-auto relative z-20">
         <div className="text-center mb-12">
           <span className="text-xs font-bold tracking-[0.25em] bg-gradient-to-r from-zinc-300 via-pink-300 to-zinc-400 bg-clip-text text-transparent uppercase">
             PRODUCTS
@@ -232,24 +259,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* SLOGAN & ANIMASI LOVE KEMBANG KEMPIS DI BAWAH */}
-      <section className="py-16 px-6 text-center border-t border-zinc-900 relative z-20 overflow-hidden">
-        <div className="max-w-4xl mx-auto flex flex-col items-center justify-center space-y-3">
-          <div className="flex items-center justify-center gap-3">
-            <span className="text-2xl md:text-3xl animate-ping select-none">🩷</span>
-            <span className="text-3xl md:text-4xl animate-pulse select-none">💖</span>
-          </div>
-          <h2 className="text-2xl md:text-4xl font-black tracking-[0.2em] uppercase italic bg-gradient-to-r from-pink-300 via-zinc-100 to-pink-400 bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(244,114,182,0.3)]">
-            DESIGN YOUR OWN STUFF
-          </h2>
-          <p className="text-xs text-zinc-500 tracking-widest uppercase">
-            LLOVEDBYUS CREATIVE STUDIO ✦ EST. 2026
-          </p>
-        </div>
-      </section>
-
       {/* FOOTER */}
-      <footer className="py-6 text-center text-zinc-600 text-xs border-t border-zinc-900/60 relative z-20">
+      <footer className="py-8 text-center text-zinc-600 text-xs border-t border-zinc-900 relative z-20">
         <p>© 2026 LLOVEDBYUS. All Rights Reserved.</p>
       </footer>
 
