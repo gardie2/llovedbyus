@@ -29,12 +29,18 @@ export default function Home() {
     },
     { 
       id: 3, 
+      name: "Custom Hoodie", 
+      desc: "Cozy fleece hoodie with custom print.", 
+      image: "/hoodie.jpg" 
+    },
+    { 
+      id: 4, 
       name: "Custom T-Shirt", 
       desc: "Boxy fit premium cotton material.", 
       image: "/t-shirt.png" 
     },
     { 
-      id: 4, 
+      id: 5, 
       name: "Custom Tote Bag", 
       desc: "Sturdy canvas material with custom print.", 
       image: "/totebag.png" 
@@ -100,7 +106,7 @@ export default function Home() {
           </h1>
 
           <p className="text-zinc-400 text-sm md:text-base max-w-md font-medium leading-relaxed">
-            Design custom phone cases, sweatshirts, t-shirts, tote bags, and more products the way you want.
+            Design custom phone cases, sweatshirts, hoodies, t-shirts, tote bags, and more products the way you want.
           </p>
 
           <div className="flex items-center gap-4 pt-2">
@@ -139,7 +145,7 @@ export default function Home() {
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
           {productList.map((item) => (
             <div 
               key={item.id}
@@ -153,7 +159,7 @@ export default function Home() {
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
               </div>
-              <h3 className="text-sm font-black uppercase tracking-wide text-zinc-200 group-hover:text-pink-300 transition">{item.name}</h3>
+              <h3 className="text-sm font-black uppercase tracking-wide text-zinc-200 group-hover:text-pink-300 transition text-center">{item.name}</h3>
               <p className="text-xs text-zinc-500 text-center mt-1">{item.desc}</p>
               
               {item.id === 1 ? (
