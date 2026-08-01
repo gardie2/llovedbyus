@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 export default function DesignLab() {
   const [activeTab, setActiveTab] = useState<"edit" | "template">("edit");
@@ -10,8 +10,11 @@ export default function DesignLab() {
   
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  
+  const isDragging = useRef(false);
+  const dragStart = useRef({ x: 0, y: 0 });
+  const initialTouchDistance = useRef<number | null>(null);
+  const initialScale = useRef(1);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -23,22 +26,66 @@ export default function DesignLab() {
     }
   };
 
-  // MOUSE & TOUCH EVENT UNTUK GESER FOTO PAKAI JARI
-  const handleStart = (clientX: number, clientY: number) => {
-    setIsDragging(true);
-    setDragStart({ x: clientX - position.x, y: clientY - position.y });
+  // Helper jarak untuk Pinch Zoom (2 jari)
+  const getTouchDistance = (touches: React.TouchList) => {
+    return Math.hypot(
+      touches[0].clientX - touches[1].clientX,
+      touches[0].clientY - touches[1].clientY
+    );
   };
 
-  const handleMove = (clientX: number, clientY: number) => {
-    if (!isDragging) return;
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      isDragging.current = true;
+      dragStart.current = { x: e.touches[0].clientX - position.x, y: e.touches[0].clientY - position.y };
+    } else if (e.touches.length === 2) {
+      isDragging.current = false;
+      initialTouchDistance.current = getTouchDistance(e.touches);
+      initialScale.current = scale;
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length === 1 && isDragging.current) {
+      setPosition({
+        x: e.touches[0].clientX - dragStart.current.x,
+        y: e.touches[0].clientY - dragStart.current.y,
+      });
+    } else if (e.touches.length === 2 && initialTouchDistance.current !== null) {
+      const currentDistance = getTouchDistance(e.touches);
+      const factor = currentDistance / initialTouchDistance.current;
+      const newScale = Math.min(Math.max(0.5, initialScale.current * factor), 3.5);
+      setScale(newScale);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    isDragging.current = false;
+    initialTouchDistance.current = null;
+  };
+
+  // Mouse Support untuk Laptop / PC (Drag & Scroll Zoom)
+  const handleMouseDown = (e: React.MouseEvent) => {
+    isDragging.current = true;
+    dragStart.current = { x: e.clientX - position.x, y: e.clientY - position.y };
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging.current) return;
     setPosition({
-      x: clientX - dragStart.x,
-      y: clientY - dragStart.y,
+      x: e.clientX - dragStart.current.x,
+      y: e.clientY - dragStart.current.y,
     });
   };
 
-  const handleEnd = () => {
-    setIsDragging(false);
+  const handleMouseUp = () => {
+    isDragging.current = false;
+  };
+
+  const handleWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    const zoomFactor = e.deltaY < 0 ? 0.1 : -0.1;
+    setScale((prev) => Math.min(Math.max(0.5, prev + zoomFactor), 3.5));
   };
 
   const handleWhatsAppOrder = () => {
@@ -77,28 +124,24 @@ export default function DesignLab() {
                   style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", zIndex: 10, pointerEvents: "none" }}
                 />
 
-                {/* 2. LAYER TENGAH (z-20): Foto Customer yang bisa digeser & diedit kapan saja */}
+                {/* 2. LAYER TENGAH (z-20): Foto Customer yang bisa digeser & dicubit untuk zoom */}
                 {uploadedImage ? (
                   <div 
                     style={{ position: "absolute", inset: 0, zIndex: 20, overflow: "hidden", cursor: "grab", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#18181b", touchAction: "none" }}
-                    onMouseDown={(e) => handleStart(e.clientX, e.clientY)}
-                    onMouseMove={(e) => handleMove(e.clientX, e.clientY)}
-                    onMouseUp={handleEnd}
-                    onMouseLeave={handleEnd}
-                    onTouchStart={(e) => {
-                      if (e.touches.length === 1) handleStart(e.touches[0].clientX, e.touches[0].clientY);
-                    }}
-                    onTouchMove={(e) => {
-                      if (e.touches.length === 1) handleMove(e.touches[0].clientX, e.touches[0].clientY);
-                    }}
-                    onTouchEnd={handleEnd}
+                    onMouseDown={handleMouseDown}
+                    onMouseMove={handleMouseMove}
+                    onMouseUp={handleMouseUp}
+                    onMouseLeave={handleMouseUp}
+                    onWheel={handleWheel}
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
                   >
                     <img 
                       src={uploadedImage} 
                       alt="Uploaded Custom" 
                       style={{
                         transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
-                        transition: isDragging ? "none" : "transform 0.1s ease-out",
                         width: "100%",
                         height: "100%",
                         objectFit: "cover",
@@ -136,7 +179,7 @@ export default function DesignLab() {
           </div>
           
           <span style={{ fontSize: "10px", fontWeight: "900", color: "#f472b6", textTransform: "uppercase", letterSpacing: "1px", marginTop: "10px" }}>
-            {activeTab === "edit" ? "✨ Geser Foto Langsung" : `✨ Template ${selectedTemplate}`}
+            {activeTab === "edit" ? "✨ Geser & Cubit untuk Zoom" : `✨ Template ${selectedTemplate}`}
           </span>
         </div>
 
