@@ -90,7 +90,7 @@ export default function Home() {
   return (
     <main className="bg-[#090a0d] text-zinc-100 min-h-screen selection:bg-pink-500 selection:text-white font-sans relative overflow-hidden">
       
-      {/* GLOBAL CSS: CHROME, MARQUEE GLITCH, RANDOM ICON POSITIONS */}
+      {/* GLOBAL CSS: CHROME & PERFECT SMOOTH MARQUEE */}
       <style jsx global>{`
         .chrome-text {
           font-weight: 900;
@@ -111,30 +111,19 @@ export default function Home() {
                   drop-shadow(0 5px 10px rgba(0,0,0,0.6));
           letter-spacing: -0.02em;
         }
+
         @keyframes marquee {
-          0% { transform: translateX(0%); }
+          0% { transform: translateX(0); }
           100% { transform: translateX(-50%); }
         }
-        @keyframes glitch {
-          2%, 64% { transform: translate(2px, 0) skew(0deg); }
-          4%, 60% { transform: translate(-2px, 0) skew(0deg); }
-          62% { transform: translate(0, 0) skew(5deg); }
-        }
+
         .animate-marquee {
           display: flex;
           width: max-content;
-          animation: marquee 16s linear infinite;
+          will-change: transform;
+          animation: marquee 20s linear infinite;
         }
-        .animate-glitch {
-          animation: glitch 1.2s infinite;
-        }
-        .animate-flicker {
-          animation: flicker 2.5s infinite;
-        }
-        @keyframes flicker {
-          0%, 19.999%, 22%, 62.999%, 64%, 64.999%, 70%, 100% { opacity: 1; }
-          20%, 21.999%, 63%, 63.999%, 65%, 69.999% { opacity: 0.2; }
-        }
+
         /* Posisi acak elemen dekorasi latar belakang */
         .icon-pos-1 { top: 8%; left: 3%; }
         .icon-pos-2 { top: 12%; right: 5%; }
@@ -239,13 +228,17 @@ export default function Home() {
         </div>
       </section>
 
-      {/* INFINITE MARQUEE SLOGAN (GLITCH NONSTOP) */}
+      {/* INFINITE MARQUEE SLOGAN (100% MULUS SEMPURNA TANPA GLITCH) */}
       <div className="py-6 bg-zinc-950 border-y border-zinc-800/80 overflow-hidden relative z-20 flex whitespace-nowrap shadow-xl">
-        <div className="animate-marquee flex items-center gap-10">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className={`flex items-center gap-8 text-xl md:text-3xl italic chrome-text ${i % 2 === 0 ? 'animate-glitch' : ''} ${i % 3 === 0 ? 'animate-flicker' : ''}`}>
-              <span>DESIGN YOUR OWN STUFF</span>
-              <span className="text-pink-400">✦</span>
+        <div className="animate-marquee flex items-center">
+          {[...Array(2)].map((_, groupIndex) => (
+            <div key={groupIndex} className="flex items-center shrink-0">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="flex items-center gap-8 mx-6 text-xl md:text-3xl italic chrome-text">
+                  <span>DESIGN YOUR OWN STUFF</span>
+                  <span className="text-pink-400">✦</span>
+                </div>
+              ))}
             </div>
           ))}
         </div>
