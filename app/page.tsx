@@ -90,7 +90,7 @@ export default function Home() {
   return (
     <main className="bg-[#090a0d] text-zinc-100 min-h-screen selection:bg-pink-500 selection:text-white font-sans relative overflow-hidden">
       
-      {/* GLOBAL CSS CHROME TEXT & MARQUEE */}
+      {/* GLOBAL CSS: CHROME, MARQUEE GLITCH, RANDOM ICON POSITIONS */}
       <style jsx global>{`
         .chrome-text {
           font-weight: 900;
@@ -115,12 +115,52 @@ export default function Home() {
           0% { transform: translateX(0%); }
           100% { transform: translateX(-50%); }
         }
+        @keyframes glitch {
+          2%, 64% { transform: translate(2px, 0) skew(0deg); }
+          4%, 60% { transform: translate(-2px, 0) skew(0deg); }
+          62% { transform: translate(0, 0) skew(5deg); }
+        }
         .animate-marquee {
           display: flex;
           width: max-content;
           animation: marquee 16s linear infinite;
         }
+        .animate-glitch {
+          animation: glitch 1s infinite;
+        }
+        .animate-flicker {
+          animation: flicker 2s infinite;
+        }
+        @keyframes flicker {
+          0%, 19.999%, 22%, 62.999%, 64%, 64.999%, 70%, 100% { opacity: 1; }
+          20%, 21.999%, 63%, 63.999%, 65%, 69.999% { opacity: 0.3; }
+        }
+        /* Helper classes for random positioning */
+        .icon-spot-1 { top: 10%; left: 5%; }
+        .icon-spot-2 { top: 15%; right: 8%; }
+        .icon-spot-3 { bottom: 20%; left: 15%; }
+        .icon-spot-4 { bottom: 25%; right: 12%; }
+        .icon-spot-5 { top: 40%; left: 2%; }
+        .icon-spot-6 { top: 55%; right: 5%; }
+        .icon-spot-7 { bottom: 50%; left: 18%; }
+        .icon-spot-8 { bottom: 45%; right: 15%; }
+        .icon-spot-9 { top: 70%; left: 8%; }
+        .icon-spot-10 { bottom: 5%; left: 50%; }
+        .icon-spot-11 { top: 80%; right: 20%; }
       `}</style>
+
+      {/* RANDOM ICONS MENGAMBANG (Diambil dari icon1-icon11, total 11 icon) */}
+      <div className="fixed inset-0 pointer-events-none z-10 opacity-40">
+        {[...Array(11)].map((_, i) => {
+          const iconIndex = i + 1;
+          const src = iconIndex === 11 ? `/icon${iconIndex}.jpg` : `/icon${iconIndex}.png`;
+          return (
+            <div key={i} className={`absolute w-10 h-10 object-contain animate-pulse icon-spot-${iconIndex} hidden md:block`}>
+              <img src={src} alt={`decor${iconIndex}`} className="w-full h-full" />
+            </div>
+          );
+        })}
+      </div>
 
       {/* NAVBAR */}
       <nav className="bg-[#0d0e12]/90 backdrop-blur-xl border-b border-zinc-800/80 sticky top-0 z-50 py-4 px-6">
@@ -150,7 +190,7 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* HERO SECTION DENGAN DEKORASI ICON 1 & 8 */}
+      {/* HERO SECTION */}
       <section 
         ref={heroReveal.ref}
         className={`relative py-20 px-6 max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center z-20 transition-all duration-1000 transform ${
@@ -158,15 +198,11 @@ export default function Home() {
         }`}
       >
         <div className="space-y-6 relative">
-          <div className="absolute -top-10 -left-6 w-12 h-12 opacity-80 animate-bounce pointer-events-none hidden sm:block">
-            <img src="/icon1.png" alt="decor" className="w-full h-full object-contain" />
-          </div>
-
           <span className="inline-block text-[11px] font-extrabold tracking-[0.3em] bg-gradient-to-r from-pink-300 via-zinc-200 to-pink-400 bg-clip-text text-transparent uppercase border border-pink-500/20 px-3 py-1 rounded-full bg-pink-500/5 animate-pulse">
             ✦ LLOVEDBYUS STUDIO
           </span>
 
-          <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tight leading-[0.95] italic chrome-text">
+          <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tight leading-[0.95] chrome-text italic">
             Create <br />
             Something <br />
             <span className="text-pink-300">That's Yours.</span>
@@ -189,13 +225,15 @@ export default function Home() {
           </div>
         </div>
 
-        {/* KOLASE PRODUK DENGAN DEKORASI ICON 6 & 10 */}
+        {/* KOLASE PRODUK DENGAN ICON 1 & 10 TERPISAH (ATAS KANAN, BAWAH KIRI) */}
         <div className="flex justify-center md:justify-end relative">
-          <div className="absolute -bottom-6 -right-6 w-14 h-14 animate-pulse pointer-events-none z-30 hidden sm:block">
-            <img src="/icon6.png" alt="decor" className="w-full h-full object-contain drop-shadow-[0_0_10px_rgba(255,255,255,0.6)]" />
+          {/* Icon Atas Kanan */}
+          <div className="absolute -top-4 -right-4 w-12 h-12 animate-bounce pointer-events-none z-30 hidden sm:block rotate-12">
+            <img src="/icon1.png" alt="decor" className="w-full h-full object-contain" />
           </div>
-          <div className="absolute -top-6 -right-4 w-12 h-12 animate-bounce pointer-events-none z-30 hidden sm:block">
-            <img src="/icon10.png" alt="decor" className="w-full h-full object-contain" />
+          {/* Icon Bawah Kiri */}
+          <div className="absolute -bottom-6 -left-6 w-14 h-14 animate-pulse pointer-events-none z-30 hidden sm:block -rotate-12">
+            <img src="/icon10.png" alt="decor" className="w-full h-full object-contain drop-shadow-[0_0_10px_rgba(255,255,255,0.6)]" />
           </div>
           <div className="relative w-[320px] h-[520px] bg-zinc-900/40 rounded-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.9)] overflow-hidden border border-zinc-800/80 flex items-center justify-center p-2 group hover:border-pink-500/40 transition duration-500">
             <img 
@@ -207,11 +245,11 @@ export default function Home() {
         </div>
       </section>
 
-      {/* INFINITE MARQUEE SLOGAN BERGERAK (MURNI DESIGN YOUR OWN STUFF) */}
+      {/* INFINITE MARQUEE SLOGAN (TEXT GLITCH & FLICKER) */}
       <div className="py-6 bg-zinc-950 border-y border-zinc-800/80 overflow-hidden relative z-20 flex whitespace-nowrap shadow-xl">
         <div className="animate-marquee flex items-center gap-10">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="flex items-center gap-8 text-xl md:text-3xl italic chrome-text">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className={`flex items-center gap-8 text-xl md:text-3xl italic chrome-text ${i % 2 === 0 ? 'animate-glitch' : ''} ${i % 3 === 0 ? 'animate-flicker' : ''}`}>
               <span>DESIGN YOUR OWN STUFF</span>
               <span className="text-pink-400">✦</span>
             </div>
@@ -219,7 +257,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* PRODUCTS PREVIEW GRID DENGAN DEKORASI ICON 2, 3 & 7 */}
+      {/* PRODUCTS PREVIEW GRID */}
       <section 
         id="products" 
         ref={productsReveal.ref}
@@ -227,12 +265,6 @@ export default function Home() {
           productsReveal.isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
         }`}
       >
-        <div className="flex justify-center items-center gap-6 mb-4">
-          <img src="/icon2.png" alt="decor" className="w-8 h-8 object-contain animate-bounce opacity-90" />
-          <img src="/icon3.png" alt="decor" className="w-10 h-10 object-contain animate-pulse opacity-90" />
-          <img src="/icon7.png" alt="decor" className="w-9 h-9 object-contain animate-bounce opacity-90" />
-        </div>
-
         <div className="text-center mb-12">
           <span className="text-xs font-bold tracking-[0.25em] bg-gradient-to-r from-zinc-300 via-pink-300 to-zinc-400 bg-clip-text text-transparent uppercase">
             PRODUCTS
@@ -249,158 +281,4 @@ export default function Home() {
               onClick={() => handleProductClick(item)}
               className="group bg-[#121318] border border-zinc-800 rounded-3xl p-5 cursor-pointer hover:border-pink-500/50 transition-all duration-300 hover:shadow-[0_0_30px_rgba(244,114,182,0.15)] flex flex-col items-center transform hover:-translate-y-1"
             >
-              <div className="w-full aspect-[4/5] bg-zinc-950 rounded-2xl overflow-hidden relative flex items-center justify-center border border-zinc-800/60 mb-4">
-                <img 
-                  src={item.image} 
-                  alt={item.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-              </div>
-              <h3 className="text-sm font-black uppercase tracking-wide text-zinc-200 group-hover:text-pink-300 transition text-center">{item.name}</h3>
-              <p className="text-xs text-zinc-500 text-center mt-1">{item.desc}</p>
-              
-              {item.id === 1 ? (
-                <span className="mt-3 text-[10px] font-extrabold bg-pink-500/10 text-pink-300 border border-pink-500/30 px-3 py-1 rounded-full uppercase tracking-widest group-hover:bg-pink-500 group-hover:text-zinc-950 transition">
-                  Buka Studio Design ✦
-                </span>
-              ) : (
-                <span className="mt-3 text-[10px] font-extrabold bg-zinc-900 text-zinc-500 border border-zinc-800 px-3 py-1 rounded-full uppercase tracking-widest cursor-not-allowed">
-                  Coming Soon ⏳
-                </span>
-              )}
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* SECTION LINK RESMI DENGAN DEKORASI ICON 4, 5, 8, 9, 11 */}
-      <section 
-        id="socials" 
-        ref={socialsReveal.ref}
-        className={`py-20 px-6 max-w-4xl mx-auto border-t border-zinc-800/85 text-center relative z-20 transition-all duration-1000 transform ${
-          socialsReveal.isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
-        }`}
-      >
-        <div className="flex justify-center items-center gap-6 mb-4">
-          <img src="/icon4.png" alt="decor" className="w-9 h-9 object-contain animate-bounce" />
-          <img src="/icon5.png" alt="decor" className="w-9 h-9 object-contain animate-pulse" />
-          <img src="/icon8.png" alt="decor" className="w-9 h-9 object-contain animate-bounce" />
-          <img src="/icon9.png" alt="decor" className="w-9 h-9 object-contain animate-pulse" />
-          <img src="/icon11.jpg" alt="decor" className="w-9 h-9 object-contain animate-bounce" />
-        </div>
-
-        <span className="text-xs font-bold tracking-[0.25em] bg-gradient-to-r from-zinc-300 via-pink-300 to-zinc-400 bg-clip-text text-transparent uppercase">
-          CONNECT WITH US
-        </span>
-        <h2 className="text-3xl md:text-4xl font-black uppercase tracking-wider mt-1 italic chrome-text mb-10">
-          Official Links
-        </h2>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          
-          {/* Shopee Store */}
-          <a 
-            href="https://shopee.co.id/llovedbyus" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="group bg-[#121318] border border-zinc-800 hover:border-pink-500/60 rounded-3xl p-6 flex flex-col items-center transition-all duration-300 hover:shadow-[0_0_30px_rgba(244,114,182,0.15)]"
-          >
-            <div className="w-14 h-14 bg-zinc-900 rounded-2xl flex items-center justify-center border border-zinc-800 mb-4 group-hover:scale-110 transition overflow-hidden p-2">
-              <img src="/shopee.png" alt="Shopee Logo" className="w-full h-full object-contain" />
-            </div>
-            <h3 className="text-sm font-black uppercase tracking-wide text-zinc-200 group-hover:text-pink-300 transition">Shopee Store</h3>
-            <p className="text-[11px] text-zinc-500 mt-1">Belanja via e-commerce</p>
-          </a>
-
-          {/* Instagram */}
-          <a 
-            href="https://instagram.com/prellovedbyus" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="group bg-[#121318] border border-zinc-800 hover:border-pink-500/60 rounded-3xl p-6 flex flex-col items-center transition-all duration-300 hover:shadow-[0_0_30px_rgba(244,114,182,0.15)]"
-          >
-            <div className="w-14 h-14 bg-zinc-900 rounded-2xl flex items-center justify-center border border-zinc-800 mb-4 group-hover:scale-110 transition overflow-hidden p-2">
-              <img src="/instagram.png" alt="Instagram Logo" className="w-full h-full object-contain" />
-            </div>
-            <h3 className="text-sm font-black uppercase tracking-wide text-zinc-200 group-hover:text-pink-300 transition">Instagram</h3>
-            <p className="text-[11px] text-zinc-500 mt-1">Lihat katalog & testimoni</p>
-          </a>
-
-          {/* WhatsApp Admin */}
-          <a 
-            href="https://wa.me/62881025376311" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="group bg-[#121318] border border-zinc-800 hover:border-pink-500/60 rounded-3xl p-6 flex flex-col items-center transition-all duration-300 hover:shadow-[0_0_30px_rgba(244,114,182,0.15)]"
-          >
-            <div className="w-14 h-14 bg-zinc-900 rounded-2xl flex items-center justify-center border border-zinc-800 mb-4 group-hover:scale-110 transition overflow-hidden p-2">
-              <img src="/whatsapp.png" alt="WhatsApp Logo" className="w-full h-full object-contain" />
-            </div>
-            <h3 className="text-sm font-black uppercase tracking-wide text-zinc-200 group-hover:text-pink-300 transition">WhatsApp Admin</h3>
-            <p className="text-[11px] text-zinc-500 mt-1">Chat & konsultasi pesanan</p>
-          </a>
-
-        </div>
-      </section>
-
-      {/* FOOTER */}
-      <footer className="py-8 text-center text-zinc-600 text-xs border-t border-zinc-900 relative z-20">
-        <p>© 2026 LLOVEDBYUS. All Rights Reserved.</p>
-      </footer>
-
-      {/* MODAL ZOOM PRODUK LAIN */}
-      {activeProduct && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-[#13141a] border border-zinc-700/80 rounded-3xl max-w-md w-full p-6 relative shadow-[0_0_50px_rgba(244,114,182,0.2)] flex flex-col items-center">
-            
-            <button 
-              onClick={() => setActiveProduct(null)}
-              className="absolute top-4 right-4 bg-zinc-800 hover:bg-pink-500 hover:text-zinc-950 text-zinc-300 w-8 h-8 rounded-full font-bold flex items-center justify-center transition"
-            >
-              ✕
-            </button>
-
-            <span className="text-[10px] font-extrabold tracking-[0.25em] text-pink-400 uppercase mb-2">PREVIEW</span>
-            
-            <div className="w-[220px] aspect-[1/2] rounded-2xl overflow-hidden bg-zinc-950 border border-zinc-700/60 shadow-2xl my-3 relative flex items-center justify-center">
-              <img 
-                src={activeProduct.image} 
-                alt={activeProduct.name}
-                className="w-full h-full object-cover"
-              />
-            </div>
-
-            <h3 className="text-lg font-black uppercase tracking-wider text-zinc-100 mt-2">{activeProduct.name}</h3>
-            <p className="text-xs text-zinc-400 text-center mt-1 mb-6 px-4">{activeProduct.desc}</p>
-
-            <button 
-              onClick={() => setActiveProduct(null)}
-              className="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-bold py-3 rounded-xl text-center text-xs uppercase tracking-widest transition"
-            >
-              Tutup
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL DESIGN LAB */}
-      {showDesignLab && (
-        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-xl flex flex-col overflow-y-auto">
-          <div className="sticky top-0 z-50 bg-[#0d0e12]/90 backdrop-blur-md border-b border-zinc-800 px-6 py-4 flex items-center justify-between">
-            <span className="text-xs font-black tracking-widest text-pink-400 uppercase">✦ LLOVEDBYUS DESIGN STUDIO</span>
-            <button 
-              onClick={() => setShowDesignLab(false)}
-              className="bg-zinc-800 hover:bg-pink-500 hover:text-zinc-950 text-zinc-300 px-4 py-2 rounded-full font-bold text-xs uppercase tracking-widest transition"
-            >
-              ✕ Tutup Studio
-            </button>
-          </div>
-          <div className="p-4 md:p-8 flex-1">
-            <DesignLab />
-          </div>
-        </div>
-      )}
-
-    </main>
-  );
-}
+              <div className="w-full aspect-[4/5] bg-zinc-950 rounded-2xl overflow-hidden relative flex items-center justify-center border border-zinc
