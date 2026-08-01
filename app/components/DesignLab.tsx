@@ -1,5 +1,4 @@
 "use client";
-
 import { useState, useRef } from "react";
 
 export default function DesignLab() {
@@ -90,7 +89,7 @@ export default function DesignLab() {
 
   const handleWhatsAppOrder = () => {
     const phoneNumber = "62881025376311";
-    const message = `Halo, saya ingin memesan Custom Phone Case.%0A- Template Pilihan: ${selectedTemplate}%0A- Tipe HP: ${phoneModel || "Tidak diisi"}`;
+    const message = `Halo, saya ingin memesan Custom Phone Case.%0A- Mode: ${activeTab === "edit" ? "Custom Posisi Foto" : `Template ${selectedTemplate}`}%0A- Tipe HP: ${phoneModel || "Tidak diisi"}`;
     window.open(`https://wa.me/${phoneNumber}?text=${message}`, "_blank");
   };
 
@@ -114,55 +113,66 @@ export default function DesignLab() {
           
           <div style={{ width: "170px", height: "340px", backgroundColor: "#09090b", borderRadius: "24px", border: "2px solid rgba(255,255,255,0.15)", position: "relative", margin: "20px 0 10px 0", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
             
-            {/* 1. LAYER BAWAH: Background Template */}
-            <img 
-              src={`/template-${selectedTemplate}.png`} 
-              alt="Template Background" 
-              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", zIndex: 10, pointerEvents: "none" }}
-            />
-
-            {/* 2. LAYER TENGAH: Foto Customer (Selalu render foto yang sama meskipun pindah tab) */}
-            {uploadedImage ? (
-              <div 
-                style={{ position: "absolute", inset: 0, zIndex: 20, overflow: "hidden", cursor: "grab", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#18181b", touchAction: "none" }}
-                onMouseDown={handleMouseDown}
-                onMouseMove={handleMouseMove}
-                onMouseUp={handleMouseUp}
-                onMouseLeave={handleMouseUp}
-                onWheel={handleWheel}
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
-              >
+            {activeTab === "edit" ? (
+              <>
+                {/* 1. LAYER BAWAH: Background Template */}
                 <img 
-                  src={uploadedImage} 
-                  alt="Uploaded Custom" 
-                  style={{
-                    transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
-                    pointerEvents: "none",
-                    userSelect: "none"
-                  }}
+                  src={`/template-${selectedTemplate}.png`} 
+                  alt="Template Background" 
+                  style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", zIndex: 10, pointerEvents: "none" }}
                 />
-              </div>
+
+                {/* 2. LAYER TENGAH: Foto Customer yang bisa digeser & di-zoom */}
+                {uploadedImage ? (
+                  <div 
+                    style={{ position: "absolute", inset: 0, zIndex: 20, overflow: "hidden", cursor: "grab", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#18181b", touchAction: "none" }}
+                    onMouseDown={handleMouseDown}
+                    onMouseMove={handleMouseMove}
+                    onMouseUp={handleMouseUp}
+                    onMouseLeave={handleMouseUp}
+                    onWheel={handleWheel}
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                  >
+                    <img 
+                      src={uploadedImage} 
+                      alt="Uploaded Custom" 
+                      style={{
+                        transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        pointerEvents: "none",
+                        userSelect: "none"
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <div style={{ position: "absolute", inset: 0, zIndex: 20, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+                    <img 
+                      src="/hero-collage.png" 
+                      alt="Hero Collage Default" 
+                      style={{ width: "100%", height: "100%", objectFit: "cover", pointerEvents: "none" }}
+                    />
+                  </div>
+                )}
+
+                {/* 3. LAYER ATAS: Mockup Frame Transparan */}
+                <img 
+                  src="/mockup-case-transparent.png" 
+                  alt="Mockup Frame" 
+                  style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", zIndex: 30, pointerEvents: "none" }}
+                />
+              </>
             ) : (
-              <div style={{ position: "absolute", inset: 0, zIndex: 20, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-                <img 
-                  src="/hero-collage.png" 
-                  alt="Hero Collage Default" 
-                  style={{ width: "100%", height: "100%", objectFit: "cover", pointerEvents: "none" }}
-                />
-              </div>
+              /* MODE TEMPLATE */
+              <img 
+                src={`/template-${selectedTemplate}.png`} 
+                alt={`Template ${selectedTemplate}`} 
+                style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", zIndex: 20 }}
+              />
             )}
-
-            {/* 3. LAYER ATAS: Mockup Frame Transparan */}
-            <img 
-              src="/mockup-case-transparent.png" 
-              alt="Mockup Frame" 
-              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", zIndex: 30, pointerEvents: "none" }}
-            />
 
           </div>
           
@@ -211,49 +221,53 @@ export default function DesignLab() {
             </button>
           </div>
 
-          <div style={{ display: activeTab === "edit" ? "block" : "none", backgroundColor: "#121318", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "14px", padding: "16px" }}>
-            <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase", marginBottom: "10px" }}>
-              Upload Foto Kamu
-            </label>
-            <input 
-              type="file" 
-              accept="image/*"
-              onChange={handleImageUpload}
-              style={{ width: "100%", fontSize: "11px", color: "#a1a1aa" }}
-            />
-            {fileName && (
-              <p style={{ fontSize: "10px", color: "#f472b6", marginTop: "8px", fontWeight: "bold" }}>
-                Foto terpilih: {fileName}
-              </p>
-            )}
-          </div>
-
-          <div style={{ display: activeTab === "template" ? "block" : "none", backgroundColor: "#121318", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "14px", padding: "16px" }}>
-            <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase", marginBottom: "10px" }}>
-              Pilih Template (1 - 4)
-            </label>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "8px" }}>
-              {[1, 2, 3, 4].map((num) => (
-                <button
-                  key={num}
-                  onClick={() => setSelectedTemplate(num)}
-                  style={{
-                    padding: "10px",
-                    borderRadius: "10px",
-                    fontSize: "10px",
-                    fontWeight: "900",
-                    textTransform: "uppercase",
-                    cursor: "pointer",
-                    border: selectedTemplate === num ? "1px solid #f472b6" : "1px solid rgba(255,255,255,0.1)",
-                    background: selectedTemplate === num ? "linear-gradient(to right, #f4f4f5, #f472b6)" : "#18181b",
-                    color: selectedTemplate === num ? "#09090b" : "#a1a1aa"
-                  }}
-                >
-                  Template {num}
-                </button>
-              ))}
+          {activeTab === "edit" && (
+            <div style={{ backgroundColor: "#121318", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "14px", padding: "16px" }}>
+              <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase", marginBottom: "10px" }}>
+                Upload Foto Kamu
+              </label>
+              <input 
+                type="file" 
+                accept="image/*"
+                onChange={handleImageUpload}
+                style={{ width: "100%", fontSize: "11px", color: "#a1a1aa" }}
+              />
+              {fileName && (
+                <p style={{ fontSize: "10px", color: "#f472b6", marginTop: "8px", fontWeight: "bold" }}>
+                  Foto terpilih: {fileName}
+                </p>
+              )}
             </div>
-          </div>
+          )}
+
+          {activeTab === "template" && (
+            <div style={{ backgroundColor: "#121318", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "14px", padding: "16px" }}>
+              <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase", marginBottom: "10px" }}>
+                Pilih Template (1 - 4)
+              </label>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "8px" }}>
+                {[1, 2, 3, 4].map((num) => (
+                  <button
+                    key={num}
+                    onClick={() => setSelectedTemplate(num)}
+                    style={{
+                      padding: "10px",
+                      borderRadius: "10px",
+                      fontSize: "10px",
+                      fontWeight: "900",
+                      textTransform: "uppercase",
+                      cursor: "pointer",
+                      border: selectedTemplate === num ? "1px solid #f472b6" : "1px solid rgba(255,255,255,0.1)",
+                      background: selectedTemplate === num ? "linear-gradient(to right, #f4f4f5, #f472b6)" : "#18181b",
+                      color: selectedTemplate === num ? "#09090b" : "#a1a1aa"
+                    }}
+                  >
+                    Template {num}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div style={{ backgroundColor: "#121318", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "14px", padding: "16px" }}>
             <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase", marginBottom: "10px" }}>
