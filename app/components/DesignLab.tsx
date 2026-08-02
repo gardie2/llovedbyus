@@ -13,6 +13,9 @@ export default function DesignLab() {
   
   const [subUploadTab, setSubUploadTab] = useState<"photo" | "icons">("photo");
   const [placedElements, setPlacedElements] = useState<Array<{ id: number; src: string; x: number; y: number; scale: number; rotation: number; flipX: boolean; flipY: boolean }>>([]);
+  
+  // activeElementId: null artinya foto utama yang aktif/buka kunci. 
+  // Jika berisi angka ID (number), berarti ikon tersebut yang aktif/buka kunci, dan foto utama terkunci.
   const [activeElementId, setActiveElementId] = useState<number | null>(null);
 
   const [scale, setScale] = useState(1);
@@ -86,7 +89,7 @@ export default function DesignLab() {
       flipY: false,
     };
     setPlacedElements((prev) => [...prev, newElement]);
-    setActiveElementId(newElement.id);
+    setActiveElementId(newElement.id); // Otomatis aktifkan elemen baru ini
   };
 
   const getTouchDistance = (t1: React.Touch, t2: React.Touch) => {
@@ -122,7 +125,7 @@ export default function DesignLab() {
     if (!isInteracting.current) return;
     if (e) e.preventDefault();
 
-    // Jika menggunakan 2 jari
+    // Penanganan multi-touch (2 jari) untuk Zoom & Rotate elemen aktif atau foto utama
     if (e && 'touches' in e && e.touches.length === 2) {
       const dist = getTouchDistance(e.touches[0], e.touches[1]);
       const currentAngle = getTouchAngle(e.touches[0], e.touches[1]);
@@ -131,7 +134,7 @@ export default function DesignLab() {
         const factor = dist / initialPinchDistance.current;
         const angleDelta = currentAngle - initialTouchAngle.current;
 
-        // JIKA ADA IKON YANG AKTIF: Hanya ubah ukuran/putar ikon tersebut, foto utama DIAM
+        // HANYA manipulasi elemen yang sedang aktif/terbuka kuncinya
         if (activeElementId !== null) {
           setPlacedElements((prev) =>
             prev.map((el) => {
@@ -146,7 +149,7 @@ export default function DesignLab() {
             })
           );
         } else {
-          // JIKA TIDAK ADA IKON AKTIF: Zoom foto utama
+          // Jika tidak ada elemen ikon yang aktif, berarti foto utama yang di-zoom
           const newScale = Math.min(Math.max(0.5, initialScale.current * factor), 3.5);
           setScale(newScale);
         }
@@ -154,12 +157,12 @@ export default function DesignLab() {
       return;
     }
 
-    // Jika menggunakan 1 jari / mouse
+    // Penanganan geser (1 jari / mouse)
     const dx = clientX - lastClientPos.current.x;
     const dy = clientY - lastClientPos.current.y;
 
     if (activeDraggingElementId.current !== null) {
-      // Geser ikon aktif
+      // Geser posisi ikon yang sedang aktif digeser
       const id = activeDraggingElementId.current;
       setPlacedElements((prev) =>
         prev.map((el) => {
@@ -175,7 +178,7 @@ export default function DesignLab() {
       );
       lastClientPos.current = { x: clientX, y: clientY };
     } else if (activeElementId === null) {
-      // Geser foto utama hanya jika tidak sedang memegang ikon
+      // Geser foto utama HANYA JIKA foto utama sedang tidak terkunci (artinya tidak ada ikon yang aktif)
       setPosition((prev) => ({
         x: prev.x + dx,
         y: prev.y + dy,
@@ -243,9 +246,32 @@ export default function DesignLab() {
               <>
                 {uploadedImage ? (
                   <div 
-                    style={{ position: "absolute", inset: 0, zIndex: 20, overflow: "hidden", cursor: "grab", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#18181b", touchAction: "none" }}
-                    onMouseDown={(e) => { setActiveElementId(null); handleStart(e.clientX, e.clientY, e); }}
-                    onTouchStart={(e) => { if (e.touches[0]) { setActiveElementId(null); handleStart(e.touches[0].clientX, e.touches[0].clientY, e); } }}
+                    style={{ 
+                      position: "absolute", 
+                      inset: 0, 
+                      zIndex: 20, 
+                      overflow: "hidden", 
+                      cursor: "grab", 
+                      display: "flex", 
+                      alignItems: "center", 
+                      justifyContent: "center", 
+                      backgroundColor: "#18181b", 
+                      touchAction: "none",
+                      // Berikan border tipis jika foto utama sedang aktif (tidak terkunci)
+                      border: activeElementId === null ? "1px dashed rgba(244, 114, 182, 0.5)" : "none"
+                    }}
+                    onMouseDown={(e) => { 
+                      e.stopPropagation();
+                      setActiveElementId(null); // Kunci semua ikon, aktifkan/unlock foto utama
+                      handleStart(e.clientX, e.clientY, e); 
+                    }}
+                    onTouchStart={(e) => { 
+                      if (e.touches[0]) { 
+                        e.stopPropagation();
+                        setActiveElementId(null); // Kunci semua ikon, aktifkan/unlock foto utama
+                        handleStart(e.touches[0].clientX, e.touches[0].clientY, e); 
+                      } 
+                    }}
                   >
                     <img 
                       src={uploadedImage} 
@@ -300,14 +326,14 @@ export default function DesignLab() {
                       key={el.id}
                       onMouseDown={(e) => {
                         e.stopPropagation();
-                        setActiveElementId(el.id);
+                        setActiveElementId(el.id); // Unlock ikon ini, kunci foto utama dan ikon lain
                         activeDraggingElementId.current = el.id;
                         handleStart(e.clientX, e.clientY, e);
                       }}
                       onTouchStart={(e) => {
                         if (e.touches[0]) {
                           e.stopPropagation();
-                          setActiveElementId(el.id);
+                          setActiveElementId(el.id); // Unlock ikon ini, kunci foto utama dan ikon lain
                           activeDraggingElementId.current = el.id;
                           handleStart(e.touches[0].clientX, e.touches[0].clientY, e);
                         }
@@ -320,7 +346,7 @@ export default function DesignLab() {
                         zIndex: 25,
                         cursor: "grab",
                         padding: "6px",
-                        border: isActive ? "1px dashed #f472b6" : "none",
+                        border: isActive ? "1px dashed #f472b6" : "none", // Tanda kotak putus-putus jika sedang dipilih/unlock
                         touchAction: "none"
                       }}
                     >
