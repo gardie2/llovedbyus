@@ -11,13 +11,6 @@ export default function DesignLab() {
   const [phoneModel, setPhoneModel] = useState("");
   const [isRemovingBg, setIsRemovingBg] = useState(false);
   
-  const [subUploadTab, setSubUploadTab] = useState<"photo" | "icons">("photo");
-  const [placedElements, setPlacedElements] = useState<Array<{ id: number; src: string; x: number; y: number; scale: number; rotation: number; flipX: boolean; flipY: boolean }>>([]);
-  
-  // activeElementId: null artinya foto utama yang aktif/buka kunci. 
-  // Jika berisi angka ID (number), berarti ikon tersebut yang aktif/buka kunci, dan foto utama terkunci.
-  const [activeElementId, setActiveElementId] = useState<number | null>(null);
-
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   
@@ -25,10 +18,6 @@ export default function DesignLab() {
   const lastClientPos = useRef({ x: 0, y: 0 });
   const initialPinchDistance = useRef(0);
   const initialScale = useRef(1);
-  const initialTouchAngle = useRef(0);
-  const initialElementRotation = useRef(0);
-  
-  const activeDraggingElementId = useRef<number | null>(null);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -69,35 +58,8 @@ export default function DesignLab() {
     setFileName("");
   };
 
-  const handleRemoveElement = (id: number, e: React.MouseEvent | React.TouchEvent) => {
-    e.stopPropagation();
-    setPlacedElements((prev) => prev.filter((el) => el.id !== id));
-    if (activeElementId === id) {
-      setActiveElementId(null);
-    }
-  };
-
-  const handleAddElementToCase = (imageName: string) => {
-    const newElement = {
-      id: Date.now(),
-      src: `/${imageName}`,
-      x: 55,
-      y: 55,
-      scale: 1,
-      rotation: 0,
-      flipX: false,
-      flipY: false,
-    };
-    setPlacedElements((prev) => [...prev, newElement]);
-    setActiveElementId(newElement.id); // Otomatis aktifkan elemen baru ini
-  };
-
   const getTouchDistance = (t1: React.Touch, t2: React.Touch) => {
     return Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
-  };
-
-  const getTouchAngle = (t1: React.Touch, t2: React.Touch) => {
-    return Math.atan2(t2.clientY - t1.clientY, t2.clientX - t1.clientX) * (180 / Math.PI);
   };
 
   const handleStart = (clientX: number, clientY: number, e?: React.TouchEvent | React.MouseEvent) => {
@@ -107,17 +69,7 @@ export default function DesignLab() {
 
     if (e && 'touches' in e && e.touches.length === 2) {
       initialPinchDistance.current = getTouchDistance(e.touches[0], e.touches[1]);
-      initialTouchAngle.current = getTouchAngle(e.touches[0], e.touches[1]);
-      
-      if (activeElementId !== null) {
-        const activeEl = placedElements.find(el => el.id === activeElementId);
-        if (activeEl) {
-          initialScale.current = activeEl.scale;
-          initialElementRotation.current = activeEl.rotation;
-        }
-      } else {
-        initialScale.current = scale;
-      }
+      initialScale.current = scale;
     }
   };
 
@@ -125,106 +77,65 @@ export default function DesignLab() {
     if (!isInteracting.current) return;
     if (e) e.preventDefault();
 
-    // Penanganan multi-touch (2 jari) untuk Zoom & Rotate elemen aktif atau foto utama
     if (e && 'touches' in e && e.touches.length === 2) {
       const dist = getTouchDistance(e.touches[0], e.touches[1]);
-      const currentAngle = getTouchAngle(e.touches[0], e.touches[1]);
-      
       if (initialPinchDistance.current > 0) {
         const factor = dist / initialPinchDistance.current;
-        const angleDelta = currentAngle - initialTouchAngle.current;
-
-        // HANYA manipulasi elemen yang sedang aktif/terbuka kuncinya
-        if (activeElementId !== null) {
-          setPlacedElements((prev) =>
-            prev.map((el) => {
-              if (el.id === activeElementId) {
-                return { 
-                  ...el, 
-                  scale: Math.min(Math.max(0.3, initialScale.current * factor), 3.0),
-                  rotation: Math.round(initialElementRotation.current + angleDelta)
-                };
-              }
-              return el;
-            })
-          );
-        } else {
-          // Jika tidak ada elemen ikon yang aktif, berarti foto utama yang di-zoom
-          const newScale = Math.min(Math.max(0.5, initialScale.current * factor), 3.5);
-          setScale(newScale);
-        }
+        const newScale = Math.min(Math.max(0.5, initialScale.current * factor), 3.5);
+        setScale(newScale);
       }
       return;
     }
 
-    // Penanganan geser (1 jari / mouse)
     const dx = clientX - lastClientPos.current.x;
     const dy = clientY - lastClientPos.current.y;
 
-    if (activeDraggingElementId.current !== null) {
-      // Geser posisi ikon yang sedang aktif digeser
-      const id = activeDraggingElementId.current;
-      setPlacedElements((prev) =>
-        prev.map((el) => {
-          if (el.id === id) {
-            return {
-              ...el,
-              x: el.x + dx,
-              y: el.y + dy,
-            };
-          }
-          return el;
-        })
-      );
-      lastClientPos.current = { x: clientX, y: clientY };
-    } else if (activeElementId === null) {
-      // Geser foto utama HANYA JIKA foto utama sedang tidak terkunci (artinya tidak ada ikon yang aktif)
-      setPosition((prev) => ({
-        x: prev.x + dx,
-        y: prev.y + dy,
-      }));
-      lastClientPos.current = { x: clientX, y: clientY };
-    }
+    setPosition((prev) => ({
+      x: prev.x + dx,
+      y: prev.y + dy,
+    }));
+    lastClientPos.current = { x: clientX, y: clientY };
   };
 
   const handleEnd = () => {
     isInteracting.current = false;
-    activeDraggingElementId.current = null;
   };
 
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault();
     const zoomFactor = e.deltaY < 0 ? 0.1 : -0.1;
-    if (activeElementId !== null) {
-      setPlacedElements((prev) =>
-        prev.map((el) => {
-          if (el.id === activeElementId) {
-            return { ...el, scale: Math.min(Math.max(0.3, el.scale + zoomFactor), 3.0) };
-          }
-          return el;
-        })
-      );
-    } else {
-      setScale((prev) => Math.min(Math.max(0.5, prev + zoomFactor), 3.5));
-    }
+    setScale((prev) => Math.min(Math.max(0.5, prev + zoomFactor), 3.5));
   };
 
   const handleWhatsAppOrder = () => {
     const phoneNumber = "62881025376311";
-    const message = `Halo, saya ingin memesan Custom Phone Case.%0A- Mode: ${activeTab === "edit" ? "Custom Foto & Icons" : `Template ${selectedTemplate}`}%0A- Tipe HP: ${phoneModel || "Tidak diisi"}`;
+    const message = `Halo, saya ingin memesan Custom Phone Case.%0A- Mode: ${activeTab === "edit" ? "Custom Foto" : `Template ${selectedTemplate}`}%0A- Tipe HP: ${phoneModel || "Tidak diisi"}`;
     window.open(`https://wa.me/${phoneNumber}?text=${message}`, "_blank");
   };
 
   return (
-    <div style={{ width: "100%", maxWidth: "850px", margin: "0 auto", padding: "20px 10px", color: "#f4f4f5", fontFamily: "sans-serif", boxSizing: "border-box" }}>
+    <div style={{ position: "relative", width: "100%", maxWidth: "850px", margin: "0 auto", padding: "20px 10px", color: "#f4f4f5", fontFamily: "sans-serif", boxSizing: "border-box", overflow: "hidden" }}>
       
-      <div style={{ textAlign: "center", marginBottom: "25px" }}>
+      {/* Background Web Melayang: Agak Buram, Tidak Berwarna (Grayscale), dan Transparan */}
+      <div style={{
+        position: "absolute",
+        inset: "-50px",
+        backgroundImage: "url('/background-web.png')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        filter: "blur(25px) grayscale(100%) brightness(0.4)",
+        opacity: 0.25,
+        zIndex: -1,
+        pointerEvents: "none"
+      }} />
+
+      <div style={{ textAlign: "center", marginBottom: "25px", position: "relative", zIndex: 1 }}>
         <h2 style={{ fontSize: "26px", fontWeight: "900", textTransform: "uppercase", fontStyle: "italic", letterSpacing: "1px", margin: 0 }}>
           Customize <span style={{ background: "linear-gradient(to right, #f4f4f5, #f472b6, #a1a1aa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Your Case</span>
         </h2>
       </div>
 
-      <div style={{ display: "flex", flexDirection: "row", gap: "20px", alignItems: "flex-start", justifyContent: "center", flexWrap: "wrap" }}>
+      <div style={{ display: "flex", flexDirection: "row", gap: "20px", alignItems: "flex-start", justifyContent: "center", flexWrap: "wrap", position: "relative", zIndex: 1 }}>
         
         <div style={{ width: "280px", backgroundColor: "#121318", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "24px", padding: "16px", display: "flex", flexDirection: "column", alignItems: "center", position: "relative", boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.5)", boxSizing: "border-box" }}>
           <span style={{ position: "absolute", top: "12px", left: "16px", fontSize: "9px", fontWeight: "bold", letterSpacing: "1px", color: "#71717a", textTransform: "uppercase" }}>
@@ -246,32 +157,9 @@ export default function DesignLab() {
               <>
                 {uploadedImage ? (
                   <div 
-                    style={{ 
-                      position: "absolute", 
-                      inset: 0, 
-                      zIndex: 20, 
-                      overflow: "hidden", 
-                      cursor: "grab", 
-                      display: "flex", 
-                      alignItems: "center", 
-                      justifyContent: "center", 
-                      backgroundColor: "#18181b", 
-                      touchAction: "none",
-                      // Berikan border tipis jika foto utama sedang aktif (tidak terkunci)
-                      border: activeElementId === null ? "1px dashed rgba(244, 114, 182, 0.5)" : "none"
-                    }}
-                    onMouseDown={(e) => { 
-                      e.stopPropagation();
-                      setActiveElementId(null); // Kunci semua ikon, aktifkan/unlock foto utama
-                      handleStart(e.clientX, e.clientY, e); 
-                    }}
-                    onTouchStart={(e) => { 
-                      if (e.touches[0]) { 
-                        e.stopPropagation();
-                        setActiveElementId(null); // Kunci semua ikon, aktifkan/unlock foto utama
-                        handleStart(e.touches[0].clientX, e.touches[0].clientY, e); 
-                      } 
-                    }}
+                    style={{ position: "absolute", inset: 0, zIndex: 20, overflow: "hidden", cursor: "grab", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#18181b", touchAction: "none" }}
+                    onMouseDown={(e) => handleStart(e.clientX, e.clientY, e)}
+                    onTouchStart={(e) => { if (e.touches[0]) handleStart(e.touches[0].clientX, e.touches[0].clientY, e); }}
                   >
                     <img 
                       src={uploadedImage} 
@@ -314,84 +202,10 @@ export default function DesignLab() {
                 ) : (
                   <div style={{ position: "absolute", inset: 0, zIndex: 20, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px", textAlign: "center", pointerEvents: "none" }}>
                     <span style={{ fontSize: "11px", fontWeight: "bold", color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "1px", lineHeight: "1.5" }}>
-                      Masukkan foto dan design
+                      Masukkan foto kamu
                     </span>
                   </div>
                 )}
-
-                {placedElements.map((el) => {
-                  const isActive = activeElementId === el.id;
-                  return (
-                    <div
-                      key={el.id}
-                      onMouseDown={(e) => {
-                        e.stopPropagation();
-                        setActiveElementId(el.id); // Unlock ikon ini, kunci foto utama dan ikon lain
-                        activeDraggingElementId.current = el.id;
-                        handleStart(e.clientX, e.clientY, e);
-                      }}
-                      onTouchStart={(e) => {
-                        if (e.touches[0]) {
-                          e.stopPropagation();
-                          setActiveElementId(el.id); // Unlock ikon ini, kunci foto utama dan ikon lain
-                          activeDraggingElementId.current = el.id;
-                          handleStart(e.touches[0].clientX, e.touches[0].clientY, e);
-                        }
-                      }}
-                      style={{
-                        position: "absolute",
-                        left: `${el.x}px`,
-                        top: `${el.y}px`,
-                        transform: `scale(${el.scale}) rotate(${el.rotation}deg)`,
-                        zIndex: 25,
-                        cursor: "grab",
-                        padding: "6px",
-                        border: isActive ? "1px dashed #f472b6" : "none", // Tanda kotak putus-putus jika sedang dipilih/unlock
-                        touchAction: "none"
-                      }}
-                    >
-                      <img 
-                        src={el.src} 
-                        alt="element icon" 
-                        style={{ 
-                          width: "50px", 
-                          height: "50px", 
-                          objectFit: "contain", 
-                          pointerEvents: "none",
-                          transform: `scaleX(${el.flipX ? -1 : 1}) scaleY(${el.flipY ? -1 : 1})`
-                        }} 
-                      />
-
-                      {isActive && (
-                        <button
-                          onClick={(e) => handleRemoveElement(el.id, e)}
-                          style={{
-                            position: "absolute",
-                            top: "-8px",
-                            right: "-8px",
-                            width: "20px",
-                            height: "20px",
-                            borderRadius: "50%",
-                            backgroundColor: "#f472b6",
-                            color: "#09090b",
-                            border: "none",
-                            fontSize: "12px",
-                            fontWeight: "900",
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            zIndex: 40,
-                            boxShadow: "0 2px 4px rgba(0,0,0,0.4)"
-                          }}
-                          title="Hapus"
-                        >
-                          ×
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
 
                 <img 
                   src="/mockup-case-transparent.png" 
@@ -456,117 +270,60 @@ export default function DesignLab() {
           {activeTab === "edit" && (
             <div style={{ backgroundColor: "#121318", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "14px", padding: "16px", display: "flex", flexDirection: "column", gap: "14px" }}>
               
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", backgroundColor: "#18181b", padding: "4px", borderRadius: "10px" }}>
-                <button
-                  onClick={() => setSubUploadTab("photo")}
-                  style={{
-                    padding: "8px",
-                    borderRadius: "8px",
-                    fontSize: "9px",
-                    fontWeight: "bold",
-                    border: "none",
-                    cursor: "pointer",
-                    backgroundColor: subUploadTab === "photo" ? "#3f3d56" : "transparent",
-                    color: "#fff"
-                  }}
-                >
-                  Foto Utama
-                </button>
-                <button
-                  onClick={() => setSubUploadTab("icons")}
-                  style={{
-                    padding: "8px",
-                    borderRadius: "8px",
-                    fontSize: "9px",
-                    fontWeight: "bold",
-                    border: "none",
-                    cursor: "pointer",
-                    backgroundColor: subUploadTab === "icons" ? "#3f3d56" : "transparent",
-                    color: "#fff"
-                  }}
-                >
-                  Icons & Elements
-                </button>
-              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase" }}>
+                  Upload Foto Kamu
+                </label>
+                <input 
+                  type="file" 
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  style={{ width: "100%", fontSize: "11px", color: "#a1a1aa" }}
+                />
+                {fileName && (
+                  <p style={{ fontSize: "10px", color: "#f472b6", fontWeight: "bold" }}>
+                    Foto terpilih: {fileName}
+                  </p>
+                )}
 
-              {subUploadTab === "photo" && (
-                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                  <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase" }}>
-                    Upload Foto Kamu
-                  </label>
-                  <input 
-                    type="file" 
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    style={{ width: "100%", fontSize: "11px", color: "#a1a1aa" }}
-                  />
-                  {fileName && (
-                    <p style={{ fontSize: "10px", color: "#f472b6", fontWeight: "bold" }}>
-                      Foto terpilih: {fileName}
-                    </p>
-                  )}
-
-                  {uploadedImage && (
-                    <div style={{ display: "flex", gap: "6px", marginTop: "5px" }}>
-                      <button
-                        onClick={handleRemoveBackground}
-                        disabled={isRemovingBg}
-                        style={{
-                          flex: 1,
-                          padding: "10px",
-                          borderRadius: "10px",
-                          fontSize: "9px",
-                          fontWeight: "900",
-                          textTransform: "uppercase",
-                          backgroundColor: "#f472b6",
-                          color: "#09090b",
-                          border: "none",
-                          cursor: "pointer"
-                        }}
-                      >
-                        {isRemovingBg ? "Proses..." : "Hapus Background"}
-                      </button>
-                      <button
-                        onClick={handleResetBackground}
-                        style={{
-                          padding: "10px",
-                          borderRadius: "10px",
-                          fontSize: "9px",
-                          fontWeight: "bold",
-                          backgroundColor: "#27272a",
-                          color: "#a1a1aa",
-                          border: "none",
-                          cursor: "pointer"
-                        }}
-                      >
-                        Reset Background
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {subUploadTab === "icons" && (
-                <div style={{ maxHeight: "200px", overflowY: "auto" }}>
-                  <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase", marginBottom: "8px" }}>
-                    Pilih Icons (Klik untuk tambah ke case)
-                  </label>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px" }}>
-                    {Array.from({ length: 21 }, (_, i) => i + 1).map((num) => {
-                      const imageName = `elm${num}.png`;
-                      return (
-                        <div 
-                          key={num}
-                          onClick={() => handleAddElementToCase(imageName)}
-                          style={{ backgroundColor: "#18181b", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", padding: "8px", textAlign: "center", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
-                        >
-                          <img src={`/${imageName}`} alt={`icon ${num}`} style={{ width: "40px", height: "40px", objectFit: "contain" }} />
-                        </div>
-                      );
-                    })}
+                {uploadedImage && (
+                  <div style={{ display: "flex", gap: "6px", marginTop: "5px" }}>
+                    <button
+                      onClick={handleRemoveBackground}
+                      disabled={isRemovingBg}
+                      style={{
+                        flex: 1,
+                        padding: "10px",
+                        borderRadius: "10px",
+                        fontSize: "9px",
+                        fontWeight: "900",
+                        textTransform: "uppercase",
+                        backgroundColor: "#f472b6",
+                        color: "#09090b",
+                        border: "none",
+                        cursor: "pointer"
+                      }}
+                    >
+                      {isRemovingBg ? "Proses..." : "Hapus Background"}
+                    </button>
+                    <button
+                      onClick={handleResetBackground}
+                      style={{
+                        padding: "10px",
+                        borderRadius: "10px",
+                        fontSize: "9px",
+                        fontWeight: "bold",
+                        backgroundColor: "#27272a",
+                        color: "#a1a1aa",
+                        border: "none",
+                        cursor: "pointer"
+                      }}
+                    >
+                      Reset Background
+                    </button>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
 
             </div>
           )}
