@@ -36,7 +36,6 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
   
   const activeDraggingElementId = useRef<number | null>(null);
 
-  // Tentukan gambar mockup utama & mockup transparan penimpa (-tp.png)
   let mockupBase = "/mockup-case-transparent.png";
   let mockupTp = "";
 
@@ -116,8 +115,8 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
     const newElement = {
       id: Date.now(),
       src: `/${imageName}`,
-      x: 80,
-      y: 120,
+      x: 100,
+      y: 140,
       scale: 1,
       rotation: 0,
       flipX: false,
@@ -257,24 +256,23 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
 
       <div style={{ display: "flex", flexDirection: "row", gap: "20px", alignItems: "flex-start", justifyContent: "center", flexWrap: "wrap" }}>
         
-        {/* KOTAK CONTAINER PREVIEW UTAMA */}
-        <div style={{ width: "290px", backgroundColor: "#121318", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "24px", padding: "16px", display: "flex", flexDirection: "column", alignItems: "center", position: "relative", boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.5)", boxSizing: "border-box" }}>
+        {/* CONTAINER PREVIEW UTAMA */}
+        <div style={{ width: "280px", backgroundColor: "#121318", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "20px", padding: "12px", display: "flex", flexDirection: "column", alignItems: "center", position: "relative", boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.5)", boxSizing: "border-box" }}>
           
-          {/* LABEL ATAS: MENAMPILKAN STATUS LIVE EDITOR / TEMPLATE */}
-          <span style={{ position: "absolute", top: "14px", left: "20px", fontSize: "10px", fontWeight: "bold", letterSpacing: "1px", color: "#f472b6", textTransform: "uppercase" }}>
+          {/* LABEL LIVE EDITOR / TEMPLATE DI ATAS */}
+          <span style={{ width: "100%", textAlign: "left", fontSize: "10px", fontWeight: "bold", letterSpacing: "1px", color: "#f472b6", textTransform: "uppercase", marginBottom: "8px", paddingLeft: "4px" }}>
             {isPhoneCase && activeTab === "template" ? `Template ${selectedTemplate}` : "LIVE EDITOR"}
           </span>
           
-          {/* AREA PREVIEW GAMBAR YANG LEBIH BESAR & RAPI */}
+          {/* AREA PREVIEW FULL TANPA SPACE/MARGIN KOSONG */}
           <div 
             style={{ 
-              width: "230px", 
-              height: "360px", 
+              width: "256px", 
+              height: "380px", 
               backgroundColor: "#09090b", 
-              borderRadius: "18px", 
+              borderRadius: "14px", 
               border: "2px solid rgba(255,255,255,0.15)", 
               position: "relative", 
-              margin: "25px 0 10px 0", 
               display: "flex", 
               alignItems: "center", 
               justifyContent: "center", 
@@ -290,7 +288,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
             onWheel={handleWheel}
           >
             
-            {/* LAYER 1: MOCKUP DASAR (BAJU / TAS / CASE) */}
+            {/* LAYER 1: MOCKUP DASAR FULL (BAJU / TAS / CASE) */}
             <img 
               src={mockupBase} 
               alt="Mockup Base" 
