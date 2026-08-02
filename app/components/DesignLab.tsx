@@ -42,7 +42,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
 
   if (isPhoneCase) {
     mockupBase = "/mockup-case-transparent.png";
-    mockupTp = ""; // Case pakai 1 layer transparan saja yang sudah ada
+    mockupTp = "";
   } else if (isTshirt) {
     if (tshirtStyle === "white") {
       mockupBase = "/t-shirtmu.png";
@@ -116,8 +116,8 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
     const newElement = {
       id: Date.now(),
       src: `/${imageName}`,
-      x: 55,
-      y: 55,
+      x: 80,
+      y: 120,
       scale: 1,
       rotation: 0,
       flipX: false,
@@ -257,21 +257,24 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
 
       <div style={{ display: "flex", flexDirection: "row", gap: "20px", alignItems: "flex-start", justifyContent: "center", flexWrap: "wrap" }}>
         
-        <div style={{ width: "280px", backgroundColor: "#121318", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "24px", padding: "16px", display: "flex", flexDirection: "column", alignItems: "center", position: "relative", boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.5)", boxSizing: "border-box" }}>
-          <span style={{ position: "absolute", top: "12px", left: "16px", fontSize: "9px", fontWeight: "bold", letterSpacing: "1px", color: "#71717a", textTransform: "uppercase" }}>
-            {isPhoneCase && activeTab === "template" ? `Template ${selectedTemplate}` : "Live Editor"}
+        {/* KOTAK CONTAINER PREVIEW UTAMA */}
+        <div style={{ width: "290px", backgroundColor: "#121318", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "24px", padding: "16px", display: "flex", flexDirection: "column", alignItems: "center", position: "relative", boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.5)", boxSizing: "border-box" }}>
+          
+          {/* LABEL ATAS: MENAMPILKAN STATUS LIVE EDITOR / TEMPLATE */}
+          <span style={{ position: "absolute", top: "14px", left: "20px", fontSize: "10px", fontWeight: "bold", letterSpacing: "1px", color: "#f472b6", textTransform: "uppercase" }}>
+            {isPhoneCase && activeTab === "template" ? `Template ${selectedTemplate}` : "LIVE EDITOR"}
           </span>
           
-          {/* KOTAK PREVIEW: Bentuk khusus Phone Case vs Produk Lain */}
+          {/* AREA PREVIEW GAMBAR YANG LEBIH BESAR & RAPI */}
           <div 
             style={{ 
-              width: isPhoneCase ? "170px" : "220px", 
-              height: isPhoneCase ? "340px" : "280px", 
+              width: "230px", 
+              height: "360px", 
               backgroundColor: "#09090b", 
-              borderRadius: isPhoneCase ? "24px" : "16px", 
+              borderRadius: "18px", 
               border: "2px solid rgba(255,255,255,0.15)", 
               position: "relative", 
-              margin: "20px 0 10px 0", 
+              margin: "25px 0 10px 0", 
               display: "flex", 
               alignItems: "center", 
               justifyContent: "center", 
@@ -321,13 +324,13 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                         position: "absolute",
                         top: "8px",
                         right: "8px",
-                        width: "22px",
-                        height: "22px",
+                        width: "24px",
+                        height: "24px",
                         borderRadius: "50%",
                         backgroundColor: "rgba(0,0,0,0.7)",
                         color: "#fff",
                         border: "1px solid rgba(255,255,255,0.3)",
-                        fontSize: "12px",
+                        fontSize: "13px",
                         fontWeight: "bold",
                         cursor: "pointer",
                         display: "flex",
@@ -341,13 +344,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                       ×
                     </button>
                   </div>
-                ) : (
-                  <div style={{ position: "absolute", inset: 0, zIndex: 15, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px", textAlign: "center", pointerEvents: "none" }}>
-                    <span style={{ fontSize: "11px", fontWeight: "bold", color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "1px", lineHeight: "1.5" }}>
-                      Masukkan foto kamu
-                    </span>
-                  </div>
-                )}
+                ) : null}
               </>
             ) : (
               <div 
@@ -398,8 +395,8 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                     src={el.src} 
                     alt="element icon" 
                     style={{ 
-                      width: "50px", 
-                      height: "50px", 
+                      width: "55px", 
+                      height: "55px", 
                       objectFit: "contain", 
                       pointerEvents: "none",
                       transform: `scaleX(${el.flipX ? -1 : 1}) scaleY(${el.flipY ? -1 : 1})`
@@ -447,10 +444,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
             )}
 
           </div>
-          
-          <span style={{ fontSize: "10px", fontWeight: "900", color: "#f472b6", textTransform: "uppercase", letterSpacing: "1px", marginTop: "10px" }}>
-            {isPhoneCase && activeTab === "template" ? `Template ${selectedTemplate}` : "Live Editor"}
-          </span>
+
         </div>
 
         <div style={{ flex: "1", minWidth: "280px", display: "flex", flexDirection: "column", gap: "14px" }}>
