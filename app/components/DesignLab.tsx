@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { removeBackground } from "@imgly/background-removal";
 
 interface DesignLabProps {
@@ -36,33 +36,29 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
   
   const activeDraggingElementId = useRef<number | null>(null);
 
-  let mockupBase = "/mockup-case-transparent.png";
-  let mockupTp = "";
-
-  if (isPhoneCase) {
-    mockupBase = "/mockup-case-transparent.png";
-    mockupTp = "";
-  } else if (isTshirt) {
-    if (tshirtStyle === "white") {
-      mockupBase = "/t-shirtmu.png";
-      mockupTp = "/t-shirtmu-tp.png";
-    } else if (tshirtStyle === "black") {
-      mockupBase = "/blackshirtmu.png";
-      mockupTp = "/blackshirtmu-tp.png";
-    } else if (tshirtStyle === "croptop") {
-      mockupBase = "/croptopmu.png";
-      mockupTp = "/croptopmu-tp.png";
+  // Perbaikan jalur mockup dasar & transparan (-tp.png) agar akurat
+  const { mockupBase, mockupTp } = useMemo(() => {
+    if (isPhoneCase) {
+      return {
+        mockupBase: "/mockup-case.png",
+        mockupTp: "/mockup-case-transparent.png"
+      };
+    } else if (isTshirt) {
+      if (tshirtStyle === "black") {
+        return { mockupBase: "/blackshirtmu.png", mockupTp: "/blackshirtmu-tp.png" };
+      } else if (tshirtStyle === "croptop") {
+        return { mockupBase: "/croptopmu.png", mockupTp: "/croptopmu-tp.png" };
+      }
+      return { mockupBase: "/t-shirtmu.png", mockupTp: "/t-shirtmu-tp.png" };
+    } else if (titleLower.includes("hoodie")) {
+      return { mockupBase: "/hoodiemu.png", mockupTp: "/hoodiemu-tp.png" };
+    } else if (titleLower.includes("sweatshirt")) {
+      return { mockupBase: "/sweatshirtmu.png", mockupTp: "/sweatshirtmu-tp.png" };
+    } else if (titleLower.includes("tote")) {
+      return { mockupBase: "/totebagmu.png", mockupTp: "/totebagmu-tp.png" };
     }
-  } else if (titleLower.includes("hoodie")) {
-    mockupBase = "/hoodiemu.png";
-    mockupTp = "/hoodiemu-tp.png";
-  } else if (titleLower.includes("sweatshirt")) {
-    mockupBase = "/sweatshirtmu.png";
-    mockupTp = "/sweatshirtmu-tp.png";
-  } else if (titleLower.includes("tote")) {
-    mockupBase = "/totebagmu.png";
-    mockupTp = "/totebagmu-tp.png";
-  }
+    return { mockupBase: "/mockup-case.png", mockupTp: "/mockup-case-transparent.png" };
+  }, [isPhoneCase, isTshirt, tshirtStyle, titleLower]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -256,15 +252,12 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
 
       <div style={{ display: "flex", flexDirection: "row", gap: "20px", alignItems: "flex-start", justifyContent: "center", flexWrap: "wrap" }}>
         
-        {/* CONTAINER PREVIEW UTAMA */}
         <div style={{ width: "280px", backgroundColor: "#121318", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "20px", padding: "12px", display: "flex", flexDirection: "column", alignItems: "center", position: "relative", boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.5)", boxSizing: "border-box" }}>
           
-          {/* LABEL LIVE EDITOR / TEMPLATE DI ATAS */}
           <span style={{ width: "100%", textAlign: "left", fontSize: "10px", fontWeight: "bold", letterSpacing: "1px", color: "#f472b6", textTransform: "uppercase", marginBottom: "8px", paddingLeft: "4px" }}>
             {isPhoneCase && activeTab === "template" ? `Template ${selectedTemplate}` : "LIVE EDITOR"}
           </span>
           
-          {/* AREA PREVIEW FULL TANPA SPACE/MARGIN KOSONG */}
           <div 
             style={{ 
               width: "256px", 
@@ -288,17 +281,17 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
             onWheel={handleWheel}
           >
             
-            {/* LAYER 1: MOCKUP DASAR FULL (BAJU / TAS / CASE) */}
+            {/* LAYER 1: MOCKUP DASAR */}
             <img 
               src={mockupBase} 
               alt="Mockup Base" 
               style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", zIndex: 10, pointerEvents: "none" }}
             />
 
-            {/* LAYER 2: EDITOR FOTO UTAMA */}
+            {/* LAYER 2: EDITOR FOTO ATAU TEMPLATE */}
             {(!isPhoneCase || activeTab === "edit") ? (
               <>
-                {uploadedImage ? (
+                {uploadedImage && (
                   <div 
                     style={{ position: "absolute", inset: 0, zIndex: 15, overflow: "hidden", cursor: "grab", display: "flex", alignItems: "center", justifyContent: "center", touchAction: "none" }}
                     onMouseDown={(e) => { setActiveElementId(null); handleStart(e.clientX, e.clientY, e); }}
@@ -342,7 +335,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                       ×
                     </button>
                   </div>
-                ) : null}
+                )}
               </>
             ) : (
               <div 
@@ -432,7 +425,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
               );
             })}
 
-            {/* LAYER 4: MOCKUP TRANSPARAN PENIMPA (-tp.png) DI PALING ATAS */}
+            {/* LAYER 4: MOCKUP TRANSPARAN PENIMPA DI ATAS */}
             {mockupTp && (
               <img 
                 src={mockupTp} 
@@ -447,7 +440,6 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
 
         <div style={{ flex: "1", minWidth: "280px", display: "flex", flexDirection: "column", gap: "14px" }}>
           
-          {/* PILIHAN STYLE / WARNA KHUSUS T-SHIRT */}
           {isTshirt && (
             <div style={{ backgroundColor: "#121318", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "14px", padding: "14px" }}>
               <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase", marginBottom: "8px" }}>
@@ -506,7 +498,6 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
             </div>
           )}
 
-          {/* TAB NAVIGASI HANYA MUNCUL UNTUK CASE */}
           {isPhoneCase && (
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", backgroundColor: "#18181b", padding: "5px", borderRadius: "14px", border: "1px solid rgba(255,255,255,0.1)" }}>
               <button
@@ -606,7 +597,6 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
 
               <hr style={{ border: "none", borderTop: "1px solid rgba(255,255,255,0.1)", margin: "4px 0" }} />
 
-              {/* Pilihan Icons */}
               <div>
                 <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase", marginBottom: "8px" }}>
                   Tambah Icons & Elements (Klik untuk pasang)
