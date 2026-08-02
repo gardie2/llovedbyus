@@ -20,9 +20,6 @@ export default function Navbar() {
           <a href="#">About</a>
         </div>
 
-        <button className="rounded-full bg-red-500 px-6 py-3 font-semibold text-white transition hover:bg-red-600">
-          Start
-        </button>
       </div>
     </nav>
   );
