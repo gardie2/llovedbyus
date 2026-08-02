@@ -36,18 +36,33 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
   
   const activeDraggingElementId = useRef<number | null>(null);
 
-  // Tentukan gambar mockup sesuai produk dan gaya pilihan
-  let mockupImage = "/mockup-case-transparent.png";
-  if (isTshirt) {
-    if (tshirtStyle === "white") mockupImage = "/t-shirtmu.png";
-    else if (tshirtStyle === "black") mockupImage = "/blackshirtmu.png";
-    else if (tshirtStyle === "croptop") mockupImage = "/croptopmu.png";
+  // Tentukan gambar mockup utama & mockup transparan penimpa (-tp.png)
+  let mockupBase = "/mockup-case-transparent.png";
+  let mockupTp = "";
+
+  if (isPhoneCase) {
+    mockupBase = "/mockup-case-transparent.png";
+    mockupTp = ""; // Case pakai 1 layer transparan saja yang sudah ada
+  } else if (isTshirt) {
+    if (tshirtStyle === "white") {
+      mockupBase = "/t-shirtmu.png";
+      mockupTp = "/t-shirtmu-tp.png";
+    } else if (tshirtStyle === "black") {
+      mockupBase = "/blackshirtmu.png";
+      mockupTp = "/blackshirtmu-tp.png";
+    } else if (tshirtStyle === "croptop") {
+      mockupBase = "/croptopmu.png";
+      mockupTp = "/croptopmu-tp.png";
+    }
   } else if (titleLower.includes("hoodie")) {
-    mockupImage = "/hoodiemu.png";
+    mockupBase = "/hoodiemu.png";
+    mockupTp = "/hoodiemu-tp.png";
   } else if (titleLower.includes("sweatshirt")) {
-    mockupImage = "/sweatshirtmu.png";
+    mockupBase = "/sweatshirtmu.png";
+    mockupTp = "/sweatshirtmu-tp.png";
   } else if (titleLower.includes("tote")) {
-    mockupImage = "/totebagmu.png";
+    mockupBase = "/totebagmu.png";
+    mockupTp = "/totebagmu-tp.png";
   }
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -247,8 +262,22 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
             {isPhoneCase && activeTab === "template" ? `Template ${selectedTemplate}` : "Live Editor"}
           </span>
           
+          {/* KOTAK PREVIEW: Bentuk khusus Phone Case vs Produk Lain */}
           <div 
-            style={{ width: "170px", height: "340px", backgroundColor: "#09090b", borderRadius: "24px", border: "2px solid rgba(255,255,255,0.15)", position: "relative", margin: "20px 0 10px 0", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", touchAction: "none" }}
+            style={{ 
+              width: isPhoneCase ? "170px" : "220px", 
+              height: isPhoneCase ? "340px" : "280px", 
+              backgroundColor: "#09090b", 
+              borderRadius: isPhoneCase ? "24px" : "16px", 
+              border: "2px solid rgba(255,255,255,0.15)", 
+              position: "relative", 
+              margin: "20px 0 10px 0", 
+              display: "flex", 
+              alignItems: "center", 
+              justifyContent: "center", 
+              overflow: "hidden", 
+              touchAction: "none" 
+            }}
             onMouseMove={(e) => handleMove(e.clientX, e.clientY, e)}
             onMouseUp={handleEnd}
             onMouseLeave={handleEnd}
@@ -258,11 +287,19 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
             onWheel={handleWheel}
           >
             
+            {/* LAYER 1: MOCKUP DASAR (BAJU / TAS / CASE) */}
+            <img 
+              src={mockupBase} 
+              alt="Mockup Base" 
+              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", zIndex: 10, pointerEvents: "none" }}
+            />
+
+            {/* LAYER 2: EDITOR FOTO UTAMA */}
             {(!isPhoneCase || activeTab === "edit") ? (
               <>
                 {uploadedImage ? (
                   <div 
-                    style={{ position: "absolute", inset: 0, zIndex: 20, overflow: "hidden", cursor: "grab", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#18181b", touchAction: "none" }}
+                    style={{ position: "absolute", inset: 0, zIndex: 15, overflow: "hidden", cursor: "grab", display: "flex", alignItems: "center", justifyContent: "center", touchAction: "none" }}
                     onMouseDown={(e) => { setActiveElementId(null); handleStart(e.clientX, e.clientY, e); }}
                     onTouchStart={(e) => { if (e.touches[0]) { setActiveElementId(null); handleStart(e.touches[0].clientX, e.touches[0].clientY, e); } }}
                   >
@@ -305,7 +342,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                     </button>
                   </div>
                 ) : (
-                  <div style={{ position: "absolute", inset: 0, zIndex: 20, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px", textAlign: "center", pointerEvents: "none" }}>
+                  <div style={{ position: "absolute", inset: 0, zIndex: 15, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px", textAlign: "center", pointerEvents: "none" }}>
                     <span style={{ fontSize: "11px", fontWeight: "bold", color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "1px", lineHeight: "1.5" }}>
                       Masukkan foto kamu
                     </span>
@@ -314,7 +351,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
               </>
             ) : (
               <div 
-                style={{ position: "absolute", inset: 0, zIndex: 20, display: "flex", alignItems: "center", justifyContent: "center" }}
+                style={{ position: "absolute", inset: 0, zIndex: 15, display: "flex", alignItems: "center", justifyContent: "center" }}
                 onClick={() => setActiveElementId(null)}
               >
                 <img 
@@ -325,7 +362,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
               </div>
             )}
 
-            {/* Ikon/Elements */}
+            {/* LAYER 3: IKON & ELEMEN DEKORASI */}
             {placedElements.map((el) => {
               const isActive = activeElementId === el.id;
               return (
@@ -400,12 +437,14 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
               );
             })}
 
-            {/* Mockup Sesuai Produk */}
-            <img 
-              src={mockupImage} 
-              alt="Mockup Frame" 
-              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", zIndex: 30, pointerEvents: "none" }}
-            />
+            {/* LAYER 4: MOCKUP TRANSPARAN PENIMPA (-tp.png) DI PALING ATAS */}
+            {mockupTp && (
+              <img 
+                src={mockupTp} 
+                alt="Mockup Overlay" 
+                style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", zIndex: 35, pointerEvents: "none" }}
+              />
+            )}
 
           </div>
           
@@ -416,7 +455,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
 
         <div style={{ flex: "1", minWidth: "280px", display: "flex", flexDirection: "column", gap: "14px" }}>
           
-          {/* PILIHAN STYLE / WARNA KHUSUS T-SHIRT (WHITE, BLACK, CROPTOP) */}
+          {/* PILIHAN STYLE / WARNA KHUSUS T-SHIRT */}
           {isTshirt && (
             <div style={{ backgroundColor: "#121318", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "14px", padding: "14px" }}>
               <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase", marginBottom: "8px" }}>
