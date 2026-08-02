@@ -102,18 +102,18 @@ export default function DesignLab() {
     isInteracting.current = true;
     lastClientPos.current = { x: clientX, y: clientY };
 
-    if (e && 'touches' in e) {
-      if (e.touches.length === 2) {
-        initialPinchDistance.current = getTouchDistance(e.touches[0], e.touches[1]);
-        initialTouchAngle.current = getTouchAngle(e.touches[0], e.touches[1]);
-        
-        if (activeElementId !== null) {
-          const activeEl = placedElements.find(el => el.id === activeElementId);
-          if (activeEl) initialScale.current = activeEl.scale;
-          if (activeEl) initialElementRotation.current = activeEl.rotation;
-        } else {
-          initialScale.current = scale;
+    if (e && 'touches' in e && e.touches.length === 2) {
+      initialPinchDistance.current = getTouchDistance(e.touches[0], e.touches[1]);
+      initialTouchAngle.current = getTouchAngle(e.touches[0], e.touches[1]);
+      
+      if (activeElementId !== null) {
+        const activeEl = placedElements.find(el => el.id === activeElementId);
+        if (activeEl) {
+          initialScale.current = activeEl.scale;
+          initialElementRotation.current = activeEl.rotation;
         }
+      } else {
+        initialScale.current = scale;
       }
     }
   };
@@ -122,6 +122,7 @@ export default function DesignLab() {
     if (!isInteracting.current) return;
     if (e) e.preventDefault();
 
+    // Jika menggunakan 2 jari
     if (e && 'touches' in e && e.touches.length === 2) {
       const dist = getTouchDistance(e.touches[0], e.touches[1]);
       const currentAngle = getTouchAngle(e.touches[0], e.touches[1]);
@@ -130,6 +131,7 @@ export default function DesignLab() {
         const factor = dist / initialPinchDistance.current;
         const angleDelta = currentAngle - initialTouchAngle.current;
 
+        // JIKA ADA IKON YANG AKTIF: Hanya ubah ukuran/putar ikon tersebut, foto utama DIAM
         if (activeElementId !== null) {
           setPlacedElements((prev) =>
             prev.map((el) => {
@@ -144,6 +146,7 @@ export default function DesignLab() {
             })
           );
         } else {
+          // JIKA TIDAK ADA IKON AKTIF: Zoom foto utama
           const newScale = Math.min(Math.max(0.5, initialScale.current * factor), 3.5);
           setScale(newScale);
         }
@@ -151,10 +154,12 @@ export default function DesignLab() {
       return;
     }
 
+    // Jika menggunakan 1 jari / mouse
     const dx = clientX - lastClientPos.current.x;
     const dy = clientY - lastClientPos.current.y;
 
     if (activeDraggingElementId.current !== null) {
+      // Geser ikon aktif
       const id = activeDraggingElementId.current;
       setPlacedElements((prev) =>
         prev.map((el) => {
@@ -169,7 +174,8 @@ export default function DesignLab() {
         })
       );
       lastClientPos.current = { x: clientX, y: clientY };
-    } else {
+    } else if (activeElementId === null) {
+      // Geser foto utama hanya jika tidak sedang memegang ikon
       setPosition((prev) => ({
         x: prev.x + dx,
         y: prev.y + dy,
