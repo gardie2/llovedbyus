@@ -366,7 +366,7 @@ export default function DesignLab() {
               placeholder="Contoh: iPhone 13 / Samsung S22"
               value={phoneModel}
               onChange={(e) => setPhoneModel(e.target.value)}
-              style={{ width: "100%", backgroundColor: "#18181b", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "10px", fontSize: "11px", color: "#f4f4f5", outline: "none", boxSizing: "border-box" }}
+              style={{ width: "100%", backgroundColor: "#121318", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "10px", fontSize: "11px", color: "#f4f4f5", outline: "none", boxSizing: "border-box" }}
             />
           </div>
 
