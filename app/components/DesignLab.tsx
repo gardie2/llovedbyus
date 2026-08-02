@@ -36,12 +36,12 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
   
   const activeDraggingElementId = useRef<number | null>(null);
 
-  // Perbaikan jalur mockup dasar & transparan (-tp.png) agar akurat
+  // Logika layer mockup yang bersih: Phone case hanya 1 layer transparan, baju/tas pakai base & -tp.png
   const { mockupBase, mockupTp } = useMemo(() => {
     if (isPhoneCase) {
       return {
-        mockupBase: "/mockup-case.png",
-        mockupTp: "/mockup-case-transparent.png"
+        mockupBase: "/mockup-case-transparent.png",
+        mockupTp: ""
       };
     } else if (isTshirt) {
       if (tshirtStyle === "black") {
@@ -57,7 +57,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
     } else if (titleLower.includes("tote")) {
       return { mockupBase: "/totebagmu.png", mockupTp: "/totebagmu-tp.png" };
     }
-    return { mockupBase: "/mockup-case.png", mockupTp: "/mockup-case-transparent.png" };
+    return { mockupBase: "/mockup-case-transparent.png", mockupTp: "" };
   }, [isPhoneCase, isTshirt, tshirtStyle, titleLower]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
