@@ -7,11 +7,14 @@ interface DesignLabProps {
 }
 
 export default function DesignLab({ productTitle = "Custom Phone Case" }: DesignLabProps) {
-  // Cek apakah produk ini Phone Case atau bukan
-  const isPhoneCase = productTitle.toLowerCase().includes("case");
+  const titleLower = productTitle.toLowerCase();
+  const isPhoneCase = titleLower.includes("case");
+  const isTshirt = titleLower.includes("t-shirt");
 
-  const [activeTab, setActiveTab] = useState<"edit" | "template">(isPhoneCase ? "edit" : "edit");
+  const [activeTab, setActiveTab] = useState<"edit" | "template">("edit");
   const [selectedTemplate, setSelectedTemplate] = useState(1);
+  const [tshirtStyle, setTshirtStyle] = useState<"white" | "black" | "croptop">("white");
+  
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [originalImage, setOriginalImage] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string>("");
@@ -33,12 +36,19 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
   
   const activeDraggingElementId = useRef<number | null>(null);
 
-  // Tentukan gambar mockup berdasarkan nama produk yang diklik
+  // Tentukan gambar mockup sesuai produk dan gaya pilihan
   let mockupImage = "/mockup-case-transparent.png";
-  if (productTitle.toLowerCase().includes("t-shirt")) mockupImage = "/t-shirtmu.png";
-  else if (productTitle.toLowerCase().includes("hoodie")) mockupImage = "/hoodiemu.png";
-  else if (productTitle.toLowerCase().includes("sweatshirt")) mockupImage = "/sweatshirtmu.png";
-  else if (productTitle.toLowerCase().includes("tote")) mockupImage = "/totebagmu.png";
+  if (isTshirt) {
+    if (tshirtStyle === "white") mockupImage = "/t-shirtmu.png";
+    else if (tshirtStyle === "black") mockupImage = "/blackshirtmu.png";
+    else if (tshirtStyle === "croptop") mockupImage = "/croptopmu.png";
+  } else if (titleLower.includes("hoodie")) {
+    mockupImage = "/hoodiemu.png";
+  } else if (titleLower.includes("sweatshirt")) {
+    mockupImage = "/sweatshirtmu.png";
+  } else if (titleLower.includes("tote")) {
+    mockupImage = "/totebagmu.png";
+  }
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -215,8 +225,9 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
 
   const handleWhatsAppOrder = () => {
     const phoneNumber = "62881025376311";
+    const styleInfo = isTshirt ? ` (${tshirtStyle.toUpperCase()})` : "";
     const modeDesc = isPhoneCase ? (activeTab === "edit" ? "Custom Foto & Icons" : `Template ${selectedTemplate} + Icons`) : "Custom Foto & Icons";
-    const message = `Halo, saya ingin memesan ${productTitle}.%0A- Mode: ${modeDesc}%0A- Detail/Ukuran: ${phoneModel || "Tidak diisi"}`;
+    const message = `Halo, saya ingin memesan ${productTitle}${styleInfo}.%0A- Mode: ${modeDesc}%0A- Detail/Ukuran: ${phoneModel || "Tidak diisi"}`;
     window.open(`https://wa.me/${phoneNumber}?text=${message}`, "_blank");
   };
 
@@ -225,7 +236,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
       
       <div style={{ textAlign: "center", marginBottom: "25px" }}>
         <h2 style={{ fontSize: "26px", fontWeight: "900", textTransform: "uppercase", fontStyle: "italic", letterSpacing: "1px", margin: 0 }}>
-          Customize <span style={{ background: "linear-gradient(to right, #f4f4f5, #f472b6, #a1a1aa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{productTitle}</span>
+          Customize <span style={{ background: "linear-gradient(to right, #f4f4f5, #f472b6, #a1a1aa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{productTitle} {isTshirt ? `(${tshirtStyle})` : ""}</span>
         </h2>
       </div>
 
@@ -405,6 +416,66 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
 
         <div style={{ flex: "1", minWidth: "280px", display: "flex", flexDirection: "column", gap: "14px" }}>
           
+          {/* PILIHAN STYLE / WARNA KHUSUS T-SHIRT (WHITE, BLACK, CROPTOP) */}
+          {isTshirt && (
+            <div style={{ backgroundColor: "#121318", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "14px", padding: "14px" }}>
+              <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase", marginBottom: "8px" }}>
+                Pilih Model & Warna Kaos
+              </label>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "6px" }}>
+                <button
+                  onClick={() => setTshirtStyle("white")}
+                  style={{
+                    padding: "10px 4px",
+                    borderRadius: "10px",
+                    fontSize: "9px",
+                    fontWeight: "900",
+                    textTransform: "uppercase",
+                    cursor: "pointer",
+                    border: tshirtStyle === "white" ? "1px solid #f472b6" : "1px solid rgba(255,255,255,0.1)",
+                    background: tshirtStyle === "white" ? "#f4f4f5" : "#18181b",
+                    color: tshirtStyle === "white" ? "#09090b" : "#a1a1aa"
+                  }}
+                >
+                  White
+                </button>
+                <button
+                  onClick={() => setTshirtStyle("black")}
+                  style={{
+                    padding: "10px 4px",
+                    borderRadius: "10px",
+                    fontSize: "9px",
+                    fontWeight: "900",
+                    textTransform: "uppercase",
+                    cursor: "pointer",
+                    border: tshirtStyle === "black" ? "1px solid #f472b6" : "1px solid rgba(255,255,255,0.1)",
+                    background: tshirtStyle === "black" ? "#27272a" : "#18181b",
+                    color: tshirtStyle === "black" ? "#fff" : "#a1a1aa"
+                  }}
+                >
+                  Black
+                </button>
+                <button
+                  onClick={() => setTshirtStyle("croptop")}
+                  style={{
+                    padding: "10px 4px",
+                    borderRadius: "10px",
+                    fontSize: "9px",
+                    fontWeight: "900",
+                    textTransform: "uppercase",
+                    cursor: "pointer",
+                    border: tshirtStyle === "croptop" ? "1px solid #f472b6" : "1px solid rgba(255,255,255,0.1)",
+                    background: tshirtStyle === "croptop" ? "#f472b6" : "#18181b",
+                    color: tshirtStyle === "croptop" ? "#09090b" : "#a1a1aa"
+                  }}
+                >
+                  Crop Top
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* TAB NAVIGASI HANYA MUNCUL UNTUK CASE */}
           {isPhoneCase && (
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", backgroundColor: "#18181b", padding: "5px", borderRadius: "14px", border: "1px solid rgba(255,255,255,0.1)" }}>
               <button
