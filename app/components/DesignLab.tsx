@@ -93,14 +93,15 @@ export default function DesignLab() {
     );
   };
 
-  // Aktifkan mode rotasi saat tombol 🔄 Putar ditekan/di-hold
   const handleRotateStart = (el: { id: number; x: number; y: number; rotation: number }, clientX: number, clientY: number, e: React.MouseEvent | React.TouchEvent) => {
     e.stopPropagation();
     isRotating.current = true;
     activeDraggingElementId.current = el.id;
+    
+    // Menentukan titik tengah elemen untuk acuan putaran seperti stiker IG
     rotationCenter.current = {
-      x: el.x + 25,
-      y: el.y + 25
+      x: el.x + 35,
+      y: el.y + 35
     };
     lastClientPos.current = { x: clientX, y: clientY };
   };
@@ -355,10 +356,10 @@ export default function DesignLab() {
                           <div
                             onMouseDown={(e) => handleRotateStart(el, e.clientX, e.clientY, e)}
                             onTouchStart={(e) => { if (e.touches[0]) handleRotateStart(el, e.touches[0].clientX, e.touches[0].clientY, e); }}
-                            style={{ background: "#3f3d56", color: "#fff", borderRadius: "4px", fontSize: "9px", cursor: "ew-resize", padding: "2px 5px", fontWeight: "bold", userSelect: "none" }}
-                            title="Hold dan geser untuk memutar"
+                            style={{ background: "#3f3d56", color: "#fff", borderRadius: "4px", fontSize: "12px", cursor: "grab", padding: "2px 6px", fontWeight: "bold", userSelect: "none" }}
+                            title="Tahan dan geser untuk memutar"
                           >
-                            🔄 Putar
+                            🔄
                           </div>
                           <button
                             onClick={(e) => handleFlipElement(el.id, e)}
