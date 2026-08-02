@@ -18,7 +18,6 @@ export default function DesignLab() {
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   
-  // Universal Interaction Trackers (Support Mouse & Touch seamlessly)
   const isInteracting = useRef(false);
   const lastClientPos = useRef({ x: 0, y: 0 });
   const initialPinchDistance = useRef(0);
@@ -94,7 +93,8 @@ export default function DesignLab() {
     );
   };
 
-  const handleRotateStart = (el: { id: number; x: number; y: number; rotation: number }, e: React.MouseEvent | React.TouchEvent) => {
+  // Aktifkan mode rotasi saat tombol 🔄 Putar ditekan/di-hold
+  const handleRotateStart = (el: { id: number; x: number; y: number; rotation: number }, clientX: number, clientY: number, e: React.MouseEvent | React.TouchEvent) => {
     e.stopPropagation();
     isRotating.current = true;
     activeDraggingElementId.current = el.id;
@@ -102,6 +102,7 @@ export default function DesignLab() {
       x: el.x + 25,
       y: el.y + 25
     };
+    lastClientPos.current = { x: clientX, y: clientY };
   };
 
   const handleAddElementToCase = (imageName: string) => {
@@ -123,7 +124,6 @@ export default function DesignLab() {
     return Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
   };
 
-  // START INTERACTION (MOUSE & TOUCH)
   const handleStart = (clientX: number, clientY: number, e?: React.TouchEvent | React.MouseEvent) => {
     if (e) e.preventDefault();
     isInteracting.current = true;
@@ -135,18 +135,27 @@ export default function DesignLab() {
     }
   };
 
-  // MOVE INTERACTION (MOUSE & TOUCH)
   const handleMove = (clientX: number, clientY: number, e?: React.TouchEvent | React.MouseEvent) => {
     if (!isInteracting.current) return;
     if (e) e.preventDefault();
 
-    // Pinch Zoom di HP/iPad
     if (e && 'touches' in e && e.touches.length === 2) {
       const dist = getTouchDistance(e.touches[0], e.touches[1]);
       if (initialPinchDistance.current > 0) {
         const factor = dist / initialPinchDistance.current;
-        const newScale = Math.min(Math.max(0.5, initialScale.current * factor), 3.5);
-        setScale(newScale);
+        if (activeElementId !== null) {
+          setPlacedElements((prev) =>
+            prev.map((el) => {
+              if (el.id === activeElementId) {
+                return { ...el, scale: Math.min(Math.max(0.3, initialScale.current * factor), 3.0) };
+              }
+              return el;
+            })
+          );
+        } else {
+          const newScale = Math.min(Math.max(0.5, initialScale.current * factor), 3.5);
+          setScale(newScale);
+        }
       }
       return;
     }
@@ -155,7 +164,6 @@ export default function DesignLab() {
     const dy = clientY - lastClientPos.current.y;
 
     if (isRotating.current && activeDraggingElementId.current !== null) {
-      // Rotasi Ikon searah pointer
       const id = activeDraggingElementId.current;
       const dxRot = clientX - rotationCenter.current.x;
       const dyRot = clientY - rotationCenter.current.y;
@@ -166,7 +174,6 @@ export default function DesignLab() {
         prev.map((el) => (el.id === id ? { ...el, rotation: degrees } : el))
       );
     } else if (activeDraggingElementId.current !== null) {
-      // Geser Ikon / Elemen aktif
       const id = activeDraggingElementId.current;
       setPlacedElements((prev) =>
         prev.map((el) => {
@@ -182,7 +189,6 @@ export default function DesignLab() {
       );
       lastClientPos.current = { x: clientX, y: clientY };
     } else {
-      // Geser Foto Utama
       setPosition((prev) => ({
         x: prev.x + dx,
         y: prev.y + dy,
@@ -347,10 +353,10 @@ export default function DesignLab() {
                       {isActive && (
                         <div style={{ position: "absolute", top: "-32px", left: "50%", transform: "translateX(-50%)", display: "flex", gap: "4px", backgroundColor: "#18181b", padding: "3px 6px", borderRadius: "6px", border: "1px solid rgba(255,255,255,0.2)", zIndex: 40, whiteSpace: "nowrap" }}>
                           <div
-                            onMouseDown={(e) => handleRotateStart(el, e)}
-                            onTouchStart={(e) => handleRotateStart(el, e)}
+                            onMouseDown={(e) => handleRotateStart(el, e.clientX, e.clientY, e)}
+                            onTouchStart={(e) => { if (e.touches[0]) handleRotateStart(el, e.touches[0].clientX, e.touches[0].clientY, e); }}
                             style={{ background: "#3f3d56", color: "#fff", borderRadius: "4px", fontSize: "9px", cursor: "ew-resize", padding: "2px 5px", fontWeight: "bold", userSelect: "none" }}
-                            title="Tekan dan geser untuk memutar"
+                            title="Hold dan geser untuk memutar"
                           >
                             🔄 Putar
                           </div>
