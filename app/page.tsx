@@ -387,7 +387,7 @@ export default function Home() {
             </button>
           </div>
           <div className="p-4 md:p-8 flex-1">
-            <DesignLab />
+            <DesignLab productTitle={selectedProductTitle} />
           </div>
         </div>
       )}
