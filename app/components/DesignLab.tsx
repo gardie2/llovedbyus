@@ -11,7 +11,6 @@ export default function DesignLab() {
   const [phoneModel, setPhoneModel] = useState("");
   const [isRemovingBg, setIsRemovingBg] = useState(false);
   
-  // Elemen/ikon bisa ditambah di mode edit foto maupun template
   const [placedElements, setPlacedElements] = useState<Array<{ id: number; src: string; x: number; y: number; scale: number; rotation: number; flipX: boolean; flipY: boolean }>>([]);
   const [activeElementId, setActiveElementId] = useState<number | null>(null);
 
@@ -375,13 +374,12 @@ export default function DesignLab() {
               );
             })}
 
-            {activeTab === "edit" && (
-              <img 
-                src="/mockup-case-transparent.png" 
-                alt="Mockup Frame" 
-                style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", zIndex: 30, pointerEvents: "none" }}
-              />
-            )}
+            {/* Mockup Case Transparan dipasang di SEMUA mode (Edit Foto & Template) agar rapi di dalam garis case */}
+            <img 
+              src="/mockup-case-transparent.png" 
+              alt="Mockup Frame" 
+              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", zIndex: 30, pointerEvents: "none" }}
+            />
 
           </div>
           
@@ -544,7 +542,7 @@ export default function DesignLab() {
 
               <hr style={{ border: "none", borderTop: "1px solid rgba(255,255,255,0.1)", margin: "4px 0" }} />
 
-              {/* Pilihan Icons untuk Mode Template juga! */}
+              {/* Pilihan Icons untuk Mode Template */}
               <div>
                 <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase", marginBottom: "8px" }}>
                   Tambah Icons ke Template (Klik untuk pasang)
