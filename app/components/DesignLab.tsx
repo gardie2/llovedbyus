@@ -36,12 +36,12 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
   
   const activeDraggingElementId = useRef<number | null>(null);
 
-  // Logika layer mockup yang bersih: Phone case hanya 1 layer transparan, baju/tas pakai base & -tp.png
+  // Mengatur mockup dasar dan mockup transparan penimpa (-tp) untuk SEMUA produk termasuk Phone Case
   const { mockupBase, mockupTp } = useMemo(() => {
     if (isPhoneCase) {
       return {
-        mockupBase: "/mockup-case-transparent.png",
-        mockupTp: ""
+        mockupBase: "/mockup-case.png",
+        mockupTp: "/mockup-case-transparent.png"
       };
     } else if (isTshirt) {
       if (tshirtStyle === "black") {
@@ -57,7 +57,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
     } else if (titleLower.includes("tote")) {
       return { mockupBase: "/totebagmu.png", mockupTp: "/totebagmu-tp.png" };
     }
-    return { mockupBase: "/mockup-case-transparent.png", mockupTp: "" };
+    return { mockupBase: "/mockup-case.png", mockupTp: "/mockup-case-transparent.png" };
   }, [isPhoneCase, isTshirt, tshirtStyle, titleLower]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -281,7 +281,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
             onWheel={handleWheel}
           >
             
-            {/* LAYER 1: MOCKUP DASAR */}
+            {/* LAYER 1: MOCKUP DASAR (DI BAWAH) */}
             <img 
               src={mockupBase} 
               alt="Mockup Base" 
@@ -425,7 +425,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
               );
             })}
 
-            {/* LAYER 4: MOCKUP TRANSPARAN PENIMPA DI ATAS */}
+            {/* LAYER 4: MOCKUP TRANSPARAN PENIMPA (-tp) DI PALING ATAS (MENIMPA IKON) */}
             {mockupTp && (
               <img 
                 src={mockupTp} 
