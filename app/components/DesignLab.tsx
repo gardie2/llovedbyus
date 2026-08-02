@@ -97,8 +97,6 @@ export default function DesignLab() {
     e.stopPropagation();
     isRotating.current = true;
     activeDraggingElementId.current = el.id;
-    
-    // Menentukan titik tengah elemen untuk acuan putaran seperti stiker IG
     rotationCenter.current = {
       x: el.x + 35,
       y: el.y + 35
