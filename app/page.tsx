@@ -91,8 +91,20 @@ export default function Home() {
   return (
     <main className="text-zinc-100 min-h-screen selection:bg-pink-500 selection:text-white font-sans relative overflow-hidden">
       
-      {/* BACKGROUND GRADASI HITAM ABU-ABU */}
-      <div className="fixed inset-0 w-full h-full -z-10 pointer-events-none bg-[#050507] bg-[radial-gradient(circle_at_20%_20%,rgba(100,100,100,0.12)_0%,transparent_50%),radial-gradient(circle_at_80%_80%,rgba(50,50,70,0.15)_0%,transparent_60%)]"></div>
+      {/* BACKGROUND WEB MELAYANG: Agak Buram, Grayscale, & Transparan */}
+      <div 
+        className="fixed inset-0 w-full h-full -z-20 pointer-events-none"
+        style={{
+          backgroundImage: "url('/background-web.png')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          filter: "blur(30px) grayscale(100%) brightness(0.35)",
+          opacity: 0.22,
+        }}
+      />
+
+      {/* BACKGROUND GRADASI HITAM ABU-ABU LAPIS KEDUA */}
+      <div className="fixed inset-0 w-full h-full -z-10 pointer-events-none bg-[#050507]/80 bg-[radial-gradient(circle_at_20%_20%,rgba(100,100,100,0.1)_0%,transparent_50%),radial-gradient(circle_at_80%_80%,rgba(50,50,70,0.12)_0%,transparent_60%)]"></div>
 
       {/* GLOBAL CSS: CHROME, SMOOTH SCROLL, & OUTLINE MARQUEE TEXT */}
       <style jsx global>{`
@@ -115,8 +127,8 @@ export default function Home() {
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           filter: drop-shadow(0 2px 2px rgba(0,0,0,0.9)) 
-                  drop-shadow(0 0 15px rgba(255,255,255,0.4))
-                  drop-shadow(0 5px 10px rgba(0,0,0,0.6));
+                drop-shadow(0 0 15px rgba(255,255,255,0.4))
+                drop-shadow(0 5px 10px rgba(0,0,0,0.6));
           letter-spacing: -0.02em;
         }
 
@@ -227,12 +239,6 @@ export default function Home() {
 
         {/* KOLASE PRODUK */}
         <div className="flex justify-center md:justify-end relative">
-          <div className="absolute -top-6 -right-6 w-14 h-14 animate-bounce pointer-events-none z-30 hidden sm:block rotate-12">
-            <img src="/icon1.png" alt="decor" className="w-full h-full object-contain" />
-          </div>
-          <div className="absolute -bottom-6 -left-6 w-14 h-14 animate-pulse pointer-events-none z-30 hidden sm:block -rotate-12">
-            <img src="/icon6.png" alt="decor" className="w-full h-full object-contain drop-shadow-[0_0_12px_rgba(255,255,255,0.7)]" />
-          </div>
           <div className="relative w-[320px] h-[520px] bg-zinc-900/60 backdrop-blur-md rounded-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.9)] overflow-hidden border border-zinc-800/80 flex items-center justify-center p-2 group hover:border-pink-500/40 transition duration-500">
             <img 
               src="/hero-collage.png" 
@@ -381,7 +387,7 @@ export default function Home() {
             </button>
           </div>
           <div className="p-4 md:p-8 flex-1">
-            <DesignLab  />
+            <DesignLab />
           </div>
         </div>
       )}
