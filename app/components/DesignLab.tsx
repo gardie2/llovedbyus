@@ -18,15 +18,13 @@ export default function DesignLab() {
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   
-  // Refs untuk tracking interaksi sentuh / mouse
+  // Universal Interaction Trackers (Support Mouse & Touch seamlessly)
   const isInteracting = useRef(false);
-  const lastTouchCenter = useRef({ x: 0, y: 0 });
+  const lastClientPos = useRef({ x: 0, y: 0 });
   const initialPinchDistance = useRef(0);
   const initialScale = useRef(1);
   
   const activeDraggingElementId = useRef<number | null>(null);
-  const elementDragStart = useRef({ x: 0, y: 0 });
-
   const isRotating = useRef(false);
   const rotationCenter = useRef({ x: 0, y: 0 });
 
@@ -100,7 +98,6 @@ export default function DesignLab() {
     e.stopPropagation();
     isRotating.current = true;
     activeDraggingElementId.current = el.id;
-    
     rotationCenter.current = {
       x: el.x + 25,
       y: el.y + 25
@@ -122,69 +119,46 @@ export default function DesignLab() {
     setActiveElementId(newElement.id);
   };
 
-  // Helper jarak dua jari untuk pinch zoom
   const getTouchDistance = (t1: React.Touch, t2: React.Touch) => {
     return Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
   };
 
-  const handleTouchStartMain = (e: React.TouchEvent) => {
-    e.preventDefault(); // Mencegah layar ikut scroll/geser
-    setActiveElementId(null);
+  // START INTERACTION (MOUSE & TOUCH)
+  const handleStart = (clientX: number, clientY: number, e?: React.TouchEvent | React.MouseEvent) => {
+    if (e) e.preventDefault();
     isInteracting.current = true;
+    lastClientPos.current = { x: clientX, y: clientY };
 
-    if (e.touches.length === 2) {
+    if (e && 'touches' in e && e.touches.length === 2) {
       initialPinchDistance.current = getTouchDistance(e.touches[0], e.touches[1]);
       initialScale.current = scale;
-    } else if (e.touches.length === 1) {
-      lastTouchCenter.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
     }
   };
 
-  const handleMouseDownMain = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setActiveElementId(null);
-    isInteracting.current = true;
-    lastTouchCenter.current = { x: e.clientX, y: e.clientY };
-  };
-
-  const handleTouchMoveMain = (e: React.TouchEvent) => {
-    e.preventDefault();
+  // MOVE INTERACTION (MOUSE & TOUCH)
+  const handleMove = (clientX: number, clientY: number, e?: React.TouchEvent | React.MouseEvent) => {
     if (!isInteracting.current) return;
+    if (e) e.preventDefault();
 
-    if (e.touches.length === 2) {
-      // Pinch to Zoom dengan dua jari
+    // Pinch Zoom di HP/iPad
+    if (e && 'touches' in e && e.touches.length === 2) {
       const dist = getTouchDistance(e.touches[0], e.touches[1]);
       if (initialPinchDistance.current > 0) {
         const factor = dist / initialPinchDistance.current;
         const newScale = Math.min(Math.max(0.5, initialScale.current * factor), 3.5);
         setScale(newScale);
       }
-    } else if (e.touches.length === 1) {
-      // Geser (pan) foto utama
-      const clientX = e.touches[0].clientX;
-      const clientY = e.touches[0].clientY;
-      const dx = clientX - lastTouchCenter.current.x;
-      const dy = clientY - lastTouchCenter.current.y;
-
-      setPosition((prev) => ({
-        x: prev.x + dx,
-        y: prev.y + dy,
-      }));
-
-      lastTouchCenter.current = { x: clientX, y: clientY };
+      return;
     }
-  };
 
-  const handleMouseMoveMain = (e: React.MouseEvent) => {
-    if (!isInteracting.current) return;
-    const dx = e.clientX - lastTouchCenter.current.x;
-    const dy = e.clientY - lastTouchCenter.current.y;
+    const dx = clientX - lastClientPos.current.x;
+    const dy = clientY - lastClientPos.current.y;
 
     if (isRotating.current && activeDraggingElementId.current !== null) {
-      // Rotasi elemen searah gerakan pointer
+      // Rotasi Ikon searah pointer
       const id = activeDraggingElementId.current;
-      const dxRot = e.clientX - rotationCenter.current.x;
-      const dyRot = e.clientY - rotationCenter.current.y;
+      const dxRot = clientX - rotationCenter.current.x;
+      const dyRot = clientY - rotationCenter.current.y;
       const radians = Math.atan2(dyRot, dxRot);
       let degrees = Math.round(radians * (180 / Math.PI));
       
@@ -192,7 +166,7 @@ export default function DesignLab() {
         prev.map((el) => (el.id === id ? { ...el, rotation: degrees } : el))
       );
     } else if (activeDraggingElementId.current !== null) {
-      // Geser ikon elemen
+      // Geser Ikon / Elemen aktif
       const id = activeDraggingElementId.current;
       setPlacedElements((prev) =>
         prev.map((el) => {
@@ -206,18 +180,18 @@ export default function DesignLab() {
           return el;
         })
       );
-      lastTouchCenter.current = { x: e.clientX, y: e.clientY };
+      lastClientPos.current = { x: clientX, y: clientY };
     } else {
-      // Geser foto utama pakai mouse
+      // Geser Foto Utama
       setPosition((prev) => ({
         x: prev.x + dx,
         y: prev.y + dy,
       }));
-      lastTouchCenter.current = { x: e.clientX, y: e.clientY };
+      lastClientPos.current = { x: clientX, y: clientY };
     }
   };
 
-  const handleMouseUpMain = () => {
+  const handleEnd = () => {
     isInteracting.current = false;
     isRotating.current = false;
     activeDraggingElementId.current = null;
@@ -264,12 +238,12 @@ export default function DesignLab() {
           
           <div 
             style={{ width: "170px", height: "340px", backgroundColor: "#09090b", borderRadius: "24px", border: "2px solid rgba(255,255,255,0.15)", position: "relative", margin: "20px 0 10px 0", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", touchAction: "none" }}
-            onMouseMove={handleMouseMoveMain}
-            onMouseUp={handleMouseUpMain}
-            onMouseLeave={handleMouseUpMain}
-            onTouchMove={handleTouchMoveMain}
-            onTouchEnd={handleMouseUpMain}
-            onTouchCancel={handleMouseUpMain}
+            onMouseMove={(e) => handleMove(e.clientX, e.clientY, e)}
+            onMouseUp={handleEnd}
+            onMouseLeave={handleEnd}
+            onTouchMove={(e) => { if (e.touches[0]) handleMove(e.touches[0].clientX, e.touches[0].clientY, e); }}
+            onTouchEnd={handleEnd}
+            onTouchCancel={handleEnd}
             onWheel={handleWheel}
           >
             
@@ -278,8 +252,8 @@ export default function DesignLab() {
                 {uploadedImage ? (
                   <div 
                     style={{ position: "absolute", inset: 0, zIndex: 20, overflow: "hidden", cursor: "grab", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#18181b", touchAction: "none" }}
-                    onMouseDown={handleMouseDownMain}
-                    onTouchStart={handleTouchStartMain}
+                    onMouseDown={(e) => { setActiveElementId(null); handleStart(e.clientX, e.clientY, e); }}
+                    onTouchStart={(e) => { if (e.touches[0]) { setActiveElementId(null); handleStart(e.touches[0].clientX, e.touches[0].clientY, e); } }}
                   >
                     <img 
                       src={uploadedImage} 
@@ -336,14 +310,14 @@ export default function DesignLab() {
                         e.stopPropagation();
                         setActiveElementId(el.id);
                         activeDraggingElementId.current = el.id;
-                        lastTouchCenter.current = { x: e.clientX, y: e.clientY };
+                        handleStart(e.clientX, e.clientY, e);
                       }}
                       onTouchStart={(e) => {
                         if (e.touches[0]) {
                           e.stopPropagation();
                           setActiveElementId(el.id);
                           activeDraggingElementId.current = el.id;
-                          lastTouchCenter.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+                          handleStart(e.touches[0].clientX, e.touches[0].clientY, e);
                         }
                       }}
                       style={{
