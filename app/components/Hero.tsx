@@ -31,10 +31,6 @@ export default function HeroSection() {
             <Link href="#" className="hover:text-pink-300 transition">About</Link>
           </div>
 
-          {/* TOMBOL START NAVBAR (CHROME GLOW) */}
-          <button className="bg-gradient-to-r from-zinc-200 via-pink-200 to-zinc-300 hover:from-white hover:to-pink-100 text-zinc-950 font-black px-6 py-2 rounded-full text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(244,114,182,0.3)] transition-all active:scale-95">
-            Start
-          </button>
         </div>
       </nav>
 
@@ -62,17 +58,14 @@ export default function HeroSection() {
             Design phone cases, apparel, mugs, tote bags, and many more products exactly the way you want.
           </p>
 
-          {/* BUTTON CTA */}
+          {/* SINGLE BUTTON CTA: PICK PRODUCT & DESIGN */}
           <div className="flex items-center gap-4 pt-2">
             <Link 
               href="#design-lab" 
-              className="bg-gradient-to-r from-zinc-100 via-pink-200 to-zinc-200 hover:from-white hover:to-pink-100 text-zinc-950 font-black px-8 py-4 rounded-full text-xs uppercase tracking-widest shadow-[0_0_25px_rgba(244,114,182,0.3)] transition-all active:scale-95"
+              className="bg-gradient-to-r from-zinc-100 via-pink-200 to-zinc-200 hover:from-white hover:to-pink-100 text-zinc-950 font-black px-10 py-4 rounded-full text-xs uppercase tracking-widest shadow-[0_0_25px_rgba(244,114,182,0.3)] transition-all active:scale-95 inline-block text-center"
             >
-              Start Designing
+              Pick Product & Design
             </Link>
-            <button className="border border-zinc-700/80 hover:border-pink-400/50 text-zinc-300 font-bold px-8 py-4 rounded-full text-xs uppercase tracking-widest bg-zinc-900/50 hover:bg-zinc-800 transition active:scale-95">
-              Explore Products
-            </button>
           </div>
         </div>
 
