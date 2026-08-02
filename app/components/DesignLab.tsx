@@ -22,10 +22,10 @@ export default function DesignLab() {
   const lastClientPos = useRef({ x: 0, y: 0 });
   const initialPinchDistance = useRef(0);
   const initialScale = useRef(1);
+  const initialTouchAngle = useRef(0);
+  const initialElementRotation = useRef(0);
   
   const activeDraggingElementId = useRef<number | null>(null);
-  const isRotating = useRef(false);
-  const rotationCenter = useRef({ x: 0, y: 0 });
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -74,36 +74,6 @@ export default function DesignLab() {
     }
   };
 
-  const handleDuplicateElement = (el: { id: number; src: string; x: number; y: number; scale: number; rotation: number; flipX: boolean; flipY: boolean }, e: React.MouseEvent | React.TouchEvent) => {
-    e.stopPropagation();
-    const duplicated = {
-      ...el,
-      id: Date.now(),
-      x: el.x + 15,
-      y: el.y + 15,
-    };
-    setPlacedElements((prev) => [...prev, duplicated]);
-    setActiveElementId(duplicated.id);
-  };
-
-  const handleFlipElement = (id: number, e: React.MouseEvent | React.TouchEvent) => {
-    e.stopPropagation();
-    setPlacedElements((prev) =>
-      prev.map((el) => (el.id === id ? { ...el, flipX: !el.flipX } : el))
-    );
-  };
-
-  const handleRotateStart = (el: { id: number; x: number; y: number; rotation: number }, clientX: number, clientY: number, e: React.MouseEvent | React.TouchEvent) => {
-    e.stopPropagation();
-    isRotating.current = true;
-    activeDraggingElementId.current = el.id;
-    rotationCenter.current = {
-      x: el.x + 35,
-      y: el.y + 35
-    };
-    lastClientPos.current = { x: clientX, y: clientY };
-  };
-
   const handleAddElementToCase = (imageName: string) => {
     const newElement = {
       id: Date.now(),
@@ -123,14 +93,28 @@ export default function DesignLab() {
     return Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
   };
 
+  const getTouchAngle = (t1: React.Touch, t2: React.Touch) => {
+    return Math.atan2(t2.clientY - t1.clientY, t2.clientX - t1.clientX) * (180 / Math.PI);
+  };
+
   const handleStart = (clientX: number, clientY: number, e?: React.TouchEvent | React.MouseEvent) => {
     if (e) e.preventDefault();
     isInteracting.current = true;
     lastClientPos.current = { x: clientX, y: clientY };
 
-    if (e && 'touches' in e && e.touches.length === 2) {
-      initialPinchDistance.current = getTouchDistance(e.touches[0], e.touches[1]);
-      initialScale.current = scale;
+    if (e && 'touches' in e) {
+      if (e.touches.length === 2) {
+        initialPinchDistance.current = getTouchDistance(e.touches[0], e.touches[1]);
+        initialTouchAngle.current = getTouchAngle(e.touches[0], e.touches[1]);
+        
+        if (activeElementId !== null) {
+          const activeEl = placedElements.find(el => el.id === activeElementId);
+          if (activeEl) initialScale.current = activeEl.scale;
+          if (activeEl) initialElementRotation.current = activeEl.rotation;
+        } else {
+          initialScale.current = scale;
+        }
+      }
     }
   };
 
@@ -140,13 +124,21 @@ export default function DesignLab() {
 
     if (e && 'touches' in e && e.touches.length === 2) {
       const dist = getTouchDistance(e.touches[0], e.touches[1]);
+      const currentAngle = getTouchAngle(e.touches[0], e.touches[1]);
+      
       if (initialPinchDistance.current > 0) {
         const factor = dist / initialPinchDistance.current;
+        const angleDelta = currentAngle - initialTouchAngle.current;
+
         if (activeElementId !== null) {
           setPlacedElements((prev) =>
             prev.map((el) => {
               if (el.id === activeElementId) {
-                return { ...el, scale: Math.min(Math.max(0.3, initialScale.current * factor), 3.0) };
+                return { 
+                  ...el, 
+                  scale: Math.min(Math.max(0.3, initialScale.current * factor), 3.0),
+                  rotation: Math.round(initialElementRotation.current + angleDelta)
+                };
               }
               return el;
             })
@@ -162,17 +154,7 @@ export default function DesignLab() {
     const dx = clientX - lastClientPos.current.x;
     const dy = clientY - lastClientPos.current.y;
 
-    if (isRotating.current && activeDraggingElementId.current !== null) {
-      const id = activeDraggingElementId.current;
-      const dxRot = clientX - rotationCenter.current.x;
-      const dyRot = clientY - rotationCenter.current.y;
-      const radians = Math.atan2(dyRot, dxRot);
-      let degrees = Math.round(radians * (180 / Math.PI));
-      
-      setPlacedElements((prev) =>
-        prev.map((el) => (el.id === id ? { ...el, rotation: degrees } : el))
-      );
-    } else if (activeDraggingElementId.current !== null) {
+    if (activeDraggingElementId.current !== null) {
       const id = activeDraggingElementId.current;
       setPlacedElements((prev) =>
         prev.map((el) => {
@@ -198,7 +180,6 @@ export default function DesignLab() {
 
   const handleEnd = () => {
     isInteracting.current = false;
-    isRotating.current = false;
     activeDraggingElementId.current = null;
   };
 
@@ -350,37 +331,31 @@ export default function DesignLab() {
                       />
 
                       {isActive && (
-                        <div style={{ position: "absolute", top: "-32px", left: "50%", transform: "translateX(-50%)", display: "flex", gap: "4px", backgroundColor: "#18181b", padding: "3px 6px", borderRadius: "6px", border: "1px solid rgba(255,255,255,0.2)", zIndex: 40, whiteSpace: "nowrap" }}>
-                          <div
-                            onMouseDown={(e) => handleRotateStart(el, e.clientX, e.clientY, e)}
-                            onTouchStart={(e) => { if (e.touches[0]) handleRotateStart(el, e.touches[0].clientX, e.touches[0].clientY, e); }}
-                            style={{ background: "#3f3d56", color: "#fff", borderRadius: "4px", fontSize: "12px", cursor: "grab", padding: "2px 6px", fontWeight: "bold", userSelect: "none" }}
-                            title="Tahan dan geser untuk memutar"
-                          >
-                            🔄
-                          </div>
-                          <button
-                            onClick={(e) => handleFlipElement(el.id, e)}
-                            style={{ background: "transparent", color: "#fff", border: "none", fontSize: "10px", cursor: "pointer", padding: "2px 4px", fontWeight: "bold" }}
-                            title="Balik Arah"
-                          >
-                            🔁
-                          </button>
-                          <button
-                            onClick={(e) => handleDuplicateElement(el, e)}
-                            style={{ background: "transparent", color: "#fff", border: "none", fontSize: "10px", cursor: "pointer", padding: "2px 4px", fontWeight: "bold" }}
-                            title="Duplikat"
-                          >
-                            📋
-                          </button>
-                          <button
-                            onClick={(e) => handleRemoveElement(el.id, e)}
-                            style={{ background: "#f472b6", color: "#09090b", border: "none", width: "16px", height: "16px", borderRadius: "50%", fontSize: "10px", fontWeight: "900", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
-                            title="Hapus"
-                          >
-                            ×
-                          </button>
-                        </div>
+                        <button
+                          onClick={(e) => handleRemoveElement(el.id, e)}
+                          style={{
+                            position: "absolute",
+                            top: "-8px",
+                            right: "-8px",
+                            width: "20px",
+                            height: "20px",
+                            borderRadius: "50%",
+                            backgroundColor: "#f472b6",
+                            color: "#09090b",
+                            border: "none",
+                            fontSize: "12px",
+                            fontWeight: "900",
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            zIndex: 40,
+                            boxShadow: "0 2px 4px rgba(0,0,0,0.4)"
+                          }}
+                          title="Hapus"
+                        >
+                          ×
+                        </button>
                       )}
                     </div>
                   );
