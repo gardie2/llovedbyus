@@ -2,8 +2,15 @@
 import { useState, useRef } from "react";
 import { removeBackground } from "@imgly/background-removal";
 
-export default function DesignLab() {
-  const [activeTab, setActiveTab] = useState<"edit" | "template">("edit");
+interface DesignLabProps {
+  productTitle?: string;
+}
+
+export default function DesignLab({ productTitle = "Custom Phone Case" }: DesignLabProps) {
+  // Cek apakah produk ini Phone Case atau bukan
+  const isPhoneCase = productTitle.toLowerCase().includes("case");
+
+  const [activeTab, setActiveTab] = useState<"edit" | "template">(isPhoneCase ? "edit" : "edit");
   const [selectedTemplate, setSelectedTemplate] = useState(1);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [originalImage, setOriginalImage] = useState<string | null>(null);
@@ -25,6 +32,13 @@ export default function DesignLab() {
   const initialElementRotation = useRef(0);
   
   const activeDraggingElementId = useRef<number | null>(null);
+
+  // Tentukan gambar mockup berdasarkan nama produk yang diklik
+  let mockupImage = "/mockup-case-transparent.png";
+  if (productTitle.toLowerCase().includes("t-shirt")) mockupImage = "/t-shirtmu.png";
+  else if (productTitle.toLowerCase().includes("hoodie")) mockupImage = "/hoodiemu.png";
+  else if (productTitle.toLowerCase().includes("sweatshirt")) mockupImage = "/sweatshirtmu.png";
+  else if (productTitle.toLowerCase().includes("tote")) mockupImage = "/totebagmu.png";
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -168,7 +182,7 @@ export default function DesignLab() {
         })
       );
       lastClientPos.current = { x: clientX, y: clientY };
-    } else if (activeElementId === null && activeTab === "edit") {
+    } else if (activeElementId === null && (activeTab === "edit" || !isPhoneCase)) {
       setPosition((prev) => ({
         x: prev.x + dx,
         y: prev.y + dy,
@@ -194,14 +208,15 @@ export default function DesignLab() {
           return el;
         })
       );
-    } else if (activeTab === "edit") {
+    } else if (activeTab === "edit" || !isPhoneCase) {
       setScale((prev) => Math.min(Math.max(0.5, prev + zoomFactor), 3.5));
     }
   };
 
   const handleWhatsAppOrder = () => {
     const phoneNumber = "62881025376311";
-    const message = `Halo, saya ingin memesan Custom Phone Case.%0A- Mode: ${activeTab === "edit" ? "Custom Foto & Icons" : `Template ${selectedTemplate} + Icons`}%0A- Tipe HP: ${phoneModel || "Tidak diisi"}`;
+    const modeDesc = isPhoneCase ? (activeTab === "edit" ? "Custom Foto & Icons" : `Template ${selectedTemplate} + Icons`) : "Custom Foto & Icons";
+    const message = `Halo, saya ingin memesan ${productTitle}.%0A- Mode: ${modeDesc}%0A- Detail/Ukuran: ${phoneModel || "Tidak diisi"}`;
     window.open(`https://wa.me/${phoneNumber}?text=${message}`, "_blank");
   };
 
@@ -210,7 +225,7 @@ export default function DesignLab() {
       
       <div style={{ textAlign: "center", marginBottom: "25px" }}>
         <h2 style={{ fontSize: "26px", fontWeight: "900", textTransform: "uppercase", fontStyle: "italic", letterSpacing: "1px", margin: 0 }}>
-          Customize <span style={{ background: "linear-gradient(to right, #f4f4f5, #f472b6, #a1a1aa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Your Case</span>
+          Customize <span style={{ background: "linear-gradient(to right, #f4f4f5, #f472b6, #a1a1aa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{productTitle}</span>
         </h2>
       </div>
 
@@ -218,7 +233,7 @@ export default function DesignLab() {
         
         <div style={{ width: "280px", backgroundColor: "#121318", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "24px", padding: "16px", display: "flex", flexDirection: "column", alignItems: "center", position: "relative", boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.5)", boxSizing: "border-box" }}>
           <span style={{ position: "absolute", top: "12px", left: "16px", fontSize: "9px", fontWeight: "bold", letterSpacing: "1px", color: "#71717a", textTransform: "uppercase" }}>
-            {activeTab === "edit" ? "Live Editor" : `Template ${selectedTemplate}`}
+            {isPhoneCase && activeTab === "template" ? `Template ${selectedTemplate}` : "Live Editor"}
           </span>
           
           <div 
@@ -232,7 +247,7 @@ export default function DesignLab() {
             onWheel={handleWheel}
           >
             
-            {activeTab === "edit" ? (
+            {(!isPhoneCase || activeTab === "edit") ? (
               <>
                 {uploadedImage ? (
                   <div 
@@ -299,7 +314,7 @@ export default function DesignLab() {
               </div>
             )}
 
-            {/* Ikon/Elements yang bisa ditaruh di atas Edit Foto ATAU Template */}
+            {/* Ikon/Elements */}
             {placedElements.map((el) => {
               const isActive = activeElementId === el.id;
               return (
@@ -374,9 +389,9 @@ export default function DesignLab() {
               );
             })}
 
-            {/* Mockup Case Transparan dipasang di SEMUA mode (Edit Foto & Template) agar rapi di dalam garis case */}
+            {/* Mockup Sesuai Produk */}
             <img 
-              src="/mockup-case-transparent.png" 
+              src={mockupImage} 
               alt="Mockup Frame" 
               style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", zIndex: 30, pointerEvents: "none" }}
             />
@@ -384,50 +399,52 @@ export default function DesignLab() {
           </div>
           
           <span style={{ fontSize: "10px", fontWeight: "900", color: "#f472b6", textTransform: "uppercase", letterSpacing: "1px", marginTop: "10px" }}>
-            {activeTab === "edit" ? "Live Editor" : `Template ${selectedTemplate}`}
+            {isPhoneCase && activeTab === "template" ? `Template ${selectedTemplate}` : "Live Editor"}
           </span>
         </div>
 
         <div style={{ flex: "1", minWidth: "280px", display: "flex", flexDirection: "column", gap: "14px" }}>
           
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", backgroundColor: "#18181b", padding: "5px", borderRadius: "14px", border: "1px solid rgba(255,255,255,0.1)" }}>
-            <button
-              onClick={() => setActiveTab("edit")}
-              style={{
-                padding: "10px",
-                borderRadius: "10px",
-                fontSize: "10px",
-                fontWeight: "900",
-                textTransform: "uppercase",
-                border: "none",
-                cursor: "pointer",
-                backgroundColor: activeTab === "edit" ? "#f472b6" : "transparent",
-                color: activeTab === "edit" ? "#09090b" : "#a1a1aa",
-                transition: "all 0.2s"
-              }}
-            >
-              Upload Foto
-            </button>
-            <button
-              onClick={() => setActiveTab("template")}
-              style={{
-                padding: "10px",
-                borderRadius: "10px",
-                fontSize: "10px",
-                fontWeight: "900",
-                textTransform: "uppercase",
-                border: "none",
-                cursor: "pointer",
-                backgroundColor: activeTab === "template" ? "#f472b6" : "transparent",
-                color: activeTab === "template" ? "#09090b" : "#a1a1aa",
-                transition: "all 0.2s"
-              }}
-            >
-              Template
-            </button>
-          </div>
+          {isPhoneCase && (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", backgroundColor: "#18181b", padding: "5px", borderRadius: "14px", border: "1px solid rgba(255,255,255,0.1)" }}>
+              <button
+                onClick={() => setActiveTab("edit")}
+                style={{
+                  padding: "10px",
+                  borderRadius: "10px",
+                  fontSize: "10px",
+                  fontWeight: "900",
+                  textTransform: "uppercase",
+                  border: "none",
+                  cursor: "pointer",
+                  backgroundColor: activeTab === "edit" ? "#f472b6" : "transparent",
+                  color: activeTab === "edit" ? "#09090b" : "#a1a1aa",
+                  transition: "all 0.2s"
+                }}
+              >
+                Upload Foto
+              </button>
+              <button
+                onClick={() => setActiveTab("template")}
+                style={{
+                  padding: "10px",
+                  borderRadius: "10px",
+                  fontSize: "10px",
+                  fontWeight: "900",
+                  textTransform: "uppercase",
+                  border: "none",
+                  cursor: "pointer",
+                  backgroundColor: activeTab === "template" ? "#f472b6" : "transparent",
+                  color: activeTab === "template" ? "#09090b" : "#a1a1aa",
+                  transition: "all 0.2s"
+                }}
+              >
+                Template
+              </button>
+            </div>
+          )}
 
-          {activeTab === "edit" && (
+          {(!isPhoneCase || activeTab === "edit") && (
             <div style={{ backgroundColor: "#121318", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "14px", padding: "16px", display: "flex", flexDirection: "column", gap: "14px" }}>
               
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
@@ -487,7 +504,7 @@ export default function DesignLab() {
 
               <hr style={{ border: "none", borderTop: "1px solid rgba(255,255,255,0.1)", margin: "4px 0" }} />
 
-              {/* Pilihan Icons untuk Mode Edit */}
+              {/* Pilihan Icons */}
               <div>
                 <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase", marginBottom: "8px" }}>
                   Tambah Icons & Elements (Klik untuk pasang)
@@ -511,7 +528,7 @@ export default function DesignLab() {
             </div>
           )}
 
-          {activeTab === "template" && (
+          {isPhoneCase && activeTab === "template" && (
             <div style={{ backgroundColor: "#121318", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "14px", padding: "16px", display: "flex", flexDirection: "column", gap: "14px" }}>
               <div>
                 <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase", marginBottom: "10px" }}>
@@ -542,7 +559,6 @@ export default function DesignLab() {
 
               <hr style={{ border: "none", borderTop: "1px solid rgba(255,255,255,0.1)", margin: "4px 0" }} />
 
-              {/* Pilihan Icons untuk Mode Template */}
               <div>
                 <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase", marginBottom: "8px" }}>
                   Tambah Icons ke Template (Klik untuk pasang)
@@ -568,11 +584,11 @@ export default function DesignLab() {
 
           <div style={{ backgroundColor: "#121318", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "14px", padding: "16px" }}>
             <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase", marginBottom: "10px" }}>
-              Catatan / Tipe HP
+              Catatan / Ukuran & Detail
             </label>
             <input 
               type="text" 
-              placeholder="Contoh: iPhone 13 / Samsung S22"
+              placeholder={isPhoneCase ? "Contoh: iPhone 13 / Samsung S22" : "Contoh: Size L / Warna Hitam"}
               value={phoneModel}
               onChange={(e) => setPhoneModel(e.target.value)}
               style={{ width: "100%", backgroundColor: "#121318", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "10px", fontSize: "11px", color: "#f4f4f5", outline: "none", boxSizing: "border-box" }}
