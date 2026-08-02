@@ -98,8 +98,8 @@ export default function Home() {
           backgroundImage: "url('/background-web.png')",
           backgroundSize: "cover",
           backgroundPosition: "center",
-          filter: "blur(30px) grayscale(100%) brightness(0.35)",
-          opacity: 0.22,
+          filter: "blur(12px) grayscale(100%) brightness(0.75)",
+          opacity: 0.45,
         }}
       />
 
