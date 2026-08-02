@@ -36,7 +36,6 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
   
   const activeDraggingElementId = useRef<number | null>(null);
 
-  // Mengatur mockup dasar dan mockup transparan penimpa (-tp) untuk SEMUA produk termasuk Phone Case
   const { mockupBase, mockupTp } = useMemo(() => {
     if (isPhoneCase) {
       return {
@@ -254,14 +253,11 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
         
         <div style={{ width: "280px", backgroundColor: "#121318", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "20px", padding: "12px", display: "flex", flexDirection: "column", alignItems: "center", position: "relative", boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.5)", boxSizing: "border-box" }}>
           
-          <span style={{ width: "100%", textAlign: "left", fontSize: "10px", fontWeight: "bold", letterSpacing: "1px", color: "#f472b6", textTransform: "uppercase", marginBottom: "8px", paddingLeft: "4px" }}>
-            {isPhoneCase && activeTab === "template" ? `Template ${selectedTemplate}` : "LIVE EDITOR"}
-          </span>
-          
+          {/* AREA PREVIEW BERSIH TANPA TEKS LIVE EDITOR, FULL UTUH ANTI-CROP */}
           <div 
             style={{ 
               width: "256px", 
-              height: "380px", 
+              height: "400px", 
               backgroundColor: "#09090b", 
               borderRadius: "14px", 
               border: "2px solid rgba(255,255,255,0.15)", 
@@ -281,11 +277,11 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
             onWheel={handleWheel}
           >
             
-            {/* LAYER 1: MOCKUP DASAR (DI BAWAH) */}
+            {/* LAYER 1: MOCKUP DASAR (CONTAIN: UTUH TIDAK KE-CROP) */}
             <img 
               src={mockupBase} 
               alt="Mockup Base" 
-              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", zIndex: 10, pointerEvents: "none" }}
+              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", zIndex: 10, pointerEvents: "none" }}
             />
 
             {/* LAYER 2: EDITOR FOTO ATAU TEMPLATE */}
@@ -304,7 +300,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                         transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
                         width: "100%",
                         height: "100%",
-                        objectFit: "cover",
+                        objectFit: "contain",
                         pointerEvents: "none",
                         userSelect: "none"
                       }}
@@ -345,7 +341,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                 <img 
                   src={`/template-${selectedTemplate}.png`} 
                   alt={`Template ${selectedTemplate}`} 
-                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  style={{ width: "100%", height: "100%", objectFit: "contain" }}
                 />
               </div>
             )}
@@ -425,12 +421,12 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
               );
             })}
 
-            {/* LAYER 4: MOCKUP TRANSPARAN PENIMPA (-tp) DI PALING ATAS (MENIMPA IKON) */}
+            {/* LAYER 4: MOCKUP TRANSPARAN PENIMPA DI ATAS */}
             {mockupTp && (
               <img 
                 src={mockupTp} 
                 alt="Mockup Overlay" 
-                style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", zIndex: 35, pointerEvents: "none" }}
+                style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", zIndex: 35, pointerEvents: "none" }}
               />
             )}
 
