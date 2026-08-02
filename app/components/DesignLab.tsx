@@ -26,7 +26,6 @@ export default function DesignLab() {
 
   const isRotating = useRef(false);
   const rotationCenter = useRef({ x: 0, y: 0 });
-  const initialRotation = useRef(0);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -40,7 +39,7 @@ export default function DesignLab() {
     }
   };
 
-  const handleRemoveBackgroundAI = async () => {
+  const handleRemoveBackground = async () => {
     if (!uploadedImage) return;
     try {
       setIsRemovingBg(true);
@@ -67,7 +66,7 @@ export default function DesignLab() {
     setFileName("");
   };
 
-  const handleRemoveElement = (id: number, e: React.MouseEvent) => {
+  const handleRemoveElement = (id: number, e: React.MouseEvent | React.TouchEvent) => {
     e.stopPropagation();
     setPlacedElements((prev) => prev.filter((el) => el.id !== id));
     if (activeElementId === id) {
@@ -75,7 +74,7 @@ export default function DesignLab() {
     }
   };
 
-  const handleDuplicateElement = (el: { id: number; src: string; x: number; y: number; scale: number; rotation: number; flipX: boolean; flipY: boolean }, e: React.MouseEvent) => {
+  const handleDuplicateElement = (el: { id: number; src: string; x: number; y: number; scale: number; rotation: number; flipX: boolean; flipY: boolean }, e: React.MouseEvent | React.TouchEvent) => {
     e.stopPropagation();
     const duplicated = {
       ...el,
@@ -87,19 +86,21 @@ export default function DesignLab() {
     setActiveElementId(duplicated.id);
   };
 
-  const handleFlipElement = (id: number, e: React.MouseEvent) => {
+  const handleFlipElement = (id: number, e: React.MouseEvent | React.TouchEvent) => {
     e.stopPropagation();
     setPlacedElements((prev) =>
       prev.map((el) => (el.id === id ? { ...el, flipX: !el.flipX } : el))
     );
   };
 
-  const handleRotateStart = (el: { id: number; x: number; y: number; rotation: number }, e: React.MouseEvent) => {
+  const handleRotateStart = (el: { id: number; x: number; y: number; rotation: number }, e: React.MouseEvent | React.TouchEvent) => {
     e.stopPropagation();
     isRotating.current = true;
     activeDraggingElementId.current = el.id;
-    initialRotation.current = el.rotation;
     
+    const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
+
     rotationCenter.current = {
       x: el.x + 25,
       y: el.y + 25
@@ -121,31 +122,26 @@ export default function DesignLab() {
     setActiveElementId(newElement.id);
   };
 
-  const handleMouseDown = (e: React.MouseEvent) => {
+  const handleDragStart = (clientX: number, clientY: number) => {
     isDragging.current = true;
-    dragStart.current = { x: e.clientX - position.x, y: e.clientY - position.y };
+    dragStart.current = { x: clientX - position.x, y: clientY - position.y };
   };
 
-  const handleMouseMove = (e: React.MouseEvent) => {
+  const handleDragMove = (clientX: number, clientY: number) => {
     if (isDragging.current) {
       setPosition({
-        x: e.clientX - dragStart.current.x,
-        y: e.clientY - dragStart.current.y,
+        x: clientX - dragStart.current.x,
+        y: clientY - dragStart.current.y,
       });
     } else if (isRotating.current && activeDraggingElementId.current !== null) {
       const id = activeDraggingElementId.current;
-      const dx = e.clientX - rotationCenter.current.x;
-      const dy = e.clientY - rotationCenter.current.y;
+      const dx = clientX - rotationCenter.current.x;
+      const dy = clientY - rotationCenter.current.y;
       const radians = Math.atan2(dy, dx);
       let degrees = radians * (180 / Math.PI);
       
       setPlacedElements((prev) =>
-        prev.map((el) => {
-          if (el.id === id) {
-            return { ...el, rotation: Math.round(degrees) };
-          }
-          return el;
-        })
+        prev.map((el) => (el.id === id ? { ...el, rotation: Math.round(degrees) } : el))
       );
     } else if (activeDraggingElementId.current !== null) {
       const id = activeDraggingElementId.current;
@@ -154,8 +150,8 @@ export default function DesignLab() {
           if (el.id === id) {
             return {
               ...el,
-              x: e.clientX - elementDragStart.current.x,
-              y: e.clientY - elementDragStart.current.y,
+              x: clientX - elementDragStart.current.x,
+              y: clientY - elementDragStart.current.y,
             };
           }
           return el;
@@ -164,7 +160,7 @@ export default function DesignLab() {
     }
   };
 
-  const handleMouseUp = () => {
+  const handleDragEnd = () => {
     isDragging.current = false;
     isRotating.current = false;
     activeDraggingElementId.current = null;
@@ -211,9 +207,12 @@ export default function DesignLab() {
           
           <div 
             style={{ width: "170px", height: "340px", backgroundColor: "#09090b", borderRadius: "24px", border: "2px solid rgba(255,255,255,0.15)", position: "relative", margin: "20px 0 10px 0", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
+            onMouseMove={(e) => handleDragMove(e.clientX, e.clientY)}
+            onMouseUp={handleDragEnd}
+            onMouseLeave={handleDragEnd}
+            onTouchMove={(e) => { if (e.touches[0]) handleDragMove(e.touches[0].clientX, e.touches[0].clientY); }}
+            onTouchEnd={handleDragEnd}
+            onTouchCancel={handleDragEnd}
             onWheel={handleWheel}
           >
             
@@ -222,7 +221,8 @@ export default function DesignLab() {
                 {uploadedImage ? (
                   <div 
                     style={{ position: "absolute", inset: 0, zIndex: 20, overflow: "hidden", cursor: "grab", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#18181b", touchAction: "none" }}
-                    onMouseDown={(e) => { setActiveElementId(null); handleMouseDown(e); }}
+                    onMouseDown={(e) => { setActiveElementId(null); handleDragStart(e.clientX, e.clientY); }}
+                    onTouchStart={(e) => { if (e.touches[0]) { setActiveElementId(null); handleDragStart(e.touches[0].clientX, e.touches[0].clientY); } }}
                   >
                     <img 
                       src={uploadedImage} 
@@ -281,6 +281,14 @@ export default function DesignLab() {
                         activeDraggingElementId.current = el.id;
                         elementDragStart.current = { x: e.clientX - el.x, y: e.clientY - el.y };
                       }}
+                      onTouchStart={(e) => {
+                        if (e.touches[0]) {
+                          e.stopPropagation();
+                          setActiveElementId(el.id);
+                          activeDraggingElementId.current = el.id;
+                          elementDragStart.current = { x: e.touches[0].clientX - el.x, y: e.touches[0].clientY - el.y };
+                        }
+                      }}
                       style={{
                         position: "absolute",
                         left: `${el.x}px`,
@@ -308,6 +316,7 @@ export default function DesignLab() {
                         <div style={{ position: "absolute", top: "-32px", left: "50%", transform: "translateX(-50%)", display: "flex", gap: "4px", backgroundColor: "#18181b", padding: "3px 6px", borderRadius: "6px", border: "1px solid rgba(255,255,255,0.2)", zIndex: 40, whiteSpace: "nowrap" }}>
                           <div
                             onMouseDown={(e) => handleRotateStart(el, e)}
+                            onTouchStart={(e) => handleRotateStart(el, e)}
                             style={{ background: "#3f3d56", color: "#fff", borderRadius: "4px", fontSize: "9px", cursor: "ew-resize", padding: "2px 5px", fontWeight: "bold", userSelect: "none" }}
                             title="Tekan dan geser untuk memutar"
                           >
@@ -456,7 +465,7 @@ export default function DesignLab() {
                   {uploadedImage && (
                     <div style={{ display: "flex", gap: "6px", marginTop: "5px" }}>
                       <button
-                        onClick={handleRemoveBackgroundAI}
+                        onClick={handleRemoveBackground}
                         disabled={isRemovingBg}
                         style={{
                           flex: 1,
