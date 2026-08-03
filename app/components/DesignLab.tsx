@@ -448,9 +448,8 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                     const isElm25 = el.src.includes("elm25.png");
                     const isElm32 = el.src.includes("elm32.png");
 
-                    // Menyesuaikan ukuran container elemen berdasarkan jenis framenya agar proporsional
-                    const boxWidth = isElm24 ? "100px" : isElm25 ? "110px" : isElm32 ? "100px" : "60px";
-                    const boxHeight = isElm24 ? "180px" : isElm25 ? "140px" : isElm32 ? "120px" : "60px";
+                    const boxWidth = isElm24 ? "105px" : isElm25 ? "115px" : isElm32 ? "100px" : "60px";
+                    const boxHeight = isElm24 ? "190px" : isElm25 ? "135px" : isElm32 ? "120px" : "60px";
 
                     return (
                       <div
@@ -473,11 +472,11 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                           touchAction: "none"
                         }}
                       >
-                        {/* 1. ELM 24 (3 Slot Foto Vertikal) */}
+                        {/* 1. ELM 24 (3 Slot Persis di Dalam Bingkai Merah) */}
                         {isElm24 && (
                           <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "auto" }}>
-                            {/* Slot 1 (Atas) */}
-                            <div style={{ position: "absolute", top: "5%", left: "12%", right: "12%", height: "27%", backgroundColor: "#18181b", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            {/* Slot Atas */}
+                            <div style={{ position: "absolute", top: "7.5%", left: "10%", right: "10%", height: "27.5%", backgroundColor: "#18181b", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
                               {el.slotImages?.[1] ? (
                                 <img src={el.slotImages[1]} alt="slot 1" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                               ) : (
@@ -487,8 +486,8 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                                 </label>
                               )}
                             </div>
-                            {/* Slot 2 (Tengah) */}
-                            <div style={{ position: "absolute", top: "36%", left: "12%", right: "12%", height: "27%", backgroundColor: "#18181b", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            {/* Slot Tengah */}
+                            <div style={{ position: "absolute", top: "37.5%", left: "10%", right: "10%", height: "27.5%", backgroundColor: "#18181b", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
                               {el.slotImages?.[2] ? (
                                 <img src={el.slotImages[2]} alt="slot 2" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                               ) : (
@@ -498,8 +497,8 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                                 </label>
                               )}
                             </div>
-                            {/* Slot 3 (Bawah) */}
-                            <div style={{ position: "absolute", top: "67%", left: "12%", right: "12%", height: "27%", backgroundColor: "#18181b", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            {/* Slot Bawah */}
+                            <div style={{ position: "absolute", top: "67.5%", left: "10%", right: "10%", height: "27.5%", backgroundColor: "#18181b", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
                               {el.slotImages?.[3] ? (
                                 <img src={el.slotImages[3]} alt="slot 3" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                               ) : (
@@ -512,10 +511,10 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                           </div>
                         )}
 
-                        {/* 2. ELM 25 (1 Slot Kotak Pemutar Musik) */}
+                        {/* 2. ELM 25 (1 Slot Presisi di Layar Pemutar Musik) */}
                         {isElm25 && (
                           <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "auto" }}>
-                            <div style={{ position: "absolute", top: "6%", left: "12%", right: "12%", height: "50%", backgroundColor: "#18181b", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <div style={{ position: "absolute", top: "9.5%", left: "12.5%", right: "12.5%", height: "46.5%", backgroundColor: "#18181b", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
                               {el.slotImages?.[1] ? (
                                 <img src={el.slotImages[1]} alt="slot 1" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                               ) : (
@@ -528,10 +527,10 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                           </div>
                         )}
 
-                        {/* 3. ELM 32 (1 Slot Bulat Kepala Boneka) */}
+                        {/* 3. ELM 32 (1 Slot Bulat Presisi di Kepala Boneka) */}
                         {isElm32 && (
                           <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "auto" }}>
-                            <div style={{ position: "absolute", top: "32%", left: "22%", right: "22%", height: "38%", backgroundColor: "#18181b", borderRadius: "50%", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <div style={{ position: "absolute", top: "30.5%", left: "26.5%", right: "26.5%", height: "39%", backgroundColor: "#18181b", borderRadius: "50%", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
                               {el.slotImages?.[1] ? (
                                 <img src={el.slotImages[1]} alt="slot 1" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                               ) : (
