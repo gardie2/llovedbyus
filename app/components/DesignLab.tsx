@@ -455,7 +455,6 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
       setIsDownloading(false);
     }
   };
-
   const handleWhatsAppOrder = () => {
     const phoneNumber = "62881025376311";
     const message = `Halo, saya ingin memesan Custom Phone Case. Berikut adalah desain saya:`;
