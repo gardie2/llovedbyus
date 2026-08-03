@@ -387,11 +387,15 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
       setIsDownloading(true);
       const dataUrl = await toPng(mockupRef.current, { 
         cacheBust: true, 
-        quality: 0.95,
+        pixelRatio: 2,
         filter: (node) => {
-          const exclusionSelectors = ['button'];
-          return !exclusionSelectors.some((selector) => node.tagName === selector && (node as HTMLElement).classList?.contains('remove-btn'));
-        }
+          // Abaikan tombol hapus dan elemen eksternal yang memicu CORS
+          const className = (node as HTMLElement).className;
+          if (typeof className === 'string' && className.includes('remove-btn')) return false;
+          return true;
+        },
+        // Mencegah error CORS pada gambar eksternal/blob
+        skipFonts: true,
       });
       const link = document.createElement("a");
       link.download = `Custom-Design-${Date.now()}.png`;
@@ -399,7 +403,8 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
       link.click();
     } catch (err) {
       console.error("Gagal mendownload gambar:", err);
-      alert("Gagal menyimpan gambar desain.");
+      // Fallback darurat jika canvas tetap terblokir browser
+      alert("Gagal menyimpan otomatis karena kebijakan keamanan browser. Silakan gunakan Screenshot (Print Screen) layar untuk menyimpan desain Anda.");
     } finally {
       setIsDownloading(false);
     }
