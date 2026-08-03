@@ -31,6 +31,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
     flipX: boolean; 
     flipY: boolean;
     slotImages?: { [key: number]: string }; 
+    slotTransforms?: { [key: number]: { x: number; y: number; scale: number } };
   }>>([]);
   
   const [activeSelection, setActiveSelection] = useState<"photo" | number | null>("photo");
@@ -49,6 +50,10 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
   
   const activeDraggingElementId = useRef<number | null>(null);
   const isDraggingPhoto = useRef(false);
+
+  // State untuk interaksi geser/zoom foto di dalam slot
+  const activeSlotDrag = useRef<{ elementId: number; slotIndex: number } | null>(null);
+  const slotLastPos = useRef({ x: 0, y: 0 });
 
   const { mockupBase, mockupTp } = useMemo(() => {
     if (isPhoneCase) {
@@ -80,7 +85,32 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
       const dx = clientX - lastClientPos.current.x;
       const dy = clientY - lastClientPos.current.y;
 
-      if (activeDraggingElementId.current !== null) {
+      if (activeSlotDrag.current !== null) {
+        const { elementId, slotIndex } = activeSlotDrag.current;
+        const sDx = clientX - slotLastPos.current.x;
+        const sDy = clientY - slotLastPos.current.y;
+
+        setPlacedElements((prev) =>
+          prev.map((el) => {
+            if (el.id === elementId) {
+              const currentT = el.slotTransforms?.[slotIndex] || { x: 0, y: 0, scale: 1 };
+              return {
+                ...el,
+                slotTransforms: {
+                  ...(el.slotTransforms || {}),
+                  [slotIndex]: {
+                    ...currentT,
+                    x: currentT.x + sDx,
+                    y: currentT.y + sDy,
+                  },
+                },
+              };
+            }
+            return el;
+          })
+        );
+        slotLastPos.current = { x: clientX, y: clientY };
+      } else if (activeDraggingElementId.current !== null) {
         const id = activeDraggingElementId.current;
         setPlacedElements((prev) =>
           prev.map((el) => {
@@ -149,6 +179,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
       isInteracting.current = false;
       activeDraggingElementId.current = null;
       isDraggingPhoto.current = false;
+      activeSlotDrag.current = null;
       initialPinchDistance.current = null;
       initialTouchAngle.current = null;
     };
@@ -229,6 +260,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
       flipX: false,
       flipY: false,
       slotImages: {},
+      slotTransforms: {},
     };
     setPlacedElements((prev) => [...prev, newElement]);
     setActiveSelection(newElement.id);
@@ -247,12 +279,45 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                 ...(el.slotImages || {}),
                 [slotIndex]: url,
               },
+              slotTransforms: {
+                ...(el.slotTransforms || {}),
+                [slotIndex]: { x: 0, y: 0, scale: 1 },
+              },
             };
           }
           return el;
         })
       );
     }
+  };
+
+  const handleStartSlotDrag = (elementId: number, slotIndex: number, clientX: number, clientY: number, e: React.MouseEvent | React.TouchEvent) => {
+    e.stopPropagation();
+    isInteracting.current = true;
+    activeSlotDrag.current = { elementId, slotIndex };
+    slotLastPos.current = { x: clientX, y: clientY };
+  };
+
+  const handleSlotWheel = (elementId: number, slotIndex: number, e: React.WheelEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const zoomFactor = e.deltaY < 0 ? 0.1 : -0.1;
+    setPlacedElements((prev) =>
+      prev.map((el) => {
+        if (el.id === elementId) {
+          const currentT = el.slotTransforms?.[slotIndex] || { x: 0, y: 0, scale: 1 };
+          const newScale = Math.min(Math.max(0.3, currentT.scale + zoomFactor), 4.0);
+          return {
+            ...el,
+            slotTransforms: {
+              ...(el.slotTransforms || {}),
+              [slotIndex]: { ...currentT, scale: newScale },
+            },
+          };
+        }
+        return el;
+      })
+    );
   };
 
   const handleStartDragPhoto = (clientX: number, clientY: number, e: React.MouseEvent | React.TouchEvent) => {
@@ -472,74 +537,129 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                           touchAction: "none"
                         }}
                       >
-                        {/* 1. ELM 24 (Slot digeser ke atas pas) */}
+                        {/* 1. ELM 24 (Slot tengah & bawah digeser ke atas, fitur zoom/pan foto slot aktif) */}
                         {isElm24 && (
                           <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "auto" }}>
-                            {/* Slot Atas */}
-                            <div style={{ position: "absolute", top: "1%", left: "6%", right: "6%", height: "29%", backgroundColor: "#18181b", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                              {el.slotImages?.[1] ? (
-                                <img src={el.slotImages[1]} alt="slot 1" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                              ) : (
-                                <label style={{ cursor: "pointer", color: "#f472b6", fontSize: "16px", fontWeight: "bold" }}>
-                                  +
-                                  <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => handleSlotImageUpload(el.id, 1, e)} />
-                                </label>
-                              )}
-                            </div>
-                            {/* Slot Tengah */}
-                            <div style={{ position: "absolute", top: "32%", left: "6%", right: "6%", height: "29%", backgroundColor: "#18181b", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                              {el.slotImages?.[2] ? (
-                                <img src={el.slotImages[2]} alt="slot 2" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                              ) : (
-                                <label style={{ cursor: "pointer", color: "#f472b6", fontSize: "16px", fontWeight: "bold" }}>
-                                  +
-                                  <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => handleSlotImageUpload(el.id, 2, e)} />
-                                </label>
-                              )}
-                            </div>
-                            {/* Slot Bawah */}
-                            <div style={{ position: "absolute", top: "63%", left: "6%", right: "6%", height: "29%", backgroundColor: "#18181b", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                              {el.slotImages?.[3] ? (
-                                <img src={el.slotImages[3]} alt="slot 3" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                              ) : (
-                                <label style={{ cursor: "pointer", color: "#f472b6", fontSize: "16px", fontWeight: "bold" }}>
-                                  +
-                                  <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => handleSlotImageUpload(el.id, 3, e)} />
-                                </label>
-                              )}
-                            </div>
+                            {[1, 2, 3].map((slotIdx) => {
+                              const topPos = slotIdx === 1 ? "1%" : slotIdx === 2 ? "31%" : "61%";
+                              const slotImg = el.slotImages?.[slotIdx];
+                              const slotT = el.slotTransforms?.[slotIdx] || { x: 0, y: 0, scale: 1 };
+
+                              return (
+                                <div 
+                                  key={slotIdx}
+                                  onWheel={(e) => slotImg && handleSlotWheel(el.id, slotIdx, e)}
+                                  onMouseDown={(e) => slotImg && handleStartSlotDrag(el.id, slotIdx, e.clientX, e.clientY, e)}
+                                  onTouchStart={(e) => {
+                                    if (slotImg && e.touches.length === 1 && e.touches[0]) {
+                                      handleStartSlotDrag(el.id, slotIdx, e.touches[0].clientX, e.touches[0].clientY, e);
+                                    }
+                                  }}
+                                  style={{ position: "absolute", top: topPos, left: "6%", right: "6%", height: "29%", backgroundColor: "#18181b", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", cursor: slotImg ? "grab" : "default" }}
+                                >
+                                  {slotImg ? (
+                                    <img 
+                                      src={slotImg} 
+                                      alt={`slot ${slotIdx}`} 
+                                      style={{ 
+                                        width: "100%", 
+                                        height: "100%", 
+                                        objectFit: "cover",
+                                        transform: `translate(${slotT.x}px, ${slotT.y}px) scale(${slotT.scale})`,
+                                        pointerEvents: "none" 
+                                      }} 
+                                    />
+                                  ) : (
+                                    <label style={{ cursor: "pointer", color: "#f472b6", fontSize: "16px", fontWeight: "bold" }}>
+                                      +
+                                      <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => handleSlotImageUpload(el.id, slotIdx, e)} />
+                                    </label>
+                                  )}
+                                </div>
+                              );
+                            })}
                           </div>
                         )}
 
-                        {/* 2. ELM 25 (Pas di tengah layar pemutar musik) */}
+                        {/* 2. ELM 25 (Area atas ditarik ke atas, zoom/pan aktif) */}
                         {isElm25 && (
                           <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "auto" }}>
-                            <div style={{ position: "absolute", top: "4%", left: "6%", right: "6%", height: "45%", backgroundColor: "#18181b", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                              {el.slotImages?.[1] ? (
-                                <img src={el.slotImages[1]} alt="slot 1" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                              ) : (
-                                <label style={{ cursor: "pointer", color: "#f472b6", fontSize: "18px", fontWeight: "bold" }}>
-                                  +
-                                  <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => handleSlotImageUpload(el.id, 1, e)} />
-                                </label>
-                              )}
-                            </div>
+                            {(() => {
+                              const slotImg = el.slotImages?.[1];
+                              const slotT = el.slotTransforms?.[1] || { x: 0, y: 0, scale: 1 };
+                              return (
+                                <div 
+                                  onWheel={(e) => slotImg && handleSlotWheel(el.id, 1, e)}
+                                  onMouseDown={(e) => slotImg && handleStartSlotDrag(el.id, 1, e.clientX, e.clientY, e)}
+                                  onTouchStart={(e) => {
+                                    if (slotImg && e.touches.length === 1 && e.touches[0]) {
+                                      handleStartSlotDrag(el.id, 1, e.touches[0].clientX, e.touches[0].clientY, e);
+                                    }
+                                  }}
+                                  style={{ position: "absolute", top: "1%", left: "6%", right: "6%", height: "48%", backgroundColor: "#18181b", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", cursor: slotImg ? "grab" : "default" }}
+                                >
+                                  {slotImg ? (
+                                    <img 
+                                      src={slotImg} 
+                                      alt="slot 1" 
+                                      style={{ 
+                                        width: "100%", 
+                                        height: "100%", 
+                                        objectFit: "cover",
+                                        transform: `translate(${slotT.x}px, ${slotT.y}px) scale(${slotT.scale})`,
+                                        pointerEvents: "none" 
+                                      }} 
+                                    />
+                                  ) : (
+                                    <label style={{ cursor: "pointer", color: "#f472b6", fontSize: "18px", fontWeight: "bold" }}>
+                                      +
+                                      <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => handleSlotImageUpload(el.id, 1, e)} />
+                                    </label>
+                                  )}
+                                </div>
+                              );
+                            })()}
                           </div>
                         )}
 
-                        {/* 3. ELM 32 (Slot bulat digeser ke atas pas) */}
+                        {/* 3. ELM 32 (Bulat sempurna, zoom/pan aktif) */}
                         {isElm32 && (
                           <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "auto" }}>
-                            <div style={{ position: "absolute", top: "20%", left: "18%", right: "18%", height: "45%", backgroundColor: "#18181b", borderRadius: "50%", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                              {el.slotImages?.[1] ? (
-                                <img src={el.slotImages[1]} alt="slot 1" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                              ) : (
-                                <label style={{ cursor: "pointer", color: "#f472b6", fontSize: "18px", fontWeight: "bold" }}>
-                                  +
-                                  <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => handleSlotImageUpload(el.id, 1, e)} />
-                                </label>
-                              )}
-                            </div>
+                            {(() => {
+                              const slotImg = el.slotImages?.[1];
+                              const slotT = el.slotTransforms?.[1] || { x: 0, y: 0, scale: 1 };
+                              return (
+                                <div 
+                                  onWheel={(e) => slotImg && handleSlotWheel(el.id, 1, e)}
+                                  onMouseDown={(e) => slotImg && handleStartSlotDrag(el.id, 1, e.clientX, e.clientY, e)}
+                                  onTouchStart={(e) => {
+                                    if (slotImg && e.touches.length === 1 && e.touches[0]) {
+                                      handleStartSlotDrag(el.id, 1, e.touches[0].clientX, e.touches[0].clientY, e);
+                                    }
+                                  }}
+                                  style={{ position: "absolute", top: "20%", left: "18%", right: "18%", height: "45%", backgroundColor: "#18181b", borderRadius: "50%", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", cursor: slotImg ? "grab" : "default" }}
+                                >
+                                  {slotImg ? (
+                                    <img 
+                                      src={slotImg} 
+                                      alt="slot 1" 
+                                      style={{ 
+                                        width: "100%", 
+                                        height: "100%", 
+                                        objectFit: "cover",
+                                        transform: `translate(${slotT.x}px, ${slotT.y}px) scale(${slotT.scale})`,
+                                        pointerEvents: "none" 
+                                      }} 
+                                    />
+                                  ) : (
+                                    <label style={{ cursor: "pointer", color: "#f472b6", fontSize: "18px", fontWeight: "bold" }}>
+                                      +
+                                      <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => handleSlotImageUpload(el.id, 1, e)} />
+                                    </label>
+                                  )}
+                                </div>
+                              );
+                            })()}
                           </div>
                         )}
 
