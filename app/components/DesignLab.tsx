@@ -27,11 +27,16 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
 
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [rotation, setRotation] = useState(0);
   
   const isInteracting = useRef(false);
   const lastClientPos = useRef({ x: 0, y: 0 });
+  
+  // Ref untuk gestur multi-touch (Pinch Zoom & Two-Finger Rotate ala InstaStory)
   const initialPinchDistance = useRef<number | null>(null);
   const initialScaleOnPinch = useRef(1);
+  const initialTouchAngle = useRef<number | null>(null);
+  const initialRotationOnTouch = useRef(0);
   
   const activeDraggingElementId = useRef<number | null>(null);
   const isDraggingPhoto = useRef(false);
@@ -92,20 +97,39 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
 
     const onMouseMove = (e: MouseEvent) => handleGlobalMove(e.clientX, e.clientY);
     const onTouchMove = (e: TouchEvent) => {
-      if (e.touches.length === 2 && initialPinchDistance.current !== null) {
-        const dist = Math.hypot(
-          e.touches[0].clientX - e.touches[1].clientX,
-          e.touches[0].clientY - e.touches[1].clientY
-        );
-        const factor = dist / initialPinchDistance.current;
-        const newScale = Math.min(Math.max(0.3, initialScaleOnPinch.current * factor), 4.0);
+      // Gestur Multi-Touch: Pinch-to-Zoom & Two-Finger Rotate ala InstaStory
+      if (e.touches.length === 2) {
+        const x1 = e.touches[0].clientX;
+        const y1 = e.touches[0].clientY;
+        const x2 = e.touches[1].clientX;
+        const y2 = e.touches[1].clientY;
 
-        if (activeSelection === "photo") {
-          setScale(newScale);
-        } else if (typeof activeSelection === "number") {
-          setPlacedElements((prev) =>
-            prev.map((el) => (el.id === activeSelection ? { ...el, scale: newScale } : el))
-          );
+        const currentDist = Math.hypot(x1 - x2, y1 - y2);
+        const currentAngle = Math.atan2(y2 - y1, x2 - x1) * (180 / Math.PI);
+
+        if (initialPinchDistance.current !== null && initialTouchAngle.current !== null) {
+          const factor = currentDist / initialPinchDistance.current;
+          const angleDelta = currentAngle - initialTouchAngle.current;
+
+          if (activeSelection === "photo") {
+            const newScale = Math.min(Math.max(0.3, initialScaleOnPinch.current * factor), 4.0);
+            const newRot = initialRotationOnTouch.current + angleDelta;
+            setScale(newScale);
+            setRotation(newRot);
+          } else if (typeof activeSelection === "number") {
+            setPlacedElements((prev) =>
+              prev.map((el) => {
+                if (el.id === activeSelection) {
+                  return {
+                    ...el,
+                    scale: Math.min(Math.max(0.3, initialScaleOnPinch.current * factor), 4.0),
+                    rotation: initialRotationOnTouch.current + angleDelta,
+                  };
+                }
+                return el;
+              })
+            );
+          }
         }
         return;
       }
@@ -118,6 +142,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
       activeDraggingElementId.current = null;
       isDraggingPhoto.current = false;
       initialPinchDistance.current = null;
+      initialTouchAngle.current = null;
     };
 
     window.addEventListener("mousemove", onMouseMove);
@@ -142,6 +167,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
       setFileName(file.name);
       setScale(1);
       setPosition({ x: 0, y: 0 });
+      setRotation(0);
       setActiveSelection("photo");
     }
   };
@@ -219,15 +245,23 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
 
   const handleTouchStartContainer = (e: React.TouchEvent) => {
     if (e.touches.length === 2) {
-      initialPinchDistance.current = Math.hypot(
-        e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY
-      );
+      const x1 = e.touches[0].clientX;
+      const y1 = e.touches[0].clientY;
+      const x2 = e.touches[1].clientX;
+      const y2 = e.touches[1].clientY;
+
+      initialPinchDistance.current = Math.hypot(x1 - x2, y1 - y2);
+      initialTouchAngle.current = Math.atan2(y2 - y1, x2 - x1) * (180 / Math.PI);
+
       if (activeSelection === "photo") {
         initialScaleOnPinch.current = scale;
+        initialRotationOnTouch.current = rotation;
       } else if (typeof activeSelection === "number") {
         const found = placedElements.find((el) => el.id === activeSelection);
-        if (found) initialScaleOnPinch.current = found.scale;
+        if (found) {
+          initialScaleOnPinch.current = found.scale;
+          initialRotationOnTouch.current = found.rotation;
+        }
       }
     }
   };
@@ -300,7 +334,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
               }}
             />
 
-            {/* LAYER 2: AREA EDIT (Disempurnakan path-nya tanpa celah sedikit pun di dekat kamera) */}
+            {/* LAYER 2: AREA EDIT (Disempurnakan path presisi rapat tanpa celah) */}
             <div 
               style={{
                 position: "absolute",
@@ -345,7 +379,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                         src={uploadedImage} 
                         alt="Uploaded Custom" 
                         style={{
-                          transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
+                          transform: `translate(${position.x}px, ${position.y}px) scale(${scale}) rotate(${rotation}deg)`,
                           width: "100%",
                           height: "100%",
                           objectFit: "cover",
@@ -369,7 +403,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                 </div>
               )}
 
-              {/* LAYER 3: IKON & ELEMEN DEKORASI (Dilengkapi tombol rotasi aktif) */}
+              {/* LAYER 3: IKON & ELEMEN DEKORASI */}
               {placedElements.map((el) => {
                 const isActive = activeSelection === el.id;
                 return (
@@ -406,63 +440,31 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                     />
 
                     {isActive && (
-                      <>
-                        <button
-                          onClick={(e) => handleRemoveElement(el.id, e)}
-                          style={{
-                            position: "absolute",
-                            top: "-6px",
-                            right: "-6px",
-                            width: "18px",
-                            height: "18px",
-                            borderRadius: "50%",
-                            backgroundColor: "#f472b6",
-                            color: "#09090b",
-                            border: "none",
-                            fontSize: "10px",
-                            fontWeight: "900",
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            zIndex: 40,
-                            boxShadow: "0 2px 4px rgba(0,0,0,0.4)"
-                          }}
-                          title="Hapus"
-                        >
-                          ×
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setPlacedElements((prev) =>
-                              prev.map((item) => (item.id === el.id ? { ...item, rotation: (item.rotation + 45) % 360 } : item))
-                            );
-                          }}
-                          style={{
-                            position: "absolute",
-                            bottom: "-6px",
-                            right: "-6px",
-                            width: "18px",
-                            height: "18px",
-                            borderRadius: "50%",
-                            backgroundColor: "#f4f4f5",
-                            color: "#09090b",
-                            border: "none",
-                            fontSize: "9px",
-                            fontWeight: "900",
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            zIndex: 40,
-                            boxShadow: "0 2px 4px rgba(0,0,0,0.4)"
-                          }}
-                          title="Putar"
-                        >
-                          ↻
-                        </button>
-                      </>
+                      <button
+                        onClick={(e) => handleRemoveElement(el.id, e)}
+                        style={{
+                          position: "absolute",
+                          top: "-6px",
+                          right: "-6px",
+                          width: "18px",
+                          height: "18px",
+                          borderRadius: "50%",
+                          backgroundColor: "#f472b6",
+                          color: "#09090b",
+                          border: "none",
+                          fontSize: "10px",
+                          fontWeight: "900",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          zIndex: 40,
+                          boxShadow: "0 2px 4px rgba(0,0,0,0.4)"
+                        }}
+                        title="Hapus"
+                      >
+                        ×
+                      </button>
                     )}
                   </div>
                 );
