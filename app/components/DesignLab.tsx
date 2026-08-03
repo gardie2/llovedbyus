@@ -22,7 +22,9 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
   const [isRemovingBg, setIsRemovingBg] = useState(false);
   
   const [placedElements, setPlacedElements] = useState<Array<{ id: number; src: string; x: number; y: number; scale: number; rotation: number; flipX: boolean; flipY: boolean }>>([]);
-  const [activeElementId, setActiveElementId] = useState<number | null>(null);
+  
+  // State untuk melacak item apa yang sedang aktif/dipilih (Foto Utama vs Icon Dekorasi)
+  const [activeSelection, setActiveSelection] = useState<"photo" | number | null>("photo");
 
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -35,6 +37,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
   const initialElementRotation = useRef(0);
   
   const activeDraggingElementId = useRef<number | null>(null);
+  const isDraggingPhoto = useRef(false);
 
   const { mockupBase, mockupTp } = useMemo(() => {
     if (isPhoneCase) {
@@ -68,6 +71,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
       setFileName(file.name);
       setScale(1);
       setPosition({ x: 0, y: 0 });
+      setActiveSelection("photo");
     }
   };
 
@@ -96,13 +100,16 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
     setUploadedImage(null);
     setOriginalImage(null);
     setFileName("");
+    if (activeSelection === "photo") {
+      setActiveSelection(null);
+    }
   };
 
   const handleRemoveElement = (id: number, e: React.MouseEvent | React.TouchEvent) => {
     e.stopPropagation();
     setPlacedElements((prev) => prev.filter((el) => el.id !== id));
-    if (activeElementId === id) {
-      setActiveElementId(null);
+    if (activeSelection === id) {
+      setActiveSelection(null);
     }
   };
 
@@ -118,7 +125,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
       flipY: false,
     };
     setPlacedElements((prev) => [...prev, newElement]);
-    setActiveElementId(newElement.id);
+    setActiveSelection(newElement.id);
   };
 
   const getTouchDistance = (t1: React.Touch, t2: React.Touch) => {
@@ -129,17 +136,30 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
     return Math.atan2(t2.clientY - t1.clientY, t2.clientX - t1.clientX) * (180 / Math.PI);
   };
 
-  const handleStart = (clientX: number, clientY: number, e?: React.TouchEvent | React.MouseEvent) => {
+  const handleStart = (clientX: number, clientY: number, isPhoto: boolean, elementId?: number, e?: React.TouchEvent | React.MouseEvent) => {
     if (e) e.preventDefault();
+    
+    // Terapkan sistem lock/unlock: Hanya item yang sedang dipilih yang aktif digeser
+    if (isPhoto && activeSelection !== "photo") return;
+    if (elementId !== undefined && activeSelection !== elementId) return;
+
     isInteracting.current = true;
     lastClientPos.current = { x: clientX, y: clientY };
+
+    if (isPhoto) {
+      isDraggingPhoto.current = true;
+      activeDraggingElementId.current = null;
+    } else if (elementId !== undefined) {
+      isDraggingPhoto.current = false;
+      activeDraggingElementId.current = elementId;
+    }
 
     if (e && 'touches' in e && e.touches.length === 2) {
       initialPinchDistance.current = getTouchDistance(e.touches[0], e.touches[1]);
       initialTouchAngle.current = getTouchAngle(e.touches[0], e.touches[1]);
       
-      if (activeElementId !== null) {
-        const activeEl = placedElements.find(el => el.id === activeElementId);
+      if (typeof activeSelection === "number") {
+        const activeEl = placedElements.find(el => el.id === activeSelection);
         if (activeEl) {
           initialScale.current = activeEl.scale;
           initialElementRotation.current = activeEl.rotation;
@@ -162,10 +182,10 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
         const factor = dist / initialPinchDistance.current;
         const angleDelta = currentAngle - initialTouchAngle.current;
 
-        if (activeElementId !== null) {
+        if (typeof activeSelection === "number") {
           setPlacedElements((prev) =>
             prev.map((el) => {
-              if (el.id === activeElementId) {
+              if (el.id === activeSelection) {
                 return { 
                   ...el, 
                   scale: Math.min(Math.max(0.3, initialScale.current * factor), 3.0),
@@ -175,7 +195,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
               return el;
             })
           );
-        } else {
+        } else if (activeSelection === "photo") {
           const newScale = Math.min(Math.max(0.5, initialScale.current * factor), 3.5);
           setScale(newScale);
         }
@@ -201,7 +221,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
         })
       );
       lastClientPos.current = { x: clientX, y: clientY };
-    } else if (activeElementId === null) {
+    } else if (isDraggingPhoto.current && activeSelection === "photo") {
       setPosition((prev) => ({
         x: prev.x + dx,
         y: prev.y + dy,
@@ -213,21 +233,22 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
   const handleEnd = () => {
     isInteracting.current = false;
     activeDraggingElementId.current = null;
+    isDraggingPhoto.current = false;
   };
 
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault();
     const zoomFactor = e.deltaY < 0 ? 0.1 : -0.1;
-    if (activeElementId !== null) {
+    if (typeof activeSelection === "number") {
       setPlacedElements((prev) =>
         prev.map((el) => {
-          if (el.id === activeElementId) {
+          if (el.id === activeSelection) {
             return { ...el, scale: Math.min(Math.max(0.3, el.scale + zoomFactor), 3.0) };
           }
           return el;
         })
       );
-    } else {
+    } else if (activeSelection === "photo") {
       setScale((prev) => Math.min(Math.max(0.5, prev + zoomFactor), 3.5));
     }
   };
@@ -284,11 +305,10 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
               }}
             />
 
-            {/* LAYER 2: AREA AREA EDIT / GAMBAR KUSTOM YANG DI-CLIP PAS DI BADAN BAJU */}
+            {/* LAYER 2: AREA EDIT / GAMBAR KUSTOM */}
             <div 
               style={{
                 position: "absolute",
-                /* Mengatur posisi dan ukuran persis di tengah badan kaos agar tidak tembus ke bawah */
                 top: isPhoneCase ? "35px" : "85px",
                 left: isPhoneCase ? "50px" : "55px",
                 width: isPhoneCase ? "156px" : "146px",
@@ -305,14 +325,37 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
               onTouchEnd={handleEnd}
               onTouchCancel={handleEnd}
               onWheel={handleWheel}
+              onClick={() => {
+                // Klik area kosong akan melepaskan seleksi jika tidak kena foto/ikon
+                if (activeSelection === "photo" && !uploadedImage) setActiveSelection(null);
+              }}
             >
               {(!isPhoneCase || activeTab === "edit") ? (
                 <>
                   {uploadedImage && (
                     <div 
-                      style={{ position: "absolute", inset: 0, cursor: "grab", display: "flex", alignItems: "center", justifyContent: "center", touchAction: "none" }}
-                      onMouseDown={(e) => { setActiveElementId(null); handleStart(e.clientX, e.clientY, e); }}
-                      onTouchStart={(e) => { if (e.touches[0]) { setActiveElementId(null); handleStart(e.touches[0].clientX, e.touches[0].clientY, e); } }}
+                      style={{ 
+                        position: "absolute", 
+                        inset: 0, 
+                        cursor: "grab", 
+                        display: "flex", 
+                        alignItems: "center", 
+                        justifyContent: "center", 
+                        touchAction: "none",
+                        border: activeSelection === "photo" ? "1px dashed #f472b6" : "none" 
+                      }}
+                      onMouseDown={(e) => { 
+                        e.stopPropagation();
+                        setActiveSelection("photo"); 
+                        handleStart(e.clientX, e.clientY, true, undefined, e); 
+                      }}
+                      onTouchStart={(e) => { 
+                        if (e.touches[0]) { 
+                          e.stopPropagation();
+                          setActiveSelection("photo"); 
+                          handleStart(e.touches[0].clientX, e.touches[0].clientY, true, undefined, e); 
+                        } 
+                      }}
                     >
                       <img 
                         src={uploadedImage} 
@@ -326,38 +369,13 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                           userSelect: "none"
                         }}
                       />
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleRemoveUploadedImage(); }}
-                        style={{
-                          position: "absolute",
-                          top: "4px",
-                          right: "4px",
-                          width: "20px",
-                          height: "20px",
-                          borderRadius: "50%",
-                          backgroundColor: "rgba(0,0,0,0.8)",
-                          color: "#fff",
-                          border: "1px solid rgba(255,255,255,0.3)",
-                          fontSize: "11px",
-                          fontWeight: "bold",
-                          cursor: "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          zIndex: 40,
-                          outline: "none"
-                        }}
-                        title="Hapus foto"
-                      >
-                        ×
-                      </button>
                     </div>
                   )}
                 </>
               ) : (
                 <div 
                   style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}
-                  onClick={() => setActiveElementId(null)}
+                  onClick={() => setActiveSelection(null)}
                 >
                   <img 
                     src={`/template-${selectedTemplate}.png`} 
@@ -367,24 +385,22 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                 </div>
               )}
 
-              {/* LAYER 3: IKON & ELEMEN DEKORASI DALAM AREA EDIT */}
+              {/* LAYER 3: IKON & ELEMEN DEKORASI */}
               {placedElements.map((el) => {
-                const isActive = activeElementId === el.id;
+                const isActive = activeSelection === el.id;
                 return (
                   <div
                     key={el.id}
                     onMouseDown={(e) => {
                       e.stopPropagation();
-                      setActiveElementId(el.id);
-                      activeDraggingElementId.current = el.id;
-                      handleStart(e.clientX, e.clientY, e);
+                      setActiveSelection(el.id);
+                      handleStart(e.clientX, e.clientY, false, el.id, e);
                     }}
                     onTouchStart={(e) => {
                       if (e.touches[0]) {
                         e.stopPropagation();
-                        setActiveElementId(el.id);
-                        activeDraggingElementId.current = el.id;
-                        handleStart(e.touches[0].clientX, e.touches[0].clientY, e);
+                        setActiveSelection(el.id);
+                        handleStart(e.touches[0].clientX, e.touches[0].clientY, false, el.id, e);
                       }
                     }}
                     style={{
@@ -444,7 +460,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
 
             </div>
 
-            {/* LAYER 4: MOCKUP TRANSPARAN PENIMPA DI ATAS (Biar kerah & jahitan baju ada di atas foto/ikon) */}
+            {/* LAYER 4: MOCKUP TRANSPARAN PENIMPA DI ATAS */}
             {mockupTp && (
               <img 
                 src={mockupTp} 
@@ -566,12 +582,34 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                 <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase" }}>
                   Upload Foto Kamu
                 </label>
-                <input 
-                  type="file" 
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  style={{ width: "100%", fontSize: "11px", color: "#a1a1aa" }}
-                />
+                <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                  <input 
+                    type="file" 
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    style={{ width: "100%", fontSize: "11px", color: "#a1a1aa" }}
+                  />
+                  {/* TOMBOL SILANG (×) UNTUK HAPUS FOTO UPLOADED */}
+                  {uploadedImage && (
+                    <button
+                      onClick={handleRemoveUploadedImage}
+                      style={{
+                        backgroundColor: "#27272a",
+                        color: "#f472b6",
+                        border: "1px solid rgba(244,114,182,0.3)",
+                        borderRadius: "8px",
+                        padding: "6px 12px",
+                        fontSize: "12px",
+                        fontWeight: "900",
+                        cursor: "pointer",
+                        whiteSpace: "nowrap"
+                      }}
+                      title="Hapus foto yang di-upload"
+                    >
+                      ✕ Hapus Foto
+                    </button>
+                  )}
+                </div>
                 {fileName && (
                   <p style={{ fontSize: "10px", color: "#f472b6", fontWeight: "bold" }}>
                     Foto terpilih: {fileName}
