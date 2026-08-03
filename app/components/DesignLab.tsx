@@ -23,6 +23,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
   
   const [placedElements, setPlacedElements] = useState<Array<{ id: number; src: string; x: number; y: number; scale: number; rotation: number; flipX: boolean; flipY: boolean }>>([]);
   
+  // Kalau null berarti tidak ada garis/border yang muncul (bersih)
   const [activeSelection, setActiveSelection] = useState<"photo" | number | null>("photo");
 
   const [scale, setScale] = useState(1);
@@ -303,17 +304,17 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
               }}
             />
 
-            {/* LAYER 2: AREA EDIT (Ukuran pas penuh untuk Case, khusus dibatasi untuk Kaos/Baju) */}
+            {/* LAYER 2: AREA EDIT */}
             <div 
               style={{
                 position: "absolute",
-                top: isPhoneCase ? "35px" : "85px",
-                left: isPhoneCase ? "35px" : "55px",
-                width: isPhoneCase ? "186px" : "146px",
-                height: isPhoneCase ? "330px" : "235px",
+                top: isPhoneCase ? "0px" : "85px",
+                left: isPhoneCase ? "0px" : "55px",
+                width: isPhoneCase ? "100%" : "146px",
+                height: isPhoneCase ? "100%" : "235px",
                 zIndex: 15,
                 overflow: "hidden",
-                borderRadius: isPhoneCase ? "20px" : "8px",
+                borderRadius: isPhoneCase ? "14px" : "8px",
                 touchAction: "none"
               }}
               onMouseMove={(e) => handleMove(e.clientX, e.clientY, e)}
@@ -324,6 +325,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
               onTouchCancel={handleEnd}
               onWheel={handleWheel}
               onClick={() => {
+                // KLIK DI LUAR OBJEK AKAN MENYEMBUNYIKAN SEMUA GARIS & TOMBOL SILANG
                 setActiveSelection(null);
               }}
             >
