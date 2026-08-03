@@ -32,7 +32,6 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
   const isInteracting = useRef(false);
   const lastClientPos = useRef({ x: 0, y: 0 });
   
-  // Ref untuk gestur multi-touch (Pinch Zoom & Two-Finger Rotate ala InstaStory)
   const initialPinchDistance = useRef<number | null>(null);
   const initialScaleOnPinch = useRef(1);
   const initialTouchAngle = useRef<number | null>(null);
@@ -97,7 +96,6 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
 
     const onMouseMove = (e: MouseEvent) => handleGlobalMove(e.clientX, e.clientY);
     const onTouchMove = (e: TouchEvent) => {
-      // Gestur Multi-Touch: Pinch-to-Zoom & Two-Finger Rotate ala InstaStory
       if (e.touches.length === 2) {
         const x1 = e.touches[0].clientX;
         const y1 = e.touches[0].clientY;
@@ -304,7 +302,6 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
         
         <div style={{ width: "280px", backgroundColor: "#121318", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "20px", padding: "12px", display: "flex", flexDirection: "column", alignItems: "center", position: "relative", boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.5)", boxSizing: "border-box" }}>
           
-          {/* CONTAINER UTAMA PREVIEW */}
           <div 
             style={{ 
               width: "256px", 
@@ -319,7 +316,6 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
             }}
           >
             
-            {/* LAYER 1: MOCKUP DASAR */}
             <img 
               src={mockupBase} 
               alt="Mockup Base" 
@@ -334,34 +330,27 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
               }}
             />
 
-            {/* LAYER 2: AREA EDIT (Disempurnakan path presisi rapat tanpa celah) */}
             <div 
-        style={{
-          position: "absolute",
-          inset: 0,
-          width: "100%",
-          height: "100%",
-          zIndex: 15,
-          ...(isPhoneCase && mockupTp ? {
-            maskImage: `url(${mockupTp})`,
-            WebkitMaskImage: `url(${mockupTp})`,
-            maskSize: "contain",
-            WebkitMaskSize: "contain",
-            maskRepeat: "no-repeat",
-            WebkitMaskRepeat: "no-repeat",
-            maskPosition: "center",
-            WebkitMaskPosition: "center"
-          } : {
-            overflow: "hidden"
-          }),
-          touchAction: "none"
-        }}
-        onWheel={handleWheel}
-        onTouchStart={handleTouchStartContainer}
-        onClick={() => {
-          setActiveSelection(null);
-        }}
-      >
+              style={{
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                zIndex: 15,
+                ...(isPhoneCase && mockupTp ? {
+                  maskImage: `url(${mockupTp})`,
+                  WebkitMaskImage: `url(${mockupTp})`,
+                  maskSize: "contain",
+                  WebkitMaskSize: "contain",
+                  maskRepeat: "no-repeat",
+                  WebkitMaskRepeat: "no-repeat",
+                  maskPosition: "center",
+                  WebkitMaskPosition: "center"
+                } : {
+                  overflow: "hidden"
+                }),
+                touchAction: "none"
+              }}
               onWheel={handleWheel}
               onTouchStart={handleTouchStartContainer}
               onClick={() => {
@@ -416,7 +405,6 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                 </div>
               )}
 
-              {/* LAYER 3: IKON & ELEMEN DEKORASI */}
               {placedElements.map((el) => {
                 const isActive = activeSelection === el.id;
                 return (
@@ -485,7 +473,6 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
 
             </div>
 
-            {/* LAYER 4: MOCKUP TRANSPARAN PALING DEPAN */}
             {mockupTp && (
               <img 
                 src={mockupTp} 
