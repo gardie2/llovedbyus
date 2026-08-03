@@ -23,7 +23,6 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
   
   const [placedElements, setPlacedElements] = useState<Array<{ id: number; src: string; x: number; y: number; scale: number; rotation: number; flipX: boolean; flipY: boolean }>>([]);
   
-  // State untuk melacak item apa yang sedang aktif/dipilih (Foto Utama vs Icon Dekorasi)
   const [activeSelection, setActiveSelection] = useState<"photo" | number | null>("photo");
 
   const [scale, setScale] = useState(1);
@@ -117,8 +116,8 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
     const newElement = {
       id: Date.now(),
       src: `/${imageName}`,
-      x: 80,
-      y: 100,
+      x: 100,
+      y: 140,
       scale: 1,
       rotation: 0,
       flipX: false,
@@ -139,7 +138,6 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
   const handleStart = (clientX: number, clientY: number, isPhoto: boolean, elementId?: number, e?: React.TouchEvent | React.MouseEvent) => {
     if (e) e.preventDefault();
     
-    // Terapkan sistem lock/unlock: Hanya item yang sedang dipilih yang aktif digeser
     if (isPhoto && activeSelection !== "photo") return;
     if (elementId !== undefined && activeSelection !== elementId) return;
 
@@ -305,17 +303,17 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
               }}
             />
 
-            {/* LAYER 2: AREA EDIT / GAMBAR KUSTOM */}
+            {/* LAYER 2: AREA EDIT (Dinamis: Full untuk Case, Dibatasi untuk Kaos/Baju) */}
             <div 
               style={{
                 position: "absolute",
-                top: isPhoneCase ? "35px" : "85px",
-                left: isPhoneCase ? "50px" : "55px",
-                width: isPhoneCase ? "156px" : "146px",
-                height: isPhoneCase ? "320px" : "235px",
+                top: isPhoneCase ? "0px" : "85px",
+                left: isPhoneCase ? "0px" : "55px",
+                width: isPhoneCase ? "100%" : "146px",
+                height: isPhoneCase ? "100%" : "235px",
                 zIndex: 15,
                 overflow: "hidden",
-                borderRadius: "8px",
+                borderRadius: isPhoneCase ? "14px" : "8px",
                 touchAction: "none"
               }}
               onMouseMove={(e) => handleMove(e.clientX, e.clientY, e)}
@@ -326,7 +324,6 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
               onTouchCancel={handleEnd}
               onWheel={handleWheel}
               onClick={() => {
-                // Klik area kosong akan melepaskan seleksi jika tidak kena foto/ikon
                 if (activeSelection === "photo" && !uploadedImage) setActiveSelection(null);
               }}
             >
@@ -419,8 +416,8 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                       src={el.src} 
                       alt="element icon" 
                       style={{ 
-                        width: "45px", 
-                        height: "45px", 
+                        width: "55px", 
+                        height: "55px", 
                         objectFit: "contain", 
                         pointerEvents: "none",
                         transform: `scaleX(${el.flipX ? -1 : 1}) scaleY(${el.flipY ? -1 : 1})`
@@ -589,7 +586,6 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                     onChange={handleImageUpload}
                     style={{ width: "100%", fontSize: "11px", color: "#a1a1aa" }}
                   />
-                  {/* TOMBOL SILANG (×) UNTUK HAPUS FOTO UPLOADED */}
                   {uploadedImage && (
                     <button
                       onClick={handleRemoveUploadedImage}
