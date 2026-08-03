@@ -217,14 +217,14 @@ export default function Home() {
             Design custom phone cases, sweatshirts, hoodies, t-shirts, tote bags, and more products the way you want.
           </p>
 
-          {/* HANYA MENYISAKAN 1 TOMBOL UTAMA */}
+          {/* TOMBOL BERUBAH MENJADI LINK SCROLL KE #products */}
           <div className="flex items-center gap-4 pt-2">
-            <button 
-              onClick={() => { setSelectedProductTitle("Custom Phone Case"); setShowDesignLab(true); }}
-              className="cute-click bg-gradient-to-r from-zinc-100 via-pink-200 to-zinc-200 hover:from-white hover:to-pink-100 text-zinc-950 font-black px-8 py-4 rounded-full text-xs uppercase tracking-widest shadow-[0_0_25px_rgba(244,114,182,0.3)] cursor-pointer"
+            <a 
+              href="#products" 
+              className="cute-click bg-gradient-to-r from-zinc-100 via-pink-200 to-zinc-200 hover:from-white hover:to-pink-100 text-zinc-950 font-black px-8 py-4 rounded-full text-xs uppercase tracking-widest shadow-[0_0_25px_rgba(244,114,182,0.3)] inline-block text-center cursor-pointer"
             >
               Pick Product & Design
-            </button>
+            </a>
           </div>
         </div>
 
