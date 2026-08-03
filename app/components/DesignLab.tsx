@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useMemo } from "react";
 import { removeBackground } from "@imgly/background-removal";
 
 interface DesignLabProps {
@@ -61,62 +61,6 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
     return { mockupBase: "/mockup-case.png", mockupTp: "/mockup-case-transparent.png" };
   }, [isPhoneCase, isTshirt, tshirtStyle, titleLower]);
 
-  // Global Mouse/Touch Move & Up Listeners agar tidak nyangkut di PC saat drag keluar box
-  useEffect(() => {
-    const handleGlobalMove = (clientX: number, clientY: number) => {
-      if (!isInteracting.current) return;
-
-      const dx = clientX - lastClientPos.current.x;
-      const dy = clientY - lastClientPos.current.y;
-
-      if (activeDraggingElementId.current !== null) {
-        const id = activeDraggingElementId.current;
-        setPlacedElements((prev) =>
-          prev.map((el) => {
-            if (el.id === id) {
-              return {
-                ...el,
-                x: el.x + dx,
-                y: el.y + dy,
-              };
-            }
-            return el;
-          })
-        );
-        lastClientPos.current = { x: clientX, y: clientY };
-      } else if (isDraggingPhoto.current && activeSelection === "photo") {
-        setPosition((prev) => ({
-          x: prev.x + dx,
-          y: prev.y + dy,
-        }));
-        lastClientPos.current = { x: clientX, y: clientY };
-      }
-    };
-
-    const onMouseMove = (e: MouseEvent) => handleGlobalMove(e.clientX, e.clientY);
-    const onTouchMove = (e: TouchEvent) => {
-      if (e.touches[0]) handleGlobalMove(e.touches[0].clientX, e.touches[0].clientY);
-    };
-
-    const onEnd = () => {
-      isInteracting.current = false;
-      activeDraggingElementId.current = null;
-      isDraggingPhoto.current = false;
-    };
-
-    window.addEventListener("mousemove", onMouseMove);
-    window.addEventListener("mouseup", onEnd);
-    window.addEventListener("touchmove", onTouchMove);
-    window.addEventListener("touchend", onEnd);
-
-    return () => {
-      window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("mouseup", onEnd);
-      window.removeEventListener("touchmove", onTouchMove);
-      window.removeEventListener("touchend", onEnd);
-    };
-  }, [activeSelection]);
-
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -172,8 +116,8 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
     const newElement = {
       id: Date.now(),
       src: `/${imageName}`,
-      x: 80,
-      y: 120,
+      x: 100,
+      y: 140,
       scale: 1,
       rotation: 0,
       flipX: false,
@@ -183,8 +127,16 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
     setActiveSelection(newElement.id);
   };
 
+  const getTouchDistance = (t1: React.Touch, t2: React.Touch) => {
+    return Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+  };
+
+  const getTouchAngle = (t1: React.Touch, t2: React.Touch) => {
+    return Math.atan2(t2.clientY - t1.clientY, t2.clientX - t1.clientX) * (180 / Math.PI);
+  };
+
   const handleStart = (clientX: number, clientY: number, isPhoto: boolean, elementId?: number, e?: React.TouchEvent | React.MouseEvent) => {
-    if (e) e.stopPropagation();
+    if (e) e.preventDefault();
     
     if (isPhoto && activeSelection !== "photo") return;
     if (elementId !== undefined && activeSelection !== elementId) return;
@@ -199,6 +151,87 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
       isDraggingPhoto.current = false;
       activeDraggingElementId.current = elementId;
     }
+
+    if (e && 'touches' in e && e.touches.length === 2) {
+      initialPinchDistance.current = getTouchDistance(e.touches[0], e.touches[1]);
+      initialTouchAngle.current = getTouchAngle(e.touches[0], e.touches[1]);
+      
+      if (typeof activeSelection === "number") {
+        const activeEl = placedElements.find(el => el.id === activeSelection);
+        if (activeEl) {
+          initialScale.current = activeEl.scale;
+          initialElementRotation.current = activeEl.rotation;
+        }
+      } else {
+        initialScale.current = scale;
+      }
+    }
+  };
+
+  const handleMove = (clientX: number, clientY: number, e?: React.TouchEvent | React.MouseEvent) => {
+    if (!isInteracting.current) return;
+    if (e) e.preventDefault();
+
+    if (e && 'touches' in e && e.touches.length === 2) {
+      const dist = getTouchDistance(e.touches[0], e.touches[1]);
+      const currentAngle = getTouchAngle(e.touches[0], e.touches[1]);
+      
+      if (initialPinchDistance.current > 0) {
+        const factor = dist / initialPinchDistance.current;
+        const angleDelta = currentAngle - initialTouchAngle.current;
+
+        if (typeof activeSelection === "number") {
+          setPlacedElements((prev) =>
+            prev.map((el) => {
+              if (el.id === activeSelection) {
+                return { 
+                  ...el, 
+                  scale: Math.min(Math.max(0.3, initialScale.current * factor), 3.0),
+                  rotation: Math.round(initialElementRotation.current + angleDelta)
+                };
+              }
+              return el;
+            })
+          );
+        } else if (activeSelection === "photo") {
+          const newScale = Math.min(Math.max(0.5, initialScale.current * factor), 3.5);
+          setScale(newScale);
+        }
+      }
+      return;
+    }
+
+    const dx = clientX - lastClientPos.current.x;
+    const dy = clientY - lastClientPos.current.y;
+
+    if (activeDraggingElementId.current !== null) {
+      const id = activeDraggingElementId.current;
+      setPlacedElements((prev) =>
+        prev.map((el) => {
+          if (el.id === id) {
+            return {
+              ...el,
+              x: el.x + dx,
+              y: el.y + dy,
+            };
+          }
+          return el;
+        })
+      );
+      lastClientPos.current = { x: clientX, y: clientY };
+    } else if (isDraggingPhoto.current && activeSelection === "photo") {
+      setPosition((prev) => ({
+        x: prev.x + dx,
+        y: prev.y + dy,
+      }));
+      lastClientPos.current = { x: clientX, y: clientY };
+    }
+  };
+
+  const handleEnd = () => {
+    isInteracting.current = false;
+    activeDraggingElementId.current = null;
+    isDraggingPhoto.current = false;
   };
 
   const handleWheel = (e: React.WheelEvent) => {
@@ -270,19 +303,25 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
               }}
             />
 
-            {/* LAYER 2: AREA EDIT (Dibatasi presisi sesuai bentuk asli case/baju tanpa bocor) */}
+            {/* LAYER 2: AREA EDIT (Full untuk Case, Dibatasi khusus untuk Kaos/Baju) */}
             <div 
               style={{
                 position: "absolute",
-                top: isPhoneCase ? "28px" : "85px",
-                left: isPhoneCase ? "42px" : "55px",
-                width: isPhoneCase ? "172px" : "146px",
-                height: isPhoneCase ? "344px" : "235px",
+                top: isPhoneCase ? "0px" : "85px",
+                left: isPhoneCase ? "0px" : "55px",
+                width: isPhoneCase ? "100%" : "146px",
+                height: isPhoneCase ? "100%" : "235px",
                 zIndex: 15,
                 overflow: "hidden",
-                borderRadius: isPhoneCase ? "24px" : "8px",
+                borderRadius: isPhoneCase ? "14px" : "8px",
                 touchAction: "none"
               }}
+              onMouseMove={(e) => handleMove(e.clientX, e.clientY, e)}
+              onMouseUp={handleEnd}
+              onMouseLeave={handleEnd}
+              onTouchMove={(e) => { if (e.touches[0]) handleMove(e.touches[0].clientX, e.touches[0].clientY, e); }}
+              onTouchEnd={handleEnd}
+              onTouchCancel={handleEnd}
               onWheel={handleWheel}
               onClick={() => {
                 setActiveSelection(null);
@@ -303,11 +342,13 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                         border: activeSelection === "photo" ? "1px dashed #f472b6" : "none" 
                       }}
                       onMouseDown={(e) => { 
+                        e.stopPropagation();
                         setActiveSelection("photo"); 
                         handleStart(e.clientX, e.clientY, true, undefined, e); 
                       }}
                       onTouchStart={(e) => { 
                         if (e.touches[0]) { 
+                          e.stopPropagation();
                           setActiveSelection("photo"); 
                           handleStart(e.touches[0].clientX, e.touches[0].clientY, true, undefined, e); 
                         } 
@@ -348,11 +389,13 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                   <div
                     key={el.id}
                     onMouseDown={(e) => {
+                      e.stopPropagation();
                       setActiveSelection(el.id);
                       handleStart(e.clientX, e.clientY, false, el.id, e);
                     }}
                     onTouchStart={(e) => {
                       if (e.touches[0]) {
+                        e.stopPropagation();
                         setActiveSelection(el.id);
                         handleStart(e.touches[0].clientX, e.touches[0].clientY, false, el.id, e);
                       }
