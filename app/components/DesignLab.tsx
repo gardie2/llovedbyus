@@ -110,8 +110,8 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
     const newElement = {
       id: Date.now(),
       src: `/${imageName}`,
-      x: 100,
-      y: 140,
+      x: 80,
+      y: 100,
       scale: 1,
       rotation: 0,
       flipX: false,
@@ -201,7 +201,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
         })
       );
       lastClientPos.current = { x: clientX, y: clientY };
-    } else if (activeElementId === null && (activeTab === "edit" || !isPhoneCase)) {
+    } else if (activeElementId === null) {
       setPosition((prev) => ({
         x: prev.x + dx,
         y: prev.y + dy,
@@ -227,7 +227,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
           return el;
         })
       );
-    } else if (activeTab === "edit" || !isPhoneCase) {
+    } else {
       setScale((prev) => Math.min(Math.max(0.5, prev + zoomFactor), 3.5));
     }
   };
@@ -236,7 +236,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
     const phoneNumber = "62881025376311";
     const styleInfo = isTshirt ? ` (${tshirtStyle.toUpperCase()})` : "";
     const modeDesc = isPhoneCase ? (activeTab === "edit" ? "Custom Foto & Icons" : `Template ${selectedTemplate} + Icons`) : "Custom Foto & Icons";
-    const message = `Halo, saya ingin memesan ${productTitle}${styleInfo}.%0A- Mode: ${modeDesc}%0A- Detail/Ukuran: ${phoneModel || "Tidak diisi"}`;
+    const message = `Halo, saya ingin memesan ${productTitle}${styleInfo}.%0A- Mode: ${modeDesc}%0A- Detail/Ukuran: ${phoneModel || "Termasuk Kustomisasi"}`;
     window.open(`https://wa.me/${phoneNumber}?text=${message}`, "_blank");
   };
 
@@ -253,7 +253,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
         
         <div style={{ width: "280px", backgroundColor: "#121318", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "20px", padding: "12px", display: "flex", flexDirection: "column", alignItems: "center", position: "relative", boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.5)", boxSizing: "border-box" }}>
           
-          {/* AREA PREVIEW TANPA KOTAK HITAM KAKU, BERSIH MENYESUAIKAN GAMBAR ASLI */}
+          {/* CONTAINER UTAMA PREVIEW */}
           <div 
             style={{ 
               width: "256px", 
@@ -264,19 +264,11 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
               display: "flex", 
               alignItems: "center", 
               justifyContent: "center", 
-              overflow: "hidden", 
               touchAction: "none" 
             }}
-            onMouseMove={(e) => handleMove(e.clientX, e.clientY, e)}
-            onMouseUp={handleEnd}
-            onMouseLeave={handleEnd}
-            onTouchMove={(e) => { if (e.touches[0]) handleMove(e.touches[0].clientX, e.touches[0].clientY, e); }}
-            onTouchEnd={handleEnd}
-            onTouchCancel={handleEnd}
-            onWheel={handleWheel}
           >
             
-            {/* LAYER 1: MOCKUP DASAR DENGAN TRANSISI HALUS (SMOOTH FADE) */}
+            {/* LAYER 1: MOCKUP DASAR */}
             <img 
               src={mockupBase} 
               alt="Mockup Base" 
@@ -288,149 +280,171 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                 objectFit: "contain", 
                 zIndex: 10, 
                 pointerEvents: "none",
-                transition: "opacity 0.4s ease-in-out, transform 0.4s ease-in-out",
-                opacity: 1
+                transition: "opacity 0.4s ease-in-out, transform 0.4s ease-in-out"
               }}
             />
 
-            {/* LAYER 2: EDITOR FOTO ATAU TEMPLATE */}
-            {(!isPhoneCase || activeTab === "edit") ? (
-              <>
-                {uploadedImage && (
-                  <div 
-                    style={{ position: "absolute", inset: 0, zIndex: 15, overflow: "hidden", cursor: "grab", display: "flex", alignItems: "center", justifyContent: "center", touchAction: "none" }}
-                    onMouseDown={(e) => { setActiveElementId(null); handleStart(e.clientX, e.clientY, e); }}
-                    onTouchStart={(e) => { if (e.touches[0]) { setActiveElementId(null); handleStart(e.touches[0].clientX, e.touches[0].clientY, e); } }}
-                  >
-                    <img 
-                      src={uploadedImage} 
-                      alt="Uploaded Custom" 
-                      style={{
-                        transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "contain",
-                        pointerEvents: "none",
-                        userSelect: "none"
-                      }}
-                    />
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleRemoveUploadedImage(); }}
-                      style={{
-                        position: "absolute",
-                        top: "8px",
-                        right: "8px",
-                        width: "24px",
-                        height: "24px",
-                        borderRadius: "50%",
-                        backgroundColor: "rgba(0,0,0,0.7)",
-                        color: "#fff",
-                        border: "1px solid rgba(255,255,255,0.3)",
-                        fontSize: "13px",
-                        fontWeight: "bold",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        zIndex: 40,
-                        outline: "none"
-                      }}
-                      title="Hapus foto"
+            {/* LAYER 2: AREA AREA EDIT / GAMBAR KUSTOM YANG DI-CLIP PAS DI BADAN BAJU */}
+            <div 
+              style={{
+                position: "absolute",
+                /* Mengatur posisi dan ukuran persis di tengah badan kaos agar tidak tembus ke bawah */
+                top: isPhoneCase ? "35px" : "85px",
+                left: isPhoneCase ? "50px" : "55px",
+                width: isPhoneCase ? "156px" : "146px",
+                height: isPhoneCase ? "320px" : "235px",
+                zIndex: 15,
+                overflow: "hidden",
+                borderRadius: "8px",
+                touchAction: "none"
+              }}
+              onMouseMove={(e) => handleMove(e.clientX, e.clientY, e)}
+              onMouseUp={handleEnd}
+              onMouseLeave={handleEnd}
+              onTouchMove={(e) => { if (e.touches[0]) handleMove(e.touches[0].clientX, e.touches[0].clientY, e); }}
+              onTouchEnd={handleEnd}
+              onTouchCancel={handleEnd}
+              onWheel={handleWheel}
+            >
+              {(!isPhoneCase || activeTab === "edit") ? (
+                <>
+                  {uploadedImage && (
+                    <div 
+                      style={{ position: "absolute", inset: 0, cursor: "grab", display: "flex", alignItems: "center", justifyContent: "center", touchAction: "none" }}
+                      onMouseDown={(e) => { setActiveElementId(null); handleStart(e.clientX, e.clientY, e); }}
+                      onTouchStart={(e) => { if (e.touches[0]) { setActiveElementId(null); handleStart(e.touches[0].clientX, e.touches[0].clientY, e); } }}
                     >
-                      ×
-                    </button>
-                  </div>
-                )}
-              </>
-            ) : (
-              <div 
-                style={{ position: "absolute", inset: 0, zIndex: 15, display: "flex", alignItems: "center", justifyContent: "center" }}
-                onClick={() => setActiveElementId(null)}
-              >
-                <img 
-                  src={`/template-${selectedTemplate}.png`} 
-                  alt={`Template ${selectedTemplate}`} 
-                  style={{ width: "100%", height: "100%", objectFit: "contain" }}
-                />
-              </div>
-            )}
+                      <img 
+                        src={uploadedImage} 
+                        alt="Uploaded Custom" 
+                        style={{
+                          transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "contain",
+                          pointerEvents: "none",
+                          userSelect: "none"
+                        }}
+                      />
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleRemoveUploadedImage(); }}
+                        style={{
+                          position: "absolute",
+                          top: "4px",
+                          right: "4px",
+                          width: "20px",
+                          height: "20px",
+                          borderRadius: "50%",
+                          backgroundColor: "rgba(0,0,0,0.8)",
+                          color: "#fff",
+                          border: "1px solid rgba(255,255,255,0.3)",
+                          fontSize: "11px",
+                          fontWeight: "bold",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          zIndex: 40,
+                          outline: "none"
+                        }}
+                        title="Hapus foto"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div 
+                  style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}
+                  onClick={() => setActiveElementId(null)}
+                >
+                  <img 
+                    src={`/template-${selectedTemplate}.png`} 
+                    alt={`Template ${selectedTemplate}`} 
+                    style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                  />
+                </div>
+              )}
 
-            {/* LAYER 3: IKON & ELEMEN DEKORASI */}
-            {placedElements.map((el) => {
-              const isActive = activeElementId === el.id;
-              return (
-                <div
-                  key={el.id}
-                  onMouseDown={(e) => {
-                    e.stopPropagation();
-                    setActiveElementId(el.id);
-                    activeDraggingElementId.current = el.id;
-                    handleStart(e.clientX, e.clientY, e);
-                  }}
-                  onTouchStart={(e) => {
-                    if (e.touches[0]) {
+              {/* LAYER 3: IKON & ELEMEN DEKORASI DALAM AREA EDIT */}
+              {placedElements.map((el) => {
+                const isActive = activeElementId === el.id;
+                return (
+                  <div
+                    key={el.id}
+                    onMouseDown={(e) => {
                       e.stopPropagation();
                       setActiveElementId(el.id);
                       activeDraggingElementId.current = el.id;
-                      handleStart(e.touches[0].clientX, e.touches[0].clientY, e);
-                    }
-                  }}
-                  style={{
-                    position: "absolute",
-                    left: `${el.x}px`,
-                    top: `${el.y}px`,
-                    transform: `scale(${el.scale}) rotate(${el.rotation}deg)`,
-                    zIndex: 25,
-                    cursor: "grab",
-                    padding: "6px",
-                    border: isActive ? "1px dashed #f472b6" : "none",
-                    touchAction: "none"
-                  }}
-                >
-                  <img 
-                    src={el.src} 
-                    alt="element icon" 
-                    style={{ 
-                      width: "55px", 
-                      height: "55px", 
-                      objectFit: "contain", 
-                      pointerEvents: "none",
-                      transform: `scaleX(${el.flipX ? -1 : 1}) scaleY(${el.flipY ? -1 : 1})`
-                    }} 
-                  />
+                      handleStart(e.clientX, e.clientY, e);
+                    }}
+                    onTouchStart={(e) => {
+                      if (e.touches[0]) {
+                        e.stopPropagation();
+                        setActiveElementId(el.id);
+                        activeDraggingElementId.current = el.id;
+                        handleStart(e.touches[0].clientX, e.touches[0].clientY, e);
+                      }
+                    }}
+                    style={{
+                      position: "absolute",
+                      left: `${el.x}px`,
+                      top: `${el.y}px`,
+                      transform: `scale(${el.scale}) rotate(${el.rotation}deg)`,
+                      zIndex: 25,
+                      cursor: "grab",
+                      padding: "4px",
+                      border: isActive ? "1px dashed #f472b6" : "none",
+                      touchAction: "none"
+                    }}
+                  >
+                    <img 
+                      src={el.src} 
+                      alt="element icon" 
+                      style={{ 
+                        width: "45px", 
+                        height: "45px", 
+                        objectFit: "contain", 
+                        pointerEvents: "none",
+                        transform: `scaleX(${el.flipX ? -1 : 1}) scaleY(${el.flipY ? -1 : 1})`
+                      }} 
+                    />
 
-                  {isActive && (
-                    <button
-                      onClick={(e) => handleRemoveElement(el.id, e)}
-                      style={{
-                        position: "absolute",
-                        top: "-8px",
-                        right: "-8px",
-                        width: "20px",
-                        height: "20px",
-                        borderRadius: "50%",
-                        backgroundColor: "#f472b6",
-                        color: "#09090b",
-                        border: "none",
-                        fontSize: "12px",
-                        fontWeight: "900",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        zIndex: 40,
-                        boxShadow: "0 2px 4px rgba(0,0,0,0.4)"
-                      }}
-                      title="Hapus"
-                    >
-                      ×
-                    </button>
-                  )}
-                </div>
-              );
-            })}
+                    {isActive && (
+                      <button
+                        onClick={(e) => handleRemoveElement(el.id, e)}
+                        style={{
+                          position: "absolute",
+                          top: "-6px",
+                          right: "-6px",
+                          width: "18px",
+                          height: "18px",
+                          borderRadius: "50%",
+                          backgroundColor: "#f472b6",
+                          color: "#09090b",
+                          border: "none",
+                          fontSize: "10px",
+                          fontWeight: "900",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          zIndex: 40,
+                          boxShadow: "0 2px 4px rgba(0,0,0,0.4)"
+                        }}
+                        title="Hapus"
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
 
-            {/* LAYER 4: MOCKUP TRANSPARAN PENIMPA DI ATAS */}
+            </div>
+
+            {/* LAYER 4: MOCKUP TRANSPARAN PENIMPA DI ATAS (Biar kerah & jahitan baju ada di atas foto/ikon) */}
             {mockupTp && (
               <img 
                 src={mockupTp} 
