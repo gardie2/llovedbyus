@@ -174,7 +174,7 @@ export default function Home() {
         }
       `}</style>
 
-      {/* NAVBAR */}
+      {/* NAVBAR (TANPA TOMBOL START) */}
       <nav className="bg-[#0d0e12]/80 backdrop-blur-xl border-b border-zinc-800/80 sticky top-0 z-50 py-4 px-6">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Link href="/" className="flex flex-col group">
@@ -192,13 +192,6 @@ export default function Home() {
             <a href="#socials" className="hover:text-pink-300 transition">Official Links</a>
             <a href="#" className="hover:text-pink-300 transition">About</a>
           </div>
-
-          <button 
-            onClick={() => { setSelectedProductTitle("Custom Phone Case"); setShowDesignLab(true); }}
-            className="cute-click bg-gradient-to-r from-zinc-200 via-pink-200 to-zinc-300 hover:from-white hover:to-pink-100 text-zinc-950 font-black px-6 py-2 rounded-full text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(244,114,182,0.3)] z-20 cursor-pointer"
-          >
-            Start
-          </button>
         </div>
       </nav>
 
@@ -229,7 +222,7 @@ export default function Home() {
               onClick={() => { setSelectedProductTitle("Custom Phone Case"); setShowDesignLab(true); }}
               className="cute-click bg-gradient-to-r from-zinc-100 via-pink-200 to-zinc-200 hover:from-white hover:to-pink-100 text-zinc-950 font-black px-8 py-4 rounded-full text-xs uppercase tracking-widest shadow-[0_0_25px_rgba(244,114,182,0.3)] cursor-pointer"
             >
-              Start Designing
+              Pick Product & Design
             </button>
             <a href="#products" className="cute-click border border-zinc-700/80 hover:border-pink-400/50 text-zinc-300 font-bold px-8 py-4 rounded-full text-xs uppercase tracking-widest bg-zinc-900/60 backdrop-blur-md hover:bg-zinc-800 transition text-center">
               Explore Products
