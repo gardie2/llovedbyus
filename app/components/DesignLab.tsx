@@ -265,17 +265,26 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
               }}
             />
 
-            {/* LAYER 2: AREA EDIT DENGAN CLIP-PATH YANG RAPI TERPOTONG DI DALAM BODI HP */}
+            {/* LAYER 2: AREA EDIT DENGAN MASKING OTOMATIS BERBASIS GAMBAR TRANSPARAN */}
             <div 
               style={{
                 position: "absolute",
-                top: isPhoneCase ? "36px" : "85px",
-                left: isPhoneCase ? "52px" : "55px",
-                width: isPhoneCase ? "152px" : "146px",
-                height: isPhoneCase ? "328px" : "235px",
+                inset: 0,
+                width: "100%",
+                height: "100%",
                 zIndex: 15,
-                clipPath: isPhoneCase ? "inset(2px 2px 2px 2px round 22px)" : "inset(0px round 6px)",
-                overflow: "hidden",
+                ...(isPhoneCase && mockupTp ? {
+                  maskImage: `url(${mockupTp})`,
+                  WebkitMaskImage: `url(${mockupTp})`,
+                  maskSize: "contain",
+                  WebkitMaskSize: "contain",
+                  maskRepeat: "no-repeat",
+                  WebkitMaskRepeat: "no-repeat",
+                  maskPosition: "center",
+                  WebkitMaskPosition: "center"
+                } : {
+                  overflow: "hidden"
+                }),
                 touchAction: "none"
               }}
               onWheel={handleWheel}
@@ -654,7 +663,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
               <hr style={{ border: "none", borderTop: "1px solid rgba(255,255,255,0.1)", margin: "4px 0" }} />
 
               <div>
-                <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase",marginBottom: "8px" }}>
+                <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase", marginBottom: "8px" }}>
                   Tambah Icons ke Template (Klik untuk pasang)
                 </label>
                 <div style={{ maxHeight: "150px", overflowY: "auto", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px" }}>
