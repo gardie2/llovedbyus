@@ -1,23 +1,31 @@
+import Link from "next/link";
+
 export default function Navbar() {
   return (
-    <nav className="w-full border-b border-gray-200 bg-white">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-8 py-5">
+    <nav className="bg-[#0d0e12]/80 backdrop-blur-xl border-b border-zinc-800/80 sticky top-0 z-50 py-4 px-6 w-full">
+      <div className="max-w-7xl mx-auto flex items-center justify-between">
         
-        <div>
-          <h1 className="text-3xl font-black tracking-tight">
-            YOURS<span className="text-red-500">LAB</span>
-          </h1>
-
-          <p className="text-xs tracking-[0.35em] text-gray-400">
+        {/* LOGO CHROME Y2K */}
+        <Link href="/" className="flex flex-col group">
+          <div className="flex items-center gap-1 font-black text-2xl tracking-tighter uppercase italic">
+            <span className="bg-gradient-to-r from-zinc-100 via-zinc-300 to-zinc-400 bg-clip-text text-transparent drop-shadow-[0_2px_10px_rgba(255,255,255,0.2)]">
+              YOURS
+            </span>
+            <span className="bg-gradient-to-r from-pink-300 via-zinc-200 to-pink-400 bg-clip-text text-transparent drop-shadow-[0_0_12px_rgba(244,114,182,0.4)]">
+              LAB
+            </span>
+          </div>
+          <span className="text-[8px] font-bold tracking-[0.3em] text-zinc-400 -mt-1 uppercase">
             CREATE YOURS
-          </p>
-        </div>
+          </span>
+        </Link>
 
-        <div className="hidden gap-10 font-medium lg:flex">
-          <a href="#">Products</a>
-          <a href="#">Design Lab</a>
-          <a href="#">AI Design</a>
-          <a href="#">About</a>
+        {/* MENU NAVBAR (TANPA TOMBOL START) */}
+        <div className="hidden md:flex items-center gap-8 text-xs font-bold tracking-wider uppercase text-zinc-400">
+          <Link href="#" className="hover:text-pink-300 transition">Products</Link>
+          <Link href="#design-lab" className="hover:text-pink-300 transition">Design Lab</Link>
+          <Link href="#" className="hover:text-pink-300 transition">AI Design</Link>
+          <Link href="#" className="hover:text-pink-300 transition">About</Link>
         </div>
 
       </div>
