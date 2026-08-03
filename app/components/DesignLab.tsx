@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useMemo } from "react";
 import { removeBackground } from "@imgly/background-removal";
 
 interface DesignLabProps {
@@ -21,38 +21,20 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
   const [phoneModel, setPhoneModel] = useState("");
   const [isRemovingBg, setIsRemovingBg] = useState(false);
   
-  const [placedElements, setPlacedElements] = useState<Array<{ 
-    id: number; 
-    src: string; 
-    x: number; 
-    y: number; 
-    scale: number; 
-    rotation: number; 
-    flipX: boolean; 
-    flipY: boolean;
-    slotImages?: { [key: number]: string }; 
-    slotTransforms?: { [key: number]: { x: number; y: number; scale: number } };
-  }>>([]);
-  
-  const [activeSelection, setActiveSelection] = useState<"photo" | number | null>("photo");
+  const [placedElements, setPlacedElements] = useState<Array<{ id: number; src: string; x: number; y: number; scale: number; rotation: number; flipX: boolean; flipY: boolean }>>([]);
+  const [activeElementId, setActiveElementId] = useState<number | null>(null);
 
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [rotation, setRotation] = useState(0);
   
   const isInteracting = useRef(false);
   const lastClientPos = useRef({ x: 0, y: 0 });
-  
-  const initialPinchDistance = useRef<number | null>(null);
-  const initialScaleOnPinch = useRef(1);
-  const initialTouchAngle = useRef<number | null>(null);
-  const initialRotationOnTouch = useRef(0);
+  const initialPinchDistance = useRef(0);
+  const initialScale = useRef(1);
+  const initialTouchAngle = useRef(0);
+  const initialElementRotation = useRef(0);
   
   const activeDraggingElementId = useRef<number | null>(null);
-  const isDraggingPhoto = useRef(false);
-
-  const activeSlotDrag = useRef<{ elementId: number; slotIndex: number } | null>(null);
-  const slotLastPos = useRef({ x: 0, y: 0 });
 
   const { mockupBase, mockupTp } = useMemo(() => {
     if (isPhoneCase) {
@@ -77,125 +59,6 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
     return { mockupBase: "/mockup-case.png", mockupTp: "/mockup-case-transparent.png" };
   }, [isPhoneCase, isTshirt, tshirtStyle, titleLower]);
 
-  useEffect(() => {
-    const handleGlobalMove = (clientX: number, clientY: number) => {
-      if (!isInteracting.current) return;
-
-      const dx = clientX - lastClientPos.current.x;
-      const dy = clientY - lastClientPos.current.y;
-
-      if (activeSlotDrag.current !== null) {
-        const { elementId, slotIndex } = activeSlotDrag.current;
-        const sDx = clientX - slotLastPos.current.x;
-        const sDy = clientY - slotLastPos.current.y;
-
-        setPlacedElements((prev) =>
-          prev.map((el) => {
-            if (el.id === elementId) {
-              const currentT = el.slotTransforms?.[slotIndex] || { x: 0, y: 0, scale: 1 };
-              return {
-                ...el,
-                slotTransforms: {
-                  ...(el.slotTransforms || {}),
-                  [slotIndex]: {
-                    ...currentT,
-                    x: currentT.x + sDx,
-                    y: currentT.y + sDy,
-                  },
-                },
-              };
-            }
-            return el;
-          })
-        );
-        slotLastPos.current = { x: clientX, y: clientY };
-      } else if (activeDraggingElementId.current !== null) {
-        const id = activeDraggingElementId.current;
-        setPlacedElements((prev) =>
-          prev.map((el) => {
-            if (el.id === id) {
-              return {
-                ...el,
-                x: el.x + dx,
-                y: el.y + dy,
-              };
-            }
-            return el;
-          })
-        );
-        lastClientPos.current = { x: clientX, y: clientY };
-      } else if (isDraggingPhoto.current) {
-        setPosition((prev) => ({
-          x: prev.x + dx,
-          y: prev.y + dy,
-        }));
-        lastClientPos.current = { x: clientX, y: clientY };
-      }
-    };
-
-    const onMouseMove = (e: MouseEvent) => handleGlobalMove(e.clientX, e.clientY);
-    const onTouchMove = (e: TouchEvent) => {
-      if (e.touches.length === 2) {
-        const x1 = e.touches[0].clientX;
-        const y1 = e.touches[0].clientY;
-        const x2 = e.touches[1].clientX;
-        const y2 = e.touches[1].clientY;
-
-        const currentDist = Math.hypot(x1 - x2, y1 - y2);
-        const currentAngle = Math.atan2(y2 - y1, x2 - x1) * (180 / Math.PI);
-
-        if (initialPinchDistance.current !== null && initialTouchAngle.current !== null) {
-          const factor = currentDist / initialPinchDistance.current;
-          const angleDelta = currentAngle - initialTouchAngle.current;
-
-          if (activeSelection === "photo") {
-            const newScale = Math.min(Math.max(0.3, initialScaleOnPinch.current * factor), 4.0);
-            const newRot = initialRotationOnTouch.current + angleDelta;
-            setScale(newScale);
-            setRotation(newRot);
-          } else if (typeof activeSelection === "number") {
-            setPlacedElements((prev) =>
-              prev.map((el) => {
-                if (el.id === activeSelection) {
-                  return {
-                    ...el,
-                    scale: Math.min(Math.max(0.3, initialScaleOnPinch.current * factor), 4.0),
-                    rotation: initialRotationOnTouch.current + angleDelta,
-                  };
-                }
-                return el;
-              })
-            );
-          }
-        }
-        return;
-      }
-
-      if (e.touches[0]) handleGlobalMove(e.touches[0].clientX, e.touches[0].clientY);
-    };
-
-    const onEnd = () => {
-      isInteracting.current = false;
-      activeDraggingElementId.current = null;
-      isDraggingPhoto.current = false;
-      activeSlotDrag.current = null;
-      initialPinchDistance.current = null;
-      initialTouchAngle.current = null;
-    };
-
-    window.addEventListener("mousemove", onMouseMove);
-    window.addEventListener("mouseup", onEnd);
-    window.addEventListener("touchmove", onTouchMove, { passive: false });
-    window.addEventListener("touchend", onEnd);
-
-    return () => {
-      window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("mouseup", onEnd);
-      window.removeEventListener("touchmove", onTouchMove);
-      window.removeEventListener("touchend", onEnd);
-    };
-  }, [activeSelection]);
-
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -205,8 +68,6 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
       setFileName(file.name);
       setScale(1);
       setPosition({ x: 0, y: 0 });
-      setRotation(0);
-      setActiveSelection("photo");
     }
   };
 
@@ -235,16 +96,13 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
     setUploadedImage(null);
     setOriginalImage(null);
     setFileName("");
-    if (activeSelection === "photo") {
-      setActiveSelection(null);
-    }
   };
 
   const handleRemoveElement = (id: number, e: React.MouseEvent | React.TouchEvent) => {
     e.stopPropagation();
     setPlacedElements((prev) => prev.filter((el) => el.id !== id));
-    if (activeSelection === id) {
-      setActiveSelection(null);
+    if (activeElementId === id) {
+      setActiveElementId(null);
     }
   };
 
@@ -252,127 +110,124 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
     const newElement = {
       id: Date.now(),
       src: `/${imageName}`,
-      x: 30,
-      y: 30,
+      x: 100,
+      y: 140,
       scale: 1,
       rotation: 0,
       flipX: false,
       flipY: false,
-      slotImages: {},
-      slotTransforms: {},
     };
     setPlacedElements((prev) => [...prev, newElement]);
-    setActiveSelection(newElement.id);
+    setActiveElementId(newElement.id);
   };
 
-  const handleSlotImageUpload = (elementId: number, slotIndex: number, e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
+  const getTouchDistance = (t1: React.Touch, t2: React.Touch) => {
+    return Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+  };
+
+  const getTouchAngle = (t1: React.Touch, t2: React.Touch) => {
+    return Math.atan2(t2.clientY - t1.clientY, t2.clientX - t1.clientX) * (180 / Math.PI);
+  };
+
+  const handleStart = (clientX: number, clientY: number, e?: React.TouchEvent | React.MouseEvent) => {
+    if (e) e.preventDefault();
+    isInteracting.current = true;
+    lastClientPos.current = { x: clientX, y: clientY };
+
+    if (e && 'touches' in e && e.touches.length === 2) {
+      initialPinchDistance.current = getTouchDistance(e.touches[0], e.touches[1]);
+      initialTouchAngle.current = getTouchAngle(e.touches[0], e.touches[1]);
+      
+      if (activeElementId !== null) {
+        const activeEl = placedElements.find(el => el.id === activeElementId);
+        if (activeEl) {
+          initialScale.current = activeEl.scale;
+          initialElementRotation.current = activeEl.rotation;
+        }
+      } else {
+        initialScale.current = scale;
+      }
+    }
+  };
+
+  const handleMove = (clientX: number, clientY: number, e?: React.TouchEvent | React.MouseEvent) => {
+    if (!isInteracting.current) return;
+    if (e) e.preventDefault();
+
+    if (e && 'touches' in e && e.touches.length === 2) {
+      const dist = getTouchDistance(e.touches[0], e.touches[1]);
+      const currentAngle = getTouchAngle(e.touches[0], e.touches[1]);
+      
+      if (initialPinchDistance.current > 0) {
+        const factor = dist / initialPinchDistance.current;
+        const angleDelta = currentAngle - initialTouchAngle.current;
+
+        if (activeElementId !== null) {
+          setPlacedElements((prev) =>
+            prev.map((el) => {
+              if (el.id === activeElementId) {
+                return { 
+                  ...el, 
+                  scale: Math.min(Math.max(0.3, initialScale.current * factor), 3.0),
+                  rotation: Math.round(initialElementRotation.current + angleDelta)
+                };
+              }
+              return el;
+            })
+          );
+        } else {
+          const newScale = Math.min(Math.max(0.5, initialScale.current * factor), 3.5);
+          setScale(newScale);
+        }
+      }
+      return;
+    }
+
+    const dx = clientX - lastClientPos.current.x;
+    const dy = clientY - lastClientPos.current.y;
+
+    if (activeDraggingElementId.current !== null) {
+      const id = activeDraggingElementId.current;
       setPlacedElements((prev) =>
         prev.map((el) => {
-          if (el.id === elementId) {
+          if (el.id === id) {
             return {
               ...el,
-              slotImages: {
-                ...(el.slotImages || {}),
-                [slotIndex]: url,
-              },
-              slotTransforms: {
-                ...(el.slotTransforms || {}),
-                [slotIndex]: { x: 0, y: 0, scale: 1 },
-              },
+              x: el.x + dx,
+              y: el.y + dy,
             };
           }
           return el;
         })
       );
+      lastClientPos.current = { x: clientX, y: clientY };
+    } else if (activeElementId === null && (activeTab === "edit" || !isPhoneCase)) {
+      setPosition((prev) => ({
+        x: prev.x + dx,
+        y: prev.y + dy,
+      }));
+      lastClientPos.current = { x: clientX, y: clientY };
     }
   };
 
-  const handleStartSlotDrag = (elementId: number, slotIndex: number, clientX: number, clientY: number, e: React.MouseEvent | React.TouchEvent) => {
-    e.stopPropagation();
-    isInteracting.current = true;
-    activeSlotDrag.current = { elementId, slotIndex };
-    slotLastPos.current = { x: clientX, y: clientY };
-  };
-
-  const handleSlotWheel = (elementId: number, slotIndex: number, e: React.WheelEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const zoomFactor = e.deltaY < 0 ? 0.1 : -0.1;
-    setPlacedElements((prev) =>
-      prev.map((el) => {
-        if (el.id === elementId) {
-          const currentT = el.slotTransforms?.[slotIndex] || { x: 0, y: 0, scale: 1 };
-          const newScale = Math.min(Math.max(0.3, currentT.scale + zoomFactor), 4.0);
-          return {
-            ...el,
-            slotTransforms: {
-              ...(el.slotTransforms || {}),
-              [slotIndex]: { ...currentT, scale: newScale },
-            },
-          };
-        }
-        return el;
-      })
-    );
-  };
-
-  const handleStartDragPhoto = (clientX: number, clientY: number, e: React.MouseEvent | React.TouchEvent) => {
-    e.stopPropagation();
-    setActiveSelection("photo");
-    isInteracting.current = true;
-    isDraggingPhoto.current = true;
+  const handleEnd = () => {
+    isInteracting.current = false;
     activeDraggingElementId.current = null;
-    lastClientPos.current = { x: clientX, y: clientY };
-  };
-
-  const handleStartDragElement = (id: number, clientX: number, clientY: number, e: React.MouseEvent | React.TouchEvent) => {
-    e.stopPropagation();
-    setActiveSelection(id);
-    isInteracting.current = true;
-    isDraggingPhoto.current = false;
-    activeDraggingElementId.current = id;
-    lastClientPos.current = { x: clientX, y: clientY };
-  };
-
-  const handleTouchStartContainer = (e: React.TouchEvent) => {
-    if (e.touches.length === 2) {
-      const x1 = e.touches[0].clientX;
-      const y1 = e.touches[0].clientY;
-      const x2 = e.touches[1].clientX;
-      const y2 = e.touches[1].clientY;
-
-      initialPinchDistance.current = Math.hypot(x1 - x2, y1 - y2);
-      initialTouchAngle.current = Math.atan2(y2 - y1, x2 - x1) * (180 / Math.PI);
-
-      if (activeSelection === "photo") {
-        initialScaleOnPinch.current = scale;
-        initialRotationOnTouch.current = rotation;
-      } else if (typeof activeSelection === "number") {
-        const found = placedElements.find((el) => el.id === activeSelection);
-        if (found) {
-          initialScaleOnPinch.current = found.scale;
-          initialRotationOnTouch.current = found.rotation;
-        }
-      }
-    }
   };
 
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault();
     const zoomFactor = e.deltaY < 0 ? 0.1 : -0.1;
-    if (typeof activeSelection === "number") {
+    if (activeElementId !== null) {
       setPlacedElements((prev) =>
         prev.map((el) => {
-          if (el.id === activeSelection) {
+          if (el.id === activeElementId) {
             return { ...el, scale: Math.min(Math.max(0.3, el.scale + zoomFactor), 3.0) };
           }
           return el;
         })
       );
-    } else if (activeSelection === "photo") {
+    } else if (activeTab === "edit" || !isPhoneCase) {
       setScale((prev) => Math.min(Math.max(0.5, prev + zoomFactor), 3.5));
     }
   };
@@ -381,8 +236,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
     const phoneNumber = "62881025376311";
     const styleInfo = isTshirt ? ` (${tshirtStyle.toUpperCase()})` : "";
     const modeDesc = isPhoneCase ? (activeTab === "edit" ? "Custom Foto & Icons" : `Template ${selectedTemplate} + Icons`) : "Custom Foto & Icons";
-    const totalCustomElements = placedElements.length;
-    const message = `Halo, saya ingin memesan ${productTitle}${styleInfo}.%0A- Mode: ${modeDesc}%0A- Jumlah Frame/Elemen Tambahan: ${totalCustomElements}%0A- Detail/Ukuran: ${phoneModel || "Termasuk Kustomisasi"}`;
+    const message = `Halo, saya ingin memesan ${productTitle}${styleInfo}.%0A- Mode: ${modeDesc}%0A- Detail/Ukuran: ${phoneModel || "Tidak diisi"}`;
     window.open(`https://wa.me/${phoneNumber}?text=${message}`, "_blank");
   };
 
@@ -399,334 +253,181 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
         
         <div style={{ width: "280px", backgroundColor: "#121318", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "20px", padding: "12px", display: "flex", flexDirection: "column", alignItems: "center", position: "relative", boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.5)", boxSizing: "border-box" }}>
           
+          {/* AREA PREVIEW BERSIH TANPA TEKS LIVE EDITOR, FULL UTUH ANTI-CROP */}
           <div 
             style={{ 
               width: "256px", 
               height: "400px", 
-              backgroundColor: "transparent", 
+              backgroundColor: "#09090b", 
               borderRadius: "14px", 
+              border: "2px solid rgba(255,255,255,0.15)", 
               position: "relative", 
               display: "flex", 
               alignItems: "center", 
               justifyContent: "center", 
+              overflow: "hidden", 
               touchAction: "none" 
             }}
+            onMouseMove={(e) => handleMove(e.clientX, e.clientY, e)}
+            onMouseUp={handleEnd}
+            onMouseLeave={handleEnd}
+            onTouchMove={(e) => { if (e.touches[0]) handleMove(e.touches[0].clientX, e.touches[0].clientY, e); }}
+            onTouchEnd={handleEnd}
+            onTouchCancel={handleEnd}
+            onWheel={handleWheel}
           >
             
-            {isPhoneCase && activeTab === "template" ? (
+            {/* LAYER 1: MOCKUP DASAR (CONTAIN: UTUH TIDAK KE-CROP) */}
+            <img 
+              src={mockupBase} 
+              alt="Mockup Base" 
+              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", zIndex: 10, pointerEvents: "none" }}
+            />
+
+            {/* LAYER 2: EDITOR FOTO ATAU TEMPLATE */}
+            {(!isPhoneCase || activeTab === "edit") ? (
+              <>
+                {uploadedImage && (
+                  <div 
+                    style={{ position: "absolute", inset: 0, zIndex: 15, overflow: "hidden", cursor: "grab", display: "flex", alignItems: "center", justifyContent: "center", touchAction: "none" }}
+                    onMouseDown={(e) => { setActiveElementId(null); handleStart(e.clientX, e.clientY, e); }}
+                    onTouchStart={(e) => { if (e.touches[0]) { setActiveElementId(null); handleStart(e.touches[0].clientX, e.touches[0].clientY, e); } }}
+                  >
+                    <img 
+                      src={uploadedImage} 
+                      alt="Uploaded Custom" 
+                      style={{
+                        transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "contain",
+                        pointerEvents: "none",
+                        userSelect: "none"
+                      }}
+                    />
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleRemoveUploadedImage(); }}
+                      style={{
+                        position: "absolute",
+                        top: "8px",
+                        right: "8px",
+                        width: "24px",
+                        height: "24px",
+                        borderRadius: "50%",
+                        backgroundColor: "rgba(0,0,0,0.7)",
+                        color: "#fff",
+                        border: "1px solid rgba(255,255,255,0.3)",
+                        fontSize: "13px",
+                        fontWeight: "bold",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        zIndex: 40,
+                        outline: "none"
+                      }}
+                      title="Hapus foto"
+                    >
+                      ×
+                    </button>
+                  </div>
+                )}
+              </>
+            ) : (
               <div 
-                style={{ 
-                  position: "absolute", 
-                  inset: 0, 
-                  width: "100%", 
-                  height: "100%", 
-                  zIndex: 20,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center"
-                }}
+                style={{ position: "absolute", inset: 0, zIndex: 15, display: "flex", alignItems: "center", justifyContent: "center" }}
+                onClick={() => setActiveElementId(null)}
               >
                 <img 
                   src={`/template-${selectedTemplate}.png`} 
                   alt={`Template ${selectedTemplate}`} 
-                  style={{ 
-                    width: "100%", 
-                    height: "100%", 
-                    objectFit: "contain",
-                    borderRadius: "14px"
-                  }} 
+                  style={{ width: "100%", height: "100%", objectFit: "contain" }}
                 />
               </div>
-            ) : (
-              <>
-                <img 
-                  src={mockupBase} 
-                  alt="Mockup Base" 
-                  style={{ 
-                    position: "absolute", 
-                    inset: 0, 
-                    width: "100%", 
-                    height: "100%", 
-                    objectFit: "contain", 
-                    zIndex: 10, 
-                    pointerEvents: "none" 
-                  }}
-                />
+            )}
 
-                <div 
+            {/* LAYER 3: IKON & ELEMEN DEKORASI */}
+            {placedElements.map((el) => {
+              const isActive = activeElementId === el.id;
+              return (
+                <div
+                  key={el.id}
+                  onMouseDown={(e) => {
+                    e.stopPropagation();
+                    setActiveElementId(el.id);
+                    activeDraggingElementId.current = el.id;
+                    handleStart(e.clientX, e.clientY, e);
+                  }}
+                  onTouchStart={(e) => {
+                    if (e.touches[0]) {
+                      e.stopPropagation();
+                      setActiveElementId(el.id);
+                      activeDraggingElementId.current = el.id;
+                      handleStart(e.touches[0].clientX, e.touches[0].clientY, e);
+                    }
+                  }}
                   style={{
                     position: "absolute",
-                    top: isPhoneCase ? "27px" : "85px",
-                    left: isPhoneCase ? "41px" : "55px",
-                    width: isPhoneCase ? "174px" : "146px",
-                    height: isPhoneCase ? "346px" : "235px",
-                    zIndex: 15,
-                    clipPath: isPhoneCase 
-                      ? "path('M 15 0 L 158 0 C 166 0 174 8 174 16 L 174 330 C 174 338 166 346 158 346 L 15 346 C 7 346 0 338 0 330 L 0 16 C 0 8 7 0 15 0 Z')" 
-                      : "inset(0px round 6px)",
-                    overflow: "hidden",
+                    left: `${el.x}px`,
+                    top: `${el.y}px`,
+                    transform: `scale(${el.scale}) rotate(${el.rotation}deg)`,
+                    zIndex: 25,
+                    cursor: "grab",
+                    padding: "6px",
+                    border: isActive ? "1px dashed #f472b6" : "none",
                     touchAction: "none"
                   }}
-                  onWheel={handleWheel}
-                  onTouchStart={handleTouchStartContainer}
-                  onClick={() => {
-                    setActiveSelection(null);
-                  }}
                 >
-                  {uploadedImage && (
-                    <div 
-                      style={{ 
-                        position: "absolute", 
-                        inset: 0, 
-                        cursor: "grab", 
-                        display: "flex", 
-                        alignItems: "center", 
-                        justifyContent: "center", 
-                        touchAction: "none" 
-                      }}
-                      onMouseDown={(e) => handleStartDragPhoto(e.clientX, e.clientY, e)}
-                      onTouchStart={(e) => { 
-                        if (e.touches.length === 1 && e.touches[0]) {
-                          handleStartDragPhoto(e.touches[0].clientX, e.touches[0].clientY, e);
-                        }
-                      }}
-                    >
-                      <img 
-                        src={uploadedImage} 
-                        alt="Uploaded Custom" 
-                        style={{
-                          transform: `translate(${position.x}px, ${position.y}px) scale(${scale}) rotate(${rotation}deg)`,
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "cover",
-                          pointerEvents: "none",
-                          userSelect: "none"
-                        }}
-                      />
-                    </div>
-                  )}
-
-                  {placedElements.map((el) => {
-                    const isActive = activeSelection === el.id;
-                    const isElm24 = el.src.includes("elm24.png");
-                    const isElm25 = el.src.includes("elm25.png");
-                    const isElm32 = el.src.includes("elm32.png");
-
-                    const boxWidth = isElm24 ? "85px" : isElm25 ? "110px" : isElm32 ? "90px" : "60px";
-                    const boxHeight = isElm24 ? "210px" : isElm25 ? "145px" : isElm32 ? "125px" : "60px";
-
-                    return (
-                      <div
-                        key={el.id}
-                        onMouseDown={(e) => handleStartDragElement(el.id, e.clientX, e.clientY, e)}
-                        onTouchStart={(e) => {
-                          if (e.touches.length === 1 && e.touches[0]) {
-                            handleStartDragElement(el.id, e.touches[0].clientX, e.touches[0].clientY, e);
-                          }
-                        }}
-                        style={{
-                          position: "absolute",
-                          left: `${el.x}px`,
-                          top: `${el.y}px`,
-                          width: boxWidth,
-                          height: boxHeight,
-                          transform: `scale(${el.scale}) rotate(${el.rotation}deg)`,
-                          zIndex: 25,
-                          cursor: "grab",
-                          touchAction: "none"
-                        }}
-                      >
-                        {/* 1. ELM 24 */}
-                        {isElm24 && (
-                          <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "auto" }}>
-                            {[1, 2, 3].map((slotIdx) => {
-                              const topPos = slotIdx === 1 ? "1%" : slotIdx === 2 ? "29.5%" : "58%";
-                              const slotImg = el.slotImages?.[slotIdx];
-                              const slotT = el.slotTransforms?.[slotIdx] || { x: 0, y: 0, scale: 1 };
-
-                              return (
-                                <div 
-                                  key={slotIdx}
-                                  onWheel={(e) => slotImg && handleSlotWheel(el.id, slotIdx, e)}
-                                  onMouseDown={(e) => slotImg && handleStartSlotDrag(el.id, slotIdx, e.clientX, e.clientY, e)}
-                                  onTouchStart={(e) => {
-                                    if (slotImg && e.touches.length === 1 && e.touches[0]) {
-                                      handleStartSlotDrag(el.id, slotIdx, e.touches[0].clientX, e.touches[0].clientY, e);
-                                    }
-                                  }}
-                                  style={{ position: "absolute", top: topPos, left: "6%", right: "6%", height: "29.5%", backgroundColor: "#18181b", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", cursor: slotImg ? "grab" : "default" }}
-                                >
-                                  {slotImg ? (
-                                    <img 
-                                      src={slotImg} 
-                                      alt={`slot ${slotIdx}`} 
-                                      style={{ 
-                                        width: "100%", 
-                                        height: "100%", 
-                                        objectFit: "cover",
-                                        transform: `translate(${slotT.x}px, ${slotT.y}px) scale(${slotT.scale})`,
-                                        pointerEvents: "none" 
-                                      }} 
-                                    />
-                                  ) : (
-                                    <label style={{ cursor: "pointer", color: "#f472b6", fontSize: "16px", fontWeight: "bold" }}>
-                                      +
-                                      <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => handleSlotImageUpload(el.id, slotIdx, e)} />
-                                    </label>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-
-                        {/* 2. ELM 25 (Lebar dipotong pas di kanan-kiri dari 12% ke 14%) */}
-                        {isElm25 && (
-                          <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "auto" }}>
-                            {(() => {
-                              const slotImg = el.slotImages?.[1];
-                              const slotT = el.slotTransforms?.[1] || { x: 0, y: 0, scale: 1 };
-                              return (
-                                <div 
-                                  onWheel={(e) => slotImg && handleSlotWheel(el.id, 1, e)}
-                                  onMouseDown={(e) => slotImg && handleStartSlotDrag(el.id, 1, e.clientX, e.clientY, e)}
-                                  onTouchStart={(e) => {
-                                    if (slotImg && e.touches.length === 1 && e.touches[0]) {
-                                      handleStartSlotDrag(el.id, 1, e.touches[0].clientX, e.touches[0].clientY, e);
-                                    }
-                                  }}
-                                  style={{ position: "absolute", top: "2%", left: "14%", right: "14%", height: "46%", backgroundColor: "#18181b", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", cursor: slotImg ? "grab" : "default" }}
-                                >
-                                  {slotImg ? (
-                                    <img 
-                                      src={slotImg} 
-                                      alt="slot 1" 
-                                      style={{ 
-                                        width: "100%", 
-                                        height: "100%", 
-                                        objectFit: "cover",
-                                        transform: `translate(${slotT.x}px, ${slotT.y}px) scale(${slotT.scale})`,
-                                        pointerEvents: "none" 
-                                      }} 
-                                    />
-                                  ) : (
-                                    <label style={{ cursor: "pointer", color: "#f472b6", fontSize: "18px", fontWeight: "bold" }}>
-                                      +
-                                      <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => handleSlotImageUpload(el.id, 1, e)} />
-                                    </label>
-                                  )}
-                                </div>
-                              );
-                            })()}
-                          </div>
-                        )}
-
-                        {/* 3. ELM 32 */}
-                        {isElm32 && (
-                          <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "auto" }}>
-                            {(() => {
-                              const slotImg = el.slotImages?.[1];
-                              const slotT = el.slotTransforms?.[1] || { x: 0, y: 0, scale: 1 };
-                              return (
-                                <div 
-                                  onWheel={(e) => slotImg && handleSlotWheel(el.id, 1, e)}
-                                  onMouseDown={(e) => slotImg && handleStartSlotDrag(el.id, 1, e.clientX, e.clientY, e)}
-                                  onTouchStart={(e) => {
-                                    if (slotImg && e.touches.length === 1 && e.touches[0]) {
-                                      handleStartSlotDrag(el.id, 1, e.touches[0].clientX, e.touches[0].clientY, e);
-                                    }
-                                  }}
-                                  style={{ position: "absolute", top: "20%", left: "18%", right: "18%", height: "45%", backgroundColor: "#18181b", borderRadius: "50%", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", cursor: slotImg ? "grab" : "default" }}
-                                >
-                                  {slotImg ? (
-                                    <img 
-                                      src={slotImg} 
-                                      alt="slot 1" 
-                                      style={{ 
-                                        width: "100%", 
-                                        height: "100%", 
-                                        objectFit: "cover",
-                                        transform: `translate(${slotT.x}px, ${slotT.y}px) scale(${slotT.scale})`,
-                                        pointerEvents: "none" 
-                                      }} 
-                                    />
-                                  ) : (
-                                    <label style={{ cursor: "pointer", color: "#f472b6", fontSize: "18px", fontWeight: "bold" }}>
-                                      +
-                                      <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => handleSlotImageUpload(el.id, 1, e)} />
-                                    </label>
-                                  )}
-                                </div>
-                              );
-                            })()}
-                          </div>
-                        )}
-
-                        {/* Gambar Bingkai Utama PNG */}
-                        <img 
-                          src={el.src} 
-                          alt="element frame" 
-                          style={{ 
-                            position: "absolute",
-                            top: 0,
-                            left: 0,
-                            width: "100%", 
-                            height: "100%", 
-                            objectFit: "contain", 
-                            pointerEvents: "none",
-                            transform: `scaleX(${el.flipX ? -1 : 1}) scaleY(${el.flipY ? -1 : 1})`,
-                            zIndex: 2
-                          }} 
-                        />
-
-                        {isActive && (
-                          <button
-                            onClick={(e) => handleRemoveElement(el.id, e)}
-                            style={{
-                              position: "absolute",
-                              top: "-4px",
-                              right: "-4px",
-                              width: "20px",
-                              height: "20px",
-                              borderRadius: "50%",
-                              backgroundColor: "#f472b6",
-                              color: "#09090b",
-                              border: "none",
-                              fontSize: "11px",
-                              fontWeight: "900",
-                              cursor: "pointer",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              zIndex: 50,
-                              boxShadow: "0 2px 4px rgba(0,0,0,0.4)"
-                            }}
-                            title="Hapus"
-                          >
-                            ×
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {mockupTp && (
                   <img 
-                    src={mockupTp} 
-                    alt="Mockup Overlay" 
+                    src={el.src} 
+                    alt="element icon" 
                     style={{ 
-                      position: "absolute", 
-                      inset: 0, 
-                      width: "100%", 
-                      height: "100%", 
+                      width: "55px", 
+                      height: "55px", 
                       objectFit: "contain", 
-                      zIndex: 35, 
-                      pointerEvents: "none" 
-                    }}
+                      pointerEvents: "none",
+                      transform: `scaleX(${el.flipX ? -1 : 1}) scaleY(${el.flipY ? -1 : 1})`
+                    }} 
                   />
-                )}
-              </>
+
+                  {isActive && (
+                    <button
+                      onClick={(e) => handleRemoveElement(el.id, e)}
+                      style={{
+                        position: "absolute",
+                        top: "-8px",
+                        right: "-8px",
+                        width: "20px",
+                        height: "20px",
+                        borderRadius: "50%",
+                        backgroundColor: "#f472b6",
+                        color: "#09090b",
+                        border: "none",
+                        fontSize: "12px",
+                        fontWeight: "900",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        zIndex: 40,
+                        boxShadow: "0 2px 4px rgba(0,0,0,0.4)"
+                      }}
+                      title="Hapus"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+
+            {/* LAYER 4: MOCKUP TRANSPARAN PENIMPA DI ATAS */}
+            {mockupTp && (
+              <img 
+                src={mockupTp} 
+                alt="Mockup Overlay" 
+                style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", zIndex: 35, pointerEvents: "none" }}
+              />
             )}
 
           </div>
@@ -752,8 +453,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                     cursor: "pointer",
                     border: tshirtStyle === "white" ? "1px solid #f472b6" : "1px solid rgba(255,255,255,0.1)",
                     background: tshirtStyle === "white" ? "#f4f4f5" : "#18181b",
-                    color: tshirtStyle === "white" ? "#09090b" : "#a1a1aa",
-                    transition: "all 0.3s ease"
+                    color: tshirtStyle === "white" ? "#09090b" : "#a1a1aa"
                   }}
                 >
                   White
@@ -769,8 +469,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                     cursor: "pointer",
                     border: tshirtStyle === "black" ? "1px solid #f472b6" : "1px solid rgba(255,255,255,0.1)",
                     background: tshirtStyle === "black" ? "#27272a" : "#18181b",
-                    color: tshirtStyle === "black" ? "#fff" : "#a1a1aa",
-                    transition: "all 0.3s ease"
+                    color: tshirtStyle === "black" ? "#fff" : "#a1a1aa"
                   }}
                 >
                   Black
@@ -786,8 +485,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                     cursor: "pointer",
                     border: tshirtStyle === "croptop" ? "1px solid #f472b6" : "1px solid rgba(255,255,255,0.1)",
                     background: tshirtStyle === "croptop" ? "#f472b6" : "#18181b",
-                    color: tshirtStyle === "croptop" ? "#09090b" : "#a1a1aa",
-                    transition: "all 0.3s ease"
+                    color: tshirtStyle === "croptop" ? "#09090b" : "#a1a1aa"
                   }}
                 >
                   Crop Top
@@ -840,35 +538,14 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
               
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase" }}>
-                  Upload Foto Utama
+                  Upload Foto Kamu
                 </label>
-                <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                  <input 
-                    type="file" 
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    style={{ width: "100%", fontSize: "11px", color: "#a1a1aa" }}
-                  />
-                  {uploadedImage && (
-                    <button
-                      onClick={handleRemoveUploadedImage}
-                      style={{
-                        backgroundColor: "#27272a",
-                        color: "#f472b6",
-                        border: "1px solid rgba(244,114,182,0.3)",
-                        borderRadius: "8px",
-                        padding: "6px 12px",
-                        fontSize: "12px",
-                        fontWeight: "900",
-                        cursor: "pointer",
-                        whiteSpace: "nowrap"
-                      }}
-                      title="Hapus foto yang di-upload"
-                    >
-                      ✕ Hapus Foto
-                    </button>
-                  )}
-                </div>
+                <input 
+                  type="file" 
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  style={{ width: "100%", fontSize: "11px", color: "#a1a1aa" }}
+                />
                 {fileName && (
                   <p style={{ fontSize: "10px", color: "#f472b6", fontWeight: "bold" }}>
                     Foto terpilih: {fileName}
@@ -918,20 +595,18 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
 
               <div>
                 <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase", marginBottom: "8px" }}>
-                  Tambah Stiker & Frame (Termasuk Elm 24, 25, & 32)
+                  Tambah Icons & Elements (Klik untuk pasang)
                 </label>
                 <div style={{ maxHeight: "150px", overflowY: "auto", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px" }}>
-                  {Array.from({ length: 35 }, (_, i) => i + 1).map((num) => {
+                  {Array.from({ length: 21 }, (_, i) => i + 1).map((num) => {
                     const imageName = `elm${num}.png`;
                     return (
                       <div 
                         key={num}
                         onClick={() => handleAddElementToCase(imageName)}
                         style={{ backgroundColor: "#18181b", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", padding: "6px", textAlign: "center", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
-                        title={`Klik pasang ${imageName}`}
                       >
-                        <span style={{ fontSize: "9px", color: "#f472b6", marginRight: "4px" }}>{num}</span>
-                        <img src={`/${imageName}`} alt={`icon ${num}`} style={{ width: "30px", height: "30px", objectFit: "contain" }} onError={(e)=>{(e.target as HTMLElement).style.display='none'}} />
+                        <img src={`/${imageName}`} alt={`icon ${num}`} style={{ width: "35px", height: "35px", objectFit: "contain" }} />
                       </div>
                     );
                   })}
@@ -967,6 +642,28 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                       Template {num}
                     </button>
                   ))}
+                </div>
+              </div>
+
+              <hr style={{ border: "none", borderTop: "1px solid rgba(255,255,255,0.1)", margin: "4px 0" }} />
+
+              <div>
+                <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase", marginBottom: "8px" }}>
+                  Tambah Icons ke Template (Klik untuk pasang)
+                </label>
+                <div style={{ maxHeight: "150px", overflowY: "auto", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px" }}>
+                  {Array.from({ length: 21 }, (_, i) => i + 1).map((num) => {
+                    const imageName = `elm${num}.png`;
+                    return (
+                      <div 
+                        key={num}
+                        onClick={() => handleAddElementToCase(imageName)}
+                        style={{ backgroundColor: "#18181b", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", padding: "6px", textAlign: "center", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                      >
+                        <img src={`/${imageName}`} alt={`icon ${num}`} style={{ width: "35px", height: "35px", objectFit: "contain" }} />
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
