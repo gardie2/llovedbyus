@@ -253,14 +253,13 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
         
         <div style={{ width: "280px", backgroundColor: "#121318", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "20px", padding: "12px", display: "flex", flexDirection: "column", alignItems: "center", position: "relative", boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.5)", boxSizing: "border-box" }}>
           
-          {/* AREA PREVIEW BERSIH TANPA TEKS LIVE EDITOR, FULL UTUH ANTI-CROP */}
+          {/* AREA PREVIEW TANPA KOTAK HITAM KAKU, BERSIH MENYESUAIKAN GAMBAR ASLI */}
           <div 
             style={{ 
               width: "256px", 
               height: "400px", 
-              backgroundColor: "#09090b", 
+              backgroundColor: "transparent", 
               borderRadius: "14px", 
-              border: "2px solid rgba(255,255,255,0.15)", 
               position: "relative", 
               display: "flex", 
               alignItems: "center", 
@@ -277,11 +276,21 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
             onWheel={handleWheel}
           >
             
-            {/* LAYER 1: MOCKUP DASAR (CONTAIN: UTUH TIDAK KE-CROP) */}
+            {/* LAYER 1: MOCKUP DASAR DENGAN TRANSISI HALUS (SMOOTH FADE) */}
             <img 
               src={mockupBase} 
               alt="Mockup Base" 
-              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", zIndex: 10, pointerEvents: "none" }}
+              style={{ 
+                position: "absolute", 
+                inset: 0, 
+                width: "100%", 
+                height: "100%", 
+                objectFit: "contain", 
+                zIndex: 10, 
+                pointerEvents: "none",
+                transition: "opacity 0.4s ease-in-out, transform 0.4s ease-in-out",
+                opacity: 1
+              }}
             />
 
             {/* LAYER 2: EDITOR FOTO ATAU TEMPLATE */}
@@ -453,7 +462,8 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                     cursor: "pointer",
                     border: tshirtStyle === "white" ? "1px solid #f472b6" : "1px solid rgba(255,255,255,0.1)",
                     background: tshirtStyle === "white" ? "#f4f4f5" : "#18181b",
-                    color: tshirtStyle === "white" ? "#09090b" : "#a1a1aa"
+                    color: tshirtStyle === "white" ? "#09090b" : "#a1a1aa",
+                    transition: "all 0.3s ease"
                   }}
                 >
                   White
@@ -469,7 +479,8 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                     cursor: "pointer",
                     border: tshirtStyle === "black" ? "1px solid #f472b6" : "1px solid rgba(255,255,255,0.1)",
                     background: tshirtStyle === "black" ? "#27272a" : "#18181b",
-                    color: tshirtStyle === "black" ? "#fff" : "#a1a1aa"
+                    color: tshirtStyle === "black" ? "#fff" : "#a1a1aa",
+                    transition: "all 0.3s ease"
                   }}
                 >
                   Black
@@ -485,7 +496,8 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                     cursor: "pointer",
                     border: tshirtStyle === "croptop" ? "1px solid #f472b6" : "1px solid rgba(255,255,255,0.1)",
                     background: tshirtStyle === "croptop" ? "#f472b6" : "#18181b",
-                    color: tshirtStyle === "croptop" ? "#09090b" : "#a1a1aa"
+                    color: tshirtStyle === "croptop" ? "#09090b" : "#a1a1aa",
+                    transition: "all 0.3s ease"
                   }}
                 >
                   Crop Top
