@@ -167,8 +167,8 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
     const newElement = {
       id: Date.now(),
       src: `/${imageName}`,
-      x: 75,
-      y: 110,
+      x: 90,
+      y: 130,
       scale: 1,
       rotation: 0,
       flipX: false,
@@ -265,17 +265,17 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
               }}
             />
 
-            {/* LAYER 2: AREA EDIT (Frame disesuaikan presisi pas menutupi bagian dalam bodi case dan template tanpa keluar jalur) */}
+            {/* LAYER 2: AREA EDIT (Frame dikembalikan presisi penuh seukuran bodi casing & template) */}
             <div 
               style={{
                 position: "absolute",
-                top: isPhoneCase ? "51px" : "85px",
-                left: isPhoneCase ? "83px" : "55px",
-                width: isPhoneCase ? "152px" : "146px",
-                height: isPhoneCase ? "307px" : "235px",
+                top: isPhoneCase ? "16px" : "85px",
+                left: isPhoneCase ? "28px" : "55px",
+                width: isPhoneCase ? "200px" : "146px",
+                height: isPhoneCase ? "368px" : "235px",
                 zIndex: 15,
                 overflow: "hidden",
-                borderRadius: isPhoneCase ? "26px" : "8px",
+                borderRadius: isPhoneCase ? "32px" : "8px",
                 touchAction: "none"
               }}
               onWheel={handleWheel}
