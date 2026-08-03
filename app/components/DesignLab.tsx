@@ -330,6 +330,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
               }}
             />
 
+            {/* LAYER 2: AREA EDIT MENGGUNAKAN MASK TRANSPARAN CANVA */}
             <div 
               style={{
                 position: "absolute",
