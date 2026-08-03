@@ -23,7 +23,6 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
   
   const [placedElements, setPlacedElements] = useState<Array<{ id: number; src: string; x: number; y: number; scale: number; rotation: number; flipX: boolean; flipY: boolean }>>([]);
   
-  // Kalau null berarti tidak ada garis/border yang muncul (bersih)
   const [activeSelection, setActiveSelection] = useState<"photo" | number | null>("photo");
 
   const [scale, setScale] = useState(1);
@@ -304,7 +303,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
               }}
             />
 
-            {/* LAYER 2: AREA EDIT */}
+            {/* LAYER 2: AREA EDIT (Full untuk Case, Dibatasi khusus untuk Kaos/Baju) */}
             <div 
               style={{
                 position: "absolute",
@@ -325,7 +324,6 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
               onTouchCancel={handleEnd}
               onWheel={handleWheel}
               onClick={() => {
-                // KLIK DI LUAR OBJEK AKAN MENYEMBUNYIKAN SEMUA GARIS & TOMBOL SILANG
                 setActiveSelection(null);
               }}
             >
