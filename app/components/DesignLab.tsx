@@ -30,6 +30,8 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
   
   const isInteracting = useRef(false);
   const lastClientPos = useRef({ x: 0, y: 0 });
+  const initialPinchDistance = useRef<number | null>(null);
+  const initialScaleOnPinch = useRef(1);
   
   const activeDraggingElementId = useRef<number | null>(null);
   const isDraggingPhoto = useRef(false);
@@ -90,6 +92,25 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
 
     const onMouseMove = (e: MouseEvent) => handleGlobalMove(e.clientX, e.clientY);
     const onTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 2 && initialPinchDistance.current !== null) {
+        // Logika Pinch-to-Zoom dengan dua jari di HP
+        const dist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        const factor = dist / initialPinchDistance.current;
+        const newScale = Math.min(Math.max(0.3, initialScaleOnPinch.current * factor), 4.0);
+
+        if (activeSelection === "photo") {
+          setScale(newScale);
+        } else if (typeof activeSelection === "number") {
+          setPlacedElements((prev) =>
+            prev.map((el) => (el.id === activeSelection ? { ...el, scale: newScale } : el))
+          );
+        }
+        return;
+      }
+
       if (e.touches[0]) handleGlobalMove(e.touches[0].clientX, e.touches[0].clientY);
     };
 
@@ -97,11 +118,12 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
       isInteracting.current = false;
       activeDraggingElementId.current = null;
       isDraggingPhoto.current = false;
+      initialPinchDistance.current = null;
     };
 
     window.addEventListener("mousemove", onMouseMove);
     window.addEventListener("mouseup", onEnd);
-    window.addEventListener("touchmove", onTouchMove);
+    window.addEventListener("touchmove", onTouchMove, { passive: false });
     window.addEventListener("touchend", onEnd);
 
     return () => {
@@ -110,7 +132,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
       window.removeEventListener("touchmove", onTouchMove);
       window.removeEventListener("touchend", onEnd);
     };
-  }, []);
+  }, [activeSelection]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -194,6 +216,21 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
     isDraggingPhoto.current = false;
     activeDraggingElementId.current = id;
     lastClientPos.current = { x: clientX, y: clientY };
+  };
+
+  const handleTouchStartContainer = (e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      initialPinchDistance.current = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      if (activeSelection === "photo") {
+        initialScaleOnPinch.current = scale;
+      } else if (typeof activeSelection === "number") {
+        const found = placedElements.find((el) => el.id === activeSelection);
+        if (found) initialScaleOnPinch.current = found.scale;
+      }
+    }
   };
 
   const handleWheel = (e: React.WheelEvent) => {
@@ -280,6 +317,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                 touchAction: "none"
               }}
               onWheel={handleWheel}
+              onTouchStart={handleTouchStartContainer}
               onClick={() => {
                 setActiveSelection(null);
               }}
@@ -298,7 +336,11 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                         touchAction: "none" 
                       }}
                       onMouseDown={(e) => handleStartDragPhoto(e.clientX, e.clientY, e)}
-                      onTouchStart={(e) => { if (e.touches[0]) handleStartDragPhoto(e.touches[0].clientX, e.touches[0].clientY, e); }}
+                      onTouchStart={(e) => { 
+                        if (e.touches.length === 1 && e.touches[0]) {
+                          handleStartDragPhoto(e.touches[0].clientX, e.touches[0].clientY, e);
+                        }
+                      }}
                     >
                       <img 
                         src={uploadedImage} 
@@ -336,7 +378,9 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                     key={el.id}
                     onMouseDown={(e) => handleStartDragElement(el.id, e.clientX, e.clientY, e)}
                     onTouchStart={(e) => {
-                      if (e.touches[0]) handleStartDragElement(el.id, e.touches[0].clientX, e.touches[0].clientY, e);
+                      if (e.touches.length === 1 && e.touches[0]) {
+                        handleStartDragElement(el.id, e.touches[0].clientX, e.touches[0].clientY, e);
+                      }
                     }}
                     style={{
                       position: "absolute",
