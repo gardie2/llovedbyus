@@ -336,19 +336,32 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
 
             {/* LAYER 2: AREA EDIT (Disempurnakan path presisi rapat tanpa celah) */}
             <div 
-              style={{
-                position: "absolute",
-                top: isPhoneCase ? "27px" : "85px",
-                left: isPhoneCase ? "41px" : "55px",
-                width: isPhoneCase ? "174px" : "146px",
-                height: isPhoneCase ? "346px" : "235px",
-                zIndex: 15,
-                clipPath: isPhoneCase 
-                  ? "path('M 15 0 L 158 0 C 166 0 174 8 174 16 L 174 330 C 174 338 166 346 158 346 L 15 346 C 7 346 0 338 0 330 L 0 16 C 0 8 7 0 15 0 Z')" 
-                  : "inset(0px round 6px)",
-                overflow: "hidden",
-                touchAction: "none"
-              }}
+        style={{
+          position: "absolute",
+          inset: 0,
+          width: "100%",
+          height: "100%",
+          zIndex: 15,
+          ...(isPhoneCase && mockupTp ? {
+            maskImage: `url(${mockupTp})`,
+            WebkitMaskImage: `url(${mockupTp})`,
+            maskSize: "contain",
+            WebkitMaskSize: "contain",
+            maskRepeat: "no-repeat",
+            WebkitMaskRepeat: "no-repeat",
+            maskPosition: "center",
+            WebkitMaskPosition: "center"
+          } : {
+            overflow: "hidden"
+          }),
+          touchAction: "none"
+        }}
+        onWheel={handleWheel}
+        onTouchStart={handleTouchStartContainer}
+        onClick={() => {
+          setActiveSelection(null);
+        }}
+      >
               onWheel={handleWheel}
               onTouchStart={handleTouchStartContainer}
               onClick={() => {
