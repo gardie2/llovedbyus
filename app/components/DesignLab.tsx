@@ -531,6 +531,9 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                     const isElm25 = el.src.includes("elm25.png");
                     const isElm32 = el.src.includes("elm32.png");
 
+                    const boxWidth = isElm24 ? "85px" : isElm25 ? "110px" : isElm32 ? "90px" : "60px";
+                    const boxHeight = isElm24 ? "210px" : isElm25 ? "145px" : isElm32 ? "125px" : "60px";
+
                     return (
                       <div
                         key={el.id}
@@ -544,8 +547,8 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                           position: "absolute",
                           left: `${el.x}px`,
                           top: `${el.y}px`,
-                          width: "100px",
-                          height: "100px",
+                          width: boxWidth,
+                          height: boxHeight,
                           transform: `scale(${el.scale}) rotate(${el.rotation}deg)`,
                           zIndex: 25,
                           cursor: "grab",
@@ -554,9 +557,9 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                       >
                         {/* 1. ELM 24 */}
                         {isElm24 && (
-                          <div style={{ position: "absolute", top: "12px", left: "14px", width: "42px", height: "82px", zIndex: 1, pointerEvents: "auto" }}>
+                          <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "auto" }}>
                             {[1, 2, 3].map((slotIdx) => {
-                              const topPos = slotIdx === 1 ? "2px" : slotIdx === 2 ? "29px" : "56px";
+                              const topPos = slotIdx === 1 ? "1%" : slotIdx === 2 ? "29.5%" : "58%";
                               const slotImg = el.slotImages?.[slotIdx];
                               const slotT = el.slotTransforms?.[slotIdx] || { x: 0, y: 0, scale: 1 };
 
@@ -570,7 +573,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                                       handleStartSlotDrag(el.id, slotIdx, e.touches[0].clientX, e.touches[0].clientY, e);
                                     }
                                   }}
-                                  style={{ position: "absolute", top: topPos, left: "2px", right: "2px", height: "24px", backgroundColor: "#000", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", cursor: slotImg ? "grab" : "default" }}
+                                  style={{ position: "absolute", top: topPos, left: "6%", right: "6%", height: "29.5%", backgroundColor: "#18181b", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", cursor: slotImg ? "grab" : "default" }}
                                 >
                                   {slotImg ? (
                                     <img 
@@ -585,7 +588,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                                       }} 
                                     />
                                   ) : (
-                                    <label style={{ cursor: "pointer", color: "#f472b6", fontSize: "10px", fontWeight: "bold" }}>
+                                    <label style={{ cursor: "pointer", color: "#f472b6", fontSize: "16px", fontWeight: "bold" }}>
                                       +
                                       <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => handleSlotImageUpload(el.id, slotIdx, e)} />
                                     </label>
@@ -598,7 +601,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
 
                         {/* 2. ELM 25 */}
                         {isElm25 && (
-                          <div style={{ position: "absolute", top: "18px", left: "12px", width: "70px", height: "70px", borderRadius: "50%", zIndex: 1, pointerEvents: "auto" }}>
+                          <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "auto" }}>
                             {(() => {
                               const slotImg = el.slotImages?.[1];
                               const slotT = el.slotTransforms?.[1] || { x: 0, y: 0, scale: 1 };
@@ -611,7 +614,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                                       handleStartSlotDrag(el.id, 1, e.touches[0].clientX, e.touches[0].clientY, e);
                                     }
                                   }}
-                                  style={{ position: "absolute", inset: 0, backgroundColor: "#000", borderRadius: "50%", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", cursor: slotImg ? "grab" : "default" }}
+                                  style={{ position: "absolute", top: "2%", left: "14%", right: "14%", height: "46%", backgroundColor: "#18181b", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", cursor: slotImg ? "grab" : "default" }}
                                 >
                                   {slotImg ? (
                                     <img 
@@ -626,7 +629,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                                       }} 
                                     />
                                   ) : (
-                                    <label style={{ cursor: "pointer", color: "#f472b6", fontSize: "12px", fontWeight: "bold" }}>
+                                    <label style={{ cursor: "pointer", color: "#f472b6", fontSize: "18px", fontWeight: "bold" }}>
                                       +
                                       <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => handleSlotImageUpload(el.id, 1, e)} />
                                     </label>
@@ -639,7 +642,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
 
                         {/* 3. ELM 32 */}
                         {isElm32 && (
-                          <div style={{ position: "absolute", top: "15px", left: "15px", width: "75px", height: "75px", zIndex: 1, pointerEvents: "auto" }}>
+                          <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "auto" }}>
                             {(() => {
                               const slotImg = el.slotImages?.[1];
                               const slotT = el.slotTransforms?.[1] || { x: 0, y: 0, scale: 1 };
@@ -652,7 +655,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                                       handleStartSlotDrag(el.id, 1, e.touches[0].clientX, e.touches[0].clientY, e);
                                     }
                                   }}
-                                  style={{ position: "absolute", inset: 0, backgroundColor: "#000", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", cursor: slotImg ? "grab" : "default" }}
+                                  style={{ position: "absolute", top: "20%", left: "18%", right: "18%", height: "45%", backgroundColor: "#18181b", borderRadius: "50%", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", cursor: slotImg ? "grab" : "default" }}
                                 >
                                   {slotImg ? (
                                     <img 
@@ -667,7 +670,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                                       }} 
                                     />
                                   ) : (
-                                    <label style={{ cursor: "pointer", color: "#f472b6", fontSize: "12px", fontWeight: "bold" }}>
+                                    <label style={{ cursor: "pointer", color: "#f472b6", fontSize: "18px", fontWeight: "bold" }}>
                                       +
                                       <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => handleSlotImageUpload(el.id, 1, e)} />
                                     </label>
