@@ -1,6 +1,7 @@
 "use client";
 import { useState, useRef, useMemo } from "react";
 import { removeBackground } from "@imgly/background-removal";
+import { toPng } from "html-to-image";
 
 interface DesignLabProps {
   productTitle?: string;
@@ -20,6 +21,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
   const [fileName, setFileName] = useState<string>("");
   const [phoneModel, setPhoneModel] = useState("");
   const [isRemovingBg, setIsRemovingBg] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   
   const [placedElements, setPlacedElements] = useState<Array<{ id: number; src: string; x: number; y: number; scale: number; rotation: number; flipX: boolean; flipY: boolean }>>([]);
   const [activeElementId, setActiveElementId] = useState<number | null>(null);
@@ -35,6 +37,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
   const initialElementRotation = useRef(0);
   
   const activeDraggingElementId = useRef<number | null>(null);
+  const mockupRef = useRef<HTMLDivElement>(null);
 
   const { mockupBase, mockupTp } = useMemo(() => {
     if (isPhoneCase) {
@@ -232,11 +235,30 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
     }
   };
 
+  const handleDownloadDesign = async () => {
+    if (!mockupRef.current) return;
+    try {
+      setActiveElementId(null);
+      setIsDownloading(true);
+      const dataUrl = await toPng(mockupRef.current, { cacheBust: true, quality: 0.95 });
+      const link = document.createElement("a");
+      link.download = `Custom-Design-${Date.now()}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      console.error("Gagal mendownload gambar:", err);
+      alert("Gagal menyimpan gambar desain.");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   const handleWhatsAppOrder = () => {
     const phoneNumber = "62881025376311";
     const styleInfo = isTshirt ? ` (${tshirtStyle.toUpperCase()})` : "";
     const modeDesc = isPhoneCase ? (activeTab === "edit" ? "Custom Foto & Icons" : `Template ${selectedTemplate} + Icons`) : "Custom Foto & Icons";
-    const message = `Halo, saya ingin memesan ${productTitle}${styleInfo}.%0A- Mode: ${modeDesc}%0A- Detail/Ukuran: ${phoneModel || "Tidak diisi"}`;
+    const elementsList = placedElements.length > 0 ? `%0A- Stiker/Frame: ${placedElements.map(el => el.src).join(", ")}` : "";
+    const message = `Halo, saya ingin memesan ${productTitle}${styleInfo}.%0A- Mode: ${modeDesc}%0A- Detail/Ukuran: ${phoneModel || "Tidak diisi"}${elementsList}`;
     window.open(`https://wa.me/${phoneNumber}?text=${message}`, "_blank");
   };
 
@@ -253,8 +275,8 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
         
         <div style={{ width: "280px", backgroundColor: "#121318", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "20px", padding: "12px", display: "flex", flexDirection: "column", alignItems: "center", position: "relative", boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.5)", boxSizing: "border-box" }}>
           
-          {/* AREA PREVIEW BERSIH TANPA TEKS LIVE EDITOR, FULL UTUH ANTI-CROP */}
           <div 
+            ref={mockupRef}
             style={{ 
               width: "256px", 
               height: "400px", 
@@ -277,14 +299,12 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
             onWheel={handleWheel}
           >
             
-            {/* LAYER 1: MOCKUP DASAR (CONTAIN: UTUH TIDAK KE-CROP) */}
             <img 
               src={mockupBase} 
               alt="Mockup Base" 
               style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", zIndex: 10, pointerEvents: "none" }}
             />
 
-            {/* LAYER 2: EDITOR FOTO ATAU TEMPLATE */}
             {(!isPhoneCase || activeTab === "edit") ? (
               <>
                 {uploadedImage && (
@@ -346,7 +366,6 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
               </div>
             )}
 
-            {/* LAYER 3: IKON & ELEMEN DEKORASI */}
             {placedElements.map((el) => {
               const isActive = activeElementId === el.id;
               return (
@@ -421,7 +440,6 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
               );
             })}
 
-            {/* LAYER 4: MOCKUP TRANSPARAN PENIMPA DI ATAS */}
             {mockupTp && (
               <img 
                 src={mockupTp} 
@@ -595,10 +613,10 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
 
               <div>
                 <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase", marginBottom: "8px" }}>
-                  Tambah Icons & Elements (Klik untuk pasang)
+                  Stiker & Frame
                 </label>
                 <div style={{ maxHeight: "150px", overflowY: "auto", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px" }}>
-                  {Array.from({ length: 21 }, (_, i) => i + 1).map((num) => {
+                  {Array.from({ length: 35 }, (_, i) => i + 1).map((num) => {
                     const imageName = `elm${num}.png`;
                     return (
                       <div 
@@ -649,10 +667,10 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
 
               <div>
                 <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase", marginBottom: "8px" }}>
-                  Tambah Icons ke Template (Klik untuk pasang)
+                  Stiker & Frame
                 </label>
                 <div style={{ maxHeight: "150px", overflowY: "auto", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px" }}>
-                  {Array.from({ length: 21 }, (_, i) => i + 1).map((num) => {
+                  {Array.from({ length: 35 }, (_, i) => i + 1).map((num) => {
                     const imageName = `elm${num}.png`;
                     return (
                       <div 
@@ -683,12 +701,22 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
             />
           </div>
 
-          <button 
-            onClick={handleWhatsAppOrder}
-            style={{ width: "100%", background: "linear-gradient(to right, #f4f4f5, #f472b6, #f4f4f5)", color: "#09090b", fontWeight: "900", padding: "14px", borderRadius: "14px", fontSize: "11px", textTransform: "uppercase", letterSpacing: "1px", border: "none", cursor: "pointer", boxShadow: "0 0 20px rgba(244,114,182,0.3)" }}
-          >
-            Pesan via WhatsApp Sekarang
-          </button>
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            <button 
+              onClick={handleDownloadDesign}
+              disabled={isDownloading}
+              style={{ width: "100%", background: "#27272a", color: "#f4f4f5", fontWeight: "900", padding: "12px", borderRadius: "14px", fontSize: "11px", textTransform: "uppercase", letterSpacing: "1px", border: "1px solid rgba(255,255,255,0.2)", cursor: "pointer" }}
+            >
+              {isDownloading ? "Menyimpan Gambar..." : "Download Hasil Desain (PNG)"}
+            </button>
+
+            <button 
+              onClick={handleWhatsAppOrder}
+              style={{ width: "100%", background: "linear-gradient(to right, #f4f4f5, #f472b6, #f4f4f5)", color: "#09090b", fontWeight: "900", padding: "14px", borderRadius: "14px", fontSize: "11px", textTransform: "uppercase", letterSpacing: "1px", border: "none", cursor: "pointer", boxShadow: "0 0 20px rgba(244,114,182,0.3)" }}
+            >
+              Pesan via WhatsApp Sekarang
+            </button>
+          </div>
 
         </div>
 
