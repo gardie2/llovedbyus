@@ -223,7 +223,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
       id: Date.now(),
       src: `/${imageName}`,
       x: 30,
-      y: 40,
+      y: 30,
       scale: 1,
       rotation: 0,
       flipX: false,
@@ -448,6 +448,10 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                     const isElm25 = el.src.includes("elm25.png");
                     const isElm32 = el.src.includes("elm32.png");
 
+                    // Menyesuaikan ukuran container elemen berdasarkan jenis framenya agar proporsional
+                    const boxWidth = isElm24 ? "100px" : isElm25 ? "110px" : isElm32 ? "100px" : "60px";
+                    const boxHeight = isElm24 ? "180px" : isElm25 ? "140px" : isElm32 ? "120px" : "60px";
+
                     return (
                       <div
                         key={el.id}
@@ -461,19 +465,19 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                           position: "absolute",
                           left: `${el.x}px`,
                           top: `${el.y}px`,
-                          width: "140px",
-                          height: "180px",
+                          width: boxWidth,
+                          height: boxHeight,
                           transform: `scale(${el.scale}) rotate(${el.rotation}deg)`,
                           zIndex: 25,
                           cursor: "grab",
                           touchAction: "none"
                         }}
                       >
-                        {/* Jika elemen adalah elm24 (3 slot foto persis di dalam bingkai) */}
+                        {/* 1. ELM 24 (3 Slot Foto Vertikal) */}
                         {isElm24 && (
                           <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "auto" }}>
-                            {/* Slot 1 (Kiri Atas) */}
-                            <div style={{ position: "absolute", top: "12%", left: "12%", width: "35%", height: "35%", backgroundColor: "#18181b", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            {/* Slot 1 (Atas) */}
+                            <div style={{ position: "absolute", top: "5%", left: "12%", right: "12%", height: "27%", backgroundColor: "#18181b", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
                               {el.slotImages?.[1] ? (
                                 <img src={el.slotImages[1]} alt="slot 1" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                               ) : (
@@ -483,8 +487,8 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                                 </label>
                               )}
                             </div>
-                            {/* Slot 2 (Kanan Atas) */}
-                            <div style={{ position: "absolute", top: "12%", right: "12%", width: "35%", height: "35%", backgroundColor: "#18181b", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            {/* Slot 2 (Tengah) */}
+                            <div style={{ position: "absolute", top: "36%", left: "12%", right: "12%", height: "27%", backgroundColor: "#18181b", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
                               {el.slotImages?.[2] ? (
                                 <img src={el.slotImages[2]} alt="slot 2" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                               ) : (
@@ -495,7 +499,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                               )}
                             </div>
                             {/* Slot 3 (Bawah) */}
-                            <div style={{ position: "absolute", bottom: "12%", left: "12%", right: "12%", height: "35%", backgroundColor: "#18181b", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <div style={{ position: "absolute", top: "67%", left: "12%", right: "12%", height: "27%", backgroundColor: "#18181b", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
                               {el.slotImages?.[3] ? (
                                 <img src={el.slotImages[3]} alt="slot 3" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                               ) : (
@@ -508,10 +512,10 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                           </div>
                         )}
 
-                        {/* Jika elemen adalah elm25 (1 slot foto kotak) */}
+                        {/* 2. ELM 25 (1 Slot Kotak Pemutar Musik) */}
                         {isElm25 && (
                           <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "auto" }}>
-                            <div style={{ position: "absolute", top: "15%", left: "15%", right: "15%", bottom: "15%", backgroundColor: "#18181b", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <div style={{ position: "absolute", top: "6%", left: "12%", right: "12%", height: "50%", backgroundColor: "#18181b", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
                               {el.slotImages?.[1] ? (
                                 <img src={el.slotImages[1]} alt="slot 1" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                               ) : (
@@ -524,10 +528,10 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                           </div>
                         )}
 
-                        {/* Jika elemen adalah elm32 (1 slot foto bulat) */}
+                        {/* 3. ELM 32 (1 Slot Bulat Kepala Boneka) */}
                         {isElm32 && (
                           <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "auto" }}>
-                            <div style={{ position: "absolute", top: "20%", left: "20%", right: "20%", bottom: "20%", backgroundColor: "#18181b", borderRadius: "50%", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <div style={{ position: "absolute", top: "32%", left: "22%", right: "22%", height: "38%", backgroundColor: "#18181b", borderRadius: "50%", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
                               {el.slotImages?.[1] ? (
                                 <img src={el.slotImages[1]} alt="slot 1" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                               ) : (
@@ -540,10 +544,10 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                           </div>
                         )}
 
-                        {/* Gambar Utama Frame / Stiker / Icon */}
+                        {/* Gambar Bingkai Utama PNG */}
                         <img 
                           src={el.src} 
-                          alt="element icon" 
+                          alt="element frame" 
                           style={{ 
                             position: "absolute",
                             top: 0,
