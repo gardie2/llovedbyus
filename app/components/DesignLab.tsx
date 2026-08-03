@@ -167,8 +167,8 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
     const newElement = {
       id: Date.now(),
       src: `/${imageName}`,
-      x: 90,
-      y: 130,
+      x: 70,
+      y: 100,
       scale: 1,
       rotation: 0,
       flipX: false,
@@ -265,17 +265,17 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
               }}
             />
 
-            {/* LAYER 2: AREA EDIT (Frame dikembalikan presisi penuh seukuran bodi casing & template) */}
+            {/* LAYER 2: AREA EDIT (Ukuran dan posisi disamakan persis untuk Foto, Template, dan Overlay Transparan) */}
             <div 
               style={{
                 position: "absolute",
-                top: isPhoneCase ? "16px" : "85px",
-                left: isPhoneCase ? "28px" : "55px",
-                width: isPhoneCase ? "200px" : "146px",
-                height: isPhoneCase ? "368px" : "235px",
+                top: isPhoneCase ? "35px" : "85px",
+                left: isPhoneCase ? "52px" : "55px",
+                width: isPhoneCase ? "152px" : "146px",
+                height: isPhoneCase ? "330px" : "235px",
                 zIndex: 15,
                 overflow: "hidden",
-                borderRadius: isPhoneCase ? "32px" : "8px",
+                borderRadius: isPhoneCase ? "24px" : "8px",
                 touchAction: "none"
               }}
               onWheel={handleWheel}
@@ -395,13 +395,35 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
 
             </div>
 
-            {/* LAYER 4: MOCKUP TRANSPARAN PENIMPA DI ATAS */}
-            {mockupTp && (
-              <img 
-                src={mockupTp} 
-                alt="Mockup Overlay" 
-                style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", zIndex: 35, pointerEvents: "none" }}
-              />
+            {/* LAYER 4: MOCKUP TRANSPARAN PENIMPA DI ATAS (Ukuran dan posisi disamakan persis dengan area edit agar kamera/bingkai transparan pas di depan) */}
+            {isPhoneCase ? (
+              <div 
+                style={{
+                  position: "absolute",
+                  top: "35px",
+                  left: "52px",
+                  width: "152px",
+                  height: "330px",
+                  zIndex: 35,
+                  pointerEvents: "none",
+                  overflow: "hidden",
+                  borderRadius: "24px"
+                }}
+              >
+                <img 
+                  src={mockupTp} 
+                  alt="Mockup Overlay" 
+                  style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                />
+              </div>
+            ) : (
+              mockupTp && (
+                <img 
+                  src={mockupTp} 
+                  alt="Mockup Overlay" 
+                  style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", zIndex: 35, pointerEvents: "none" }}
+                />
+              )
             )}
 
           </div>
