@@ -316,43 +316,69 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
             }}
           >
             
-            <img 
-              src={mockupBase} 
-              alt="Mockup Base" 
-              style={{ 
-                position: "absolute", 
-                inset: 0, 
-                width: "100%", 
-                height: "100%", 
-                objectFit: "contain", 
-                zIndex: 10, 
-                pointerEvents: "none" 
-              }}
-            />
+            {/* KONDISI TAMPILAN BERDASARKAN TAB */}
+            {isPhoneCase && activeTab === "template" ? (
+              /* KALO PILIH TEMPLATE: TAMPILKAN GAMBAR FULL SATU BADAN HP DARI CANVA */
+              <div 
+                style={{ 
+                  position: "absolute", 
+                  inset: 0, 
+                  width: "100%", 
+                  height: "100%", 
+                  zIndex: 20,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center"
+                }}
+              >
+                <img 
+                  src={`/template-${selectedTemplate}.png`} 
+                  alt={`Template ${selectedTemplate}`} 
+                  style={{ 
+                    width: "100%", 
+                    height: "100%", 
+                    objectFit: "contain",
+                    borderRadius: "14px"
+                  }} 
+                />
+              </div>
+            ) : (
+              /* KALO UPLOAD FOTO / KAOS: MENGGUNAKAN MOCKUP & AREA EDIT CUSTOM */
+              <>
+                <img 
+                  src={mockupBase} 
+                  alt="Mockup Base" 
+                  style={{ 
+                    position: "absolute", 
+                    inset: 0, 
+                    width: "100%", 
+                    height: "100%", 
+                    objectFit: "contain", 
+                    zIndex: 10, 
+                    pointerEvents: "none" 
+                  }}
+                />
 
-            {/* LAYER 2: AREA EDIT PRESISI RAPAT */}
-            <div 
-              style={{
-                position: "absolute",
-                top: isPhoneCase ? "27px" : "85px",
-                left: isPhoneCase ? "41px" : "55px",
-                width: isPhoneCase ? "174px" : "146px",
-                height: isPhoneCase ? "346px" : "235px",
-                zIndex: 15,
-                clipPath: isPhoneCase 
-                  ? "path('M 15 0 L 158 0 C 166 0 174 8 174 16 L 174 330 C 174 338 166 346 158 346 L 15 346 C 7 346 0 338 0 330 L 0 16 C 0 8 7 0 15 0 Z')" 
-                  : "inset(0px round 6px)",
-                overflow: "hidden",
-                touchAction: "none"
-              }}
-              onWheel={handleWheel}
-              onTouchStart={handleTouchStartContainer}
-              onClick={() => {
-                setActiveSelection(null);
-              }}
-            >
-              {(!isPhoneCase || activeTab === "edit") ? (
-                <>
+                <div 
+                  style={{
+                    position: "absolute",
+                    top: isPhoneCase ? "27px" : "85px",
+                    left: isPhoneCase ? "41px" : "55px",
+                    width: isPhoneCase ? "174px" : "146px",
+                    height: isPhoneCase ? "346px" : "235px",
+                    zIndex: 15,
+                    clipPath: isPhoneCase 
+                      ? "path('M 15 0 L 158 0 C 166 0 174 8 174 16 L 174 330 C 174 338 166 346 158 346 L 15 346 C 7 346 0 338 0 330 L 0 16 C 0 8 7 0 15 0 Z')" 
+                      : "inset(0px round 6px)",
+                    overflow: "hidden",
+                    touchAction: "none"
+                  }}
+                  onWheel={handleWheel}
+                  onTouchStart={handleTouchStartContainer}
+                  onClick={() => {
+                    setActiveSelection(null);
+                  }}
+                >
                   {uploadedImage && (
                     <div 
                       style={{ 
@@ -385,102 +411,90 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                       />
                     </div>
                   )}
-                </>
-              ) : (
-                <div 
-                  style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}
-                  onClick={(e) => { e.stopPropagation(); setActiveSelection(null); }}
-                >
-                  <img 
-                    src={`/template-${selectedTemplate}.png`} 
-                    alt={`Template ${selectedTemplate}`} 
-                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                  />
-                </div>
-              )}
 
-              {placedElements.map((el) => {
-                const isActive = activeSelection === el.id;
-                return (
-                  <div
-                    key={el.id}
-                    onMouseDown={(e) => handleStartDragElement(el.id, e.clientX, e.clientY, e)}
-                    onTouchStart={(e) => {
-                      if (e.touches.length === 1 && e.touches[0]) {
-                        handleStartDragElement(el.id, e.touches[0].clientX, e.touches[0].clientY, e);
-                      }
-                    }}
-                    style={{
-                      position: "absolute",
-                      left: `${el.x}px`,
-                      top: `${el.y}px`,
-                      transform: `scale(${el.scale}) rotate(${el.rotation}deg)`,
-                      zIndex: 25,
-                      cursor: "grab",
-                      padding: "4px",
-                      border: isActive ? "1px dashed #f472b6" : "none",
-                      touchAction: "none"
-                    }}
-                  >
-                    <img 
-                      src={el.src} 
-                      alt="element icon" 
-                      style={{ 
-                        width: "55px", 
-                        height: "55px", 
-                        objectFit: "contain", 
-                        pointerEvents: "none",
-                        transform: `scaleX(${el.flipX ? -1 : 1}) scaleY(${el.flipY ? -1 : 1})`
-                      }} 
-                    />
-
-                    {isActive && (
-                      <button
-                        onClick={(e) => handleRemoveElement(el.id, e)}
+                  {placedElements.map((el) => {
+                    const isActive = activeSelection === el.id;
+                    return (
+                      <div
+                        key={el.id}
+                        onMouseDown={(e) => handleStartDragElement(el.id, e.clientX, e.clientY, e)}
+                        onTouchStart={(e) => {
+                          if (e.touches.length === 1 && e.touches[0]) {
+                            handleStartDragElement(el.id, e.touches[0].clientX, e.touches[0].clientY, e);
+                          }
+                        }}
                         style={{
                           position: "absolute",
-                          top: "-6px",
-                          right: "-6px",
-                          width: "18px",
-                          height: "18px",
-                          borderRadius: "50%",
-                          backgroundColor: "#f472b6",
-                          color: "#09090b",
-                          border: "none",
-                          fontSize: "10px",
-                          fontWeight: "900",
-                          cursor: "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          zIndex: 40,
-                          boxShadow: "0 2px 4px rgba(0,0,0,0.4)"
+                          left: `${el.x}px`,
+                          top: `${el.y}px`,
+                          transform: `scale(${el.scale}) rotate(${el.rotation}deg)`,
+                          zIndex: 25,
+                          cursor: "grab",
+                          padding: "4px",
+                          border: isActive ? "1px dashed #f472b6" : "none",
+                          touchAction: "none"
                         }}
-                        title="Hapus"
                       >
-                        ×
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
+                        <img 
+                          src={el.src} 
+                          alt="element icon" 
+                          style={{ 
+                            width: "55px", 
+                            height: "55px", 
+                            objectFit: "contain", 
+                            pointerEvents: "none",
+                            transform: `scaleX(${el.flipX ? -1 : 1}) scaleY(${el.flipY ? -1 : 1})`
+                          }} 
+                        />
 
-            </div>
+                        {isActive && (
+                          <button
+                            onClick={(e) => handleRemoveElement(el.id, e)}
+                            style={{
+                              position: "absolute",
+                              top: "-6px",
+                              right: "-6px",
+                              width: "18px",
+                              height: "18px",
+                              borderRadius: "50%",
+                              backgroundColor: "#f472b6",
+                              color: "#09090b",
+                              border: "none",
+                              fontSize: "10px",
+                              fontWeight: "900",
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              zIndex: 40,
+                              boxShadow: "0 2px 4px rgba(0,0,0,0.4)"
+                            }}
+                            title="Hapus"
+                          >
+                            ×
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
 
-            {mockupTp && (
-              <img 
-                src={mockupTp} 
-                alt="Mockup Overlay" 
-                style={{ 
-                  position: "absolute", 
-                  inset: 0, 
-                  width: "100%", 
-                  height: "100%", 
-                  objectFit: "contain", 
-                  zIndex: 35, 
-                  pointerEvents: "none" 
-                }}
-              />
+                {mockupTp && (
+                  <img 
+                    src={mockupTp} 
+                    alt="Mockup Overlay" 
+                    style={{ 
+                      position: "absolute", 
+                      inset: 0, 
+                      width: "100%", 
+                      height: "100%", 
+                      objectFit: "contain", 
+                      zIndex: 35, 
+                      pointerEvents: "none" 
+                    }}
+                  />
+                )}
+              </>
             )}
 
           </div>
@@ -719,28 +733,6 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                       Template {num}
                     </button>
                   ))}
-                </div>
-              </div>
-
-              <hr style={{ border: "none", borderTop: "1px solid rgba(255,255,255,0.1)", margin: "4px 0" }} />
-
-              <div>
-                <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase", marginBottom: "8px" }}>
-                  Tambah Icons ke Template (Klik untuk pasang)
-                </label>
-                <div style={{ maxHeight: "150px", overflowY: "auto", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px" }}>
-                  {Array.from({ length: 21 }, (_, i) => i + 1).map((num) => {
-                    const imageName = `elm${num}.png`;
-                    return (
-                      <div 
-                        key={num}
-                        onClick={() => handleAddElementToCase(imageName)}
-                        style={{ backgroundColor: "#18181b", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", padding: "6px", textAlign: "center", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
-                      >
-                        <img src={`/${imageName}`} alt={`icon ${num}`} style={{ width: "35px", height: "35px", objectFit: "contain" }} />
-                      </div>
-                    );
-                  })}
                 </div>
               </div>
 
