@@ -265,7 +265,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
               }}
             />
 
-            {/* LAYER 2: MASKING CUTTING (Area ini memaksa semua isi didalamnya terpotong sesuai bentuk shape masking SVG atau CSS Clip Path) */}
+            {/* LAYER 2: AREA EDIT DENGAN CLIP-PATH DAN OVERFLOW HIDDEN YANG PRESISI */}
             <div 
               style={{
                 position: "absolute",
@@ -274,8 +274,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                 width: isPhoneCase ? "152px" : "146px",
                 height: isPhoneCase ? "328px" : "235px",
                 zIndex: 15,
-                // MENGGUNAKAN LEKUKAN CSS CLIP-PATH UNTUK CUTTING YANG RAPI (Sesuaikan radius % untuk melengkung)
-                clipPath: isPhoneCase ? "inset(0px round 24px)" : "none", 
+                clipPath: isPhoneCase ? "inset(2px 2px 2px 2px round 22px)" : "inset(0px round 6px)",
                 overflow: "hidden",
                 touchAction: "none"
               }}
@@ -329,7 +328,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                 </div>
               )}
 
-              {/* LAYER 3: IKON & ELEMEN DEKORASI (Elemen di sini akan ikut terpotong oleh clip-path parent-nya) */}
+              {/* LAYER 3: IKON & ELEMEN DEKORASI */}
               {placedElements.map((el) => {
                 const isActive = activeSelection === el.id;
                 return (
@@ -357,4 +356,349 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                       style={{ 
                         width: "55px", 
                         height: "55px", 
-                        objectFit: "contain",
+                        objectFit: "contain", 
+                        pointerEvents: "none",
+                        transform: `scaleX(${el.flipX ? -1 : 1}) scaleY(${el.flipY ? -1 : 1})`
+                      }} 
+                    />
+
+                    {isActive && (
+                      <button
+                        onClick={(e) => handleRemoveElement(el.id, e)}
+                        style={{
+                          position: "absolute",
+                          top: "-6px",
+                          right: "-6px",
+                          width: "18px",
+                          height: "18px",
+                          borderRadius: "50%",
+                          backgroundColor: "#f472b6",
+                          color: "#09090b",
+                          border: "none",
+                          fontSize: "10px",
+                          fontWeight: "900",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          zIndex: 40,
+                          boxShadow: "0 2px 4px rgba(0,0,0,0.4)"
+                        }}
+                        title="Hapus"
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+
+            </div>
+
+            {/* LAYER 4: MOCKUP TRANSPARAN PALING DEPAN */}
+            {mockupTp && (
+              <img 
+                src={mockupTp} 
+                alt="Mockup Overlay" 
+                style={{ 
+                  position: "absolute", 
+                  inset: 0, 
+                  width: "100%", 
+                  height: "100%", 
+                  objectFit: "contain", 
+                  zIndex: 35, 
+                  pointerEvents: "none" 
+                }}
+              />
+            )}
+
+          </div>
+
+        </div>
+
+        <div style={{ flex: "1", minWidth: "280px", display: "flex", flexDirection: "column", gap: "14px" }}>
+          
+          {isTshirt && (
+            <div style={{ backgroundColor: "#121318", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "14px", padding: "14px" }}>
+              <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase", marginBottom: "8px" }}>
+                Pilih Model & Warna Kaos
+              </label>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "6px" }}>
+                <button
+                  onClick={() => setTshirtStyle("white")}
+                  style={{
+                    padding: "10px 4px",
+                    borderRadius: "10px",
+                    fontSize: "9px",
+                    fontWeight: "900",
+                    textTransform: "uppercase",
+                    cursor: "pointer",
+                    border: tshirtStyle === "white" ? "1px solid #f472b6" : "1px solid rgba(255,255,255,0.1)",
+                    background: tshirtStyle === "white" ? "#f4f4f5" : "#18181b",
+                    color: tshirtStyle === "white" ? "#09090b" : "#a1a1aa",
+                    transition: "all 0.3s ease"
+                  }}
+                >
+                  White
+                </button>
+                <button
+                  onClick={() => setTshirtStyle("black")}
+                  style={{
+                    padding: "10px 4px",
+                    borderRadius: "10px",
+                    fontSize: "9px",
+                    fontWeight: "900",
+                    textTransform: "uppercase",
+                    cursor: "pointer",
+                    border: tshirtStyle === "black" ? "1px solid #f472b6" : "1px solid rgba(255,255,255,0.1)",
+                    background: tshirtStyle === "black" ? "#27272a" : "#18181b",
+                    color: tshirtStyle === "black" ? "#fff" : "#a1a1aa",
+                    transition: "all 0.3s ease"
+                  }}
+                >
+                  Black
+                </button>
+                <button
+                  onClick={() => setTshirtStyle("croptop")}
+                  style={{
+                    padding: "10px 4px",
+                    borderRadius: "10px",
+                    fontSize: "9px",
+                    fontWeight: "900",
+                    textTransform: "uppercase",
+                    cursor: "pointer",
+                    border: tshirtStyle === "croptop" ? "1px solid #f472b6" : "1px solid rgba(255,255,255,0.1)",
+                    background: tshirtStyle === "croptop" ? "#f472b6" : "#18181b",
+                    color: tshirtStyle === "croptop" ? "#09090b" : "#a1a1aa",
+                    transition: "all 0.3s ease"
+                  }}
+                >
+                  Crop Top
+                </button>
+              </div>
+            </div>
+          )}
+
+          {isPhoneCase && (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", backgroundColor: "#18181b", padding: "5px", borderRadius: "14px", border: "1px solid rgba(255,255,255,0.1)" }}>
+              <button
+                onClick={() => setActiveTab("edit")}
+                style={{
+                  padding: "10px",
+                  borderRadius: "10px",
+                  fontSize: "10px",
+                  fontWeight: "900",
+                  textTransform: "uppercase",
+                  border: "none",
+                  cursor: "pointer",
+                  backgroundColor: activeTab === "edit" ? "#f472b6" : "transparent",
+                  color: activeTab === "edit" ? "#09090b" : "#a1a1aa",
+                  transition: "all 0.2s"
+                }}
+              >
+                Upload Foto
+              </button>
+              <button
+                onClick={() => setActiveTab("template")}
+                style={{
+                  padding: "10px",
+                  borderRadius: "10px",
+                  fontSize: "10px",
+                  fontWeight: "900",
+                  textTransform: "uppercase",
+                  border: "none",
+                  cursor: "pointer",
+                  backgroundColor: activeTab === "template" ? "#f472b6" : "transparent",
+                  color: activeTab === "template" ? "#09090b" : "#a1a1aa",
+                  transition: "all 0.2s"
+                }}
+              >
+                Template
+              </button>
+            </div>
+          )}
+
+          {(!isPhoneCase || activeTab === "edit") && (
+            <div style={{ backgroundColor: "#121318", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "14px", padding: "16px", display: "flex", flexDirection: "column", gap: "14px" }}>
+              
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase" }}>
+                  Upload Foto Kamu
+                </label>
+                <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                  <input 
+                    type="file" 
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    style={{ width: "100%", fontSize: "11px", color: "#a1a1aa" }}
+                  />
+                  {uploadedImage && (
+                    <button
+                      onClick={handleRemoveUploadedImage}
+                      style={{
+                        backgroundColor: "#27272a",
+                        color: "#f472b6",
+                        border: "1px solid rgba(244,114,182,0.3)",
+                        borderRadius: "8px",
+                        padding: "6px 12px",
+                        fontSize: "12px",
+                        fontWeight: "900",
+                        cursor: "pointer",
+                        whiteSpace: "nowrap"
+                      }}
+                      title="Hapus foto yang di-upload"
+                    >
+                      ✕ Hapus Foto
+                    </button>
+                  )}
+                </div>
+                {fileName && (
+                  <p style={{ fontSize: "10px", color: "#f472b6", fontWeight: "bold" }}>
+                    Foto terpilih: {fileName}
+                  </p>
+                )}
+
+                {uploadedImage && (
+                  <div style={{ display: "flex", gap: "6px", marginTop: "5px" }}>
+                    <button
+                      onClick={handleRemoveBackground}
+                      disabled={isRemovingBg}
+                      style={{
+                        flex: 1,
+                        padding: "10px",
+                        borderRadius: "10px",
+                        fontSize: "9px",
+                        fontWeight: "900",
+                        textTransform: "uppercase",
+                        backgroundColor: "#f472b6",
+                        color: "#09090b",
+                        border: "none",
+                        cursor: "pointer"
+                      }}
+                    >
+                      {isRemovingBg ? "Proses..." : "Hapus Background"}
+                    </button>
+                    <button
+                      onClick={handleResetBackground}
+                      style={{
+                        padding: "10px",
+                        borderRadius: "10px",
+                        fontSize: "9px",
+                        fontWeight: "bold",
+                        backgroundColor: "#27272a",
+                        color: "#a1a1aa",
+                        border: "none",
+                        cursor: "pointer"
+                      }}
+                    >
+                      Reset Background
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <hr style={{ border: "none", borderTop: "1px solid rgba(255,255,255,0.1)", margin: "4px 0" }} />
+
+              <div>
+                <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase", marginBottom: "8px" }}>
+                  Tambah Icons & Elements (Klik untuk pasang)
+                </label>
+                <div style={{ maxHeight: "150px", overflowY: "auto", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px" }}>
+                  {Array.from({ length: 21 }, (_, i) => i + 1).map((num) => {
+                    const imageName = `elm${num}.png`;
+                    return (
+                      <div 
+                        key={num}
+                        onClick={() => handleAddElementToCase(imageName)}
+                        style={{ backgroundColor: "#18181b", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", padding: "6px", textAlign: "center", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                      >
+                        <img src={`/${imageName}`} alt={`icon ${num}`} style={{ width: "35px", height: "35px", objectFit: "contain" }} />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+            </div>
+          )}
+
+          {isPhoneCase && activeTab === "template" && (
+            <div style={{ backgroundColor: "#121318", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "14px", padding: "16px", display: "flex", flexDirection: "column", gap: "14px" }}>
+              <div>
+                <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase", marginBottom: "10px" }}>
+                  Pilih Template (1 - 4)
+                </label>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "8px" }}>
+                  {[1, 2, 3, 4].map((num) => (
+                    <button
+                      key={num}
+                      onClick={() => setSelectedTemplate(num)}
+                      style={{
+                        padding: "10px",
+                        borderRadius: "10px",
+                        fontSize: "10px",
+                        fontWeight: "900",
+                        textTransform: "uppercase",
+                        cursor: "pointer",
+                        border: selectedTemplate === num ? "1px solid #f472b6" : "1px solid rgba(255,255,255,0.1)",
+                        background: selectedTemplate === num ? "linear-gradient(to right, #f4f4f5, #f472b6)" : "#18181b",
+                        color: selectedTemplate === num ? "#09090b" : "#a1a1aa"
+                      }}
+                    >
+                      Template {num}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <hr style={{ border: "none", borderTop: "1px solid rgba(255,255,255,0.1)", margin: "4px 0" }} />
+
+              <div>
+                <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase", marginBottom: "8px" }}>
+                  Tambah Icons ke Template (Klik untuk pasang)
+                </label>
+                <div style={{ maxHeight: "150px", overflowY: "auto", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px" }}>
+                  {Array.from({ length: 21 }, (_, i) => i + 1).map((num) => {
+                    const imageName = `elm${num}.png`;
+                    return (
+                      <div 
+                        key={num}
+                        onClick={() => handleAddElementToCase(imageName)}
+                        style={{ backgroundColor: "#18181b", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", padding: "6px", textAlign: "center", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                      >
+                        <img src={`/${imageName}`} alt={`icon ${num}`} style={{ width: "35px", height: "35px", objectFit: "contain" }} />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+            </div>
+          )}
+
+          <div style={{ backgroundColor: "#121318", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "14px", padding: "16px" }}>
+            <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase", marginBottom: "10px" }}>
+              Catatan / Ukuran & Detail
+            </label>
+            <input 
+              type="text" 
+              placeholder={isPhoneCase ? "Contoh: iPhone 13 / Samsung S22" : "Contoh: Size L / Warna Hitam"}
+              value={phoneModel}
+              onChange={(e) => setPhoneModel(e.target.value)}
+              style={{ width: "100%", backgroundColor: "#121318", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "10px", fontSize: "11px", color: "#f4f4f5", outline: "none", boxSizing: "border-box" }}
+            />
+          </div>
+
+          <button 
+            onClick={handleWhatsAppOrder}
+            style={{ width: "100%", background: "linear-gradient(to right, #f4f4f5, #f472b6, #f4f4f5)", color: "#09090b", fontWeight: "900", padding: "14px", borderRadius: "14px", fontSize: "11px", textTransform: "uppercase", letterSpacing: "1px", border: "none", cursor: "pointer", boxShadow: "0 0 20px rgba(244,114,182,0.3)" }}
+          >
+            Pesan via WhatsApp Sekarang
+          </button>
+
+        </div>
+
+      </div>
+    </div>
+  );
+}
