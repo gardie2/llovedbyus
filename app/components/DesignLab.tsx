@@ -536,7 +536,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                           touchAction: "none"
                         }}
                       >
-                        {/* 1. ELM 24 (Slot 2 & 3 dinaikkan pas untuk hilangkan garis putih) */}
+                        {/* 1. ELM 24 */}
                         {isElm24 && (
                           <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "auto" }}>
                             {[1, 2, 3].map((slotIdx) => {
@@ -580,7 +580,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                           </div>
                         )}
 
-                        {/* 2. ELM 25 (Lebar disesuaikan pas di tengah pemutar musik) */}
+                        {/* 2. ELM 25 (Lebar dipotong pas di kanan-kiri dari 12% ke 14%) */}
                         {isElm25 && (
                           <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "auto" }}>
                             {(() => {
@@ -595,7 +595,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                                       handleStartSlotDrag(el.id, 1, e.touches[0].clientX, e.touches[0].clientY, e);
                                     }
                                   }}
-                                  style={{ position: "absolute", top: "2%", left: "12%", right: "12%", height: "46%", backgroundColor: "#18181b", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", cursor: slotImg ? "grab" : "default" }}
+                                  style={{ position: "absolute", top: "2%", left: "14%", right: "14%", height: "46%", backgroundColor: "#18181b", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", cursor: slotImg ? "grab" : "default" }}
                                 >
                                   {slotImg ? (
                                     <img 
@@ -621,7 +621,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                           </div>
                         )}
 
-                        {/* 3. ELM 32 (Bulat sempurna) */}
+                        {/* 3. ELM 32 */}
                         {isElm32 && (
                           <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "auto" }}>
                             {(() => {
