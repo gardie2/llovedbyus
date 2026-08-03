@@ -385,26 +385,72 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
     try {
       setActiveSelection(null);
       setIsDownloading(true);
-      const dataUrl = await toPng(mockupRef.current, { 
-        cacheBust: true, 
-        pixelRatio: 2,
-        filter: (node) => {
-          // Abaikan tombol hapus dan elemen eksternal yang memicu CORS
-          const className = (node as HTMLElement).className;
-          if (typeof className === 'string' && className.includes('remove-btn')) return false;
-          return true;
-        },
-        // Mencegah error CORS pada gambar eksternal/blob
-        skipFonts: true,
-      });
+
+      // Membuat elemen canvas manual untuk menggabungkan gambar secara aman
+      const canvas = document.createElement("canvas");
+      canvas.width = 512;
+      canvas.height = 800;
+      const ctx = canvas.getContext("2d");
+
+      if (!ctx) {
+        throw new Error("Canvas context tidak didukung");
+      }
+
+      // Fungsi helper untuk load gambar secara aman
+      const loadImage = (src: string): Promise<HTMLImageElement> => {
+        return new Promise((resolve, reject) => {
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          img.onload = () => resolve(img);
+          img.onerror = (err) => reject(err);
+          img.src = src;
+        });
+      };
+
+      // 1. Gambar Background Mockup
+      try {
+        const baseImg = await loadImage(mockupBase);
+        ctx.drawImage(baseImg, 0, 0, canvas.width, canvas.height);
+      } catch (e) {
+        console.warn("Gagal memuat mockup base:", e);
+      }
+
+      // 2. Gambar Foto Utama yang di-upload
+      if (uploadedImage) {
+        try {
+          const userImg = await loadImage(uploadedImage);
+          ctx.save();
+          // Sesuaikan posisi koordinat berdasarkan ukuran canvas 512x800
+          ctx.translate(canvas.width / 2 + position.x, canvas.height / 2 + position.y);
+          ctx.rotate((rotation * Math.PI) / 180);
+          ctx.scale(scale, scale);
+          ctx.drawImage(userImg, -100, -150, 200, 300);
+          ctx.restore();
+        } catch (e) {
+          console.warn("Gagal memuat foto utama:", e);
+        }
+      }
+
+      // 3. Gambar Mockup Overlay (Bagian Depan/Transparan)
+      if (mockupTp) {
+        try {
+          const tpImg = await loadImage(mockupTp);
+          ctx.drawImage(tpImg, 0, 0, canvas.width, canvas.height);
+        } catch (e) {
+          console.warn("Gagal memuat mockup overlay:", e);
+        }
+      }
+
+      // Konversi canvas menjadi file PNG siap download
+      const dataUrl = canvas.toDataURL("image/png");
       const link = document.createElement("a");
       link.download = `Custom-Design-${Date.now()}.png`;
       link.href = dataUrl;
       link.click();
+
     } catch (err) {
       console.error("Gagal mendownload gambar:", err);
-      // Fallback darurat jika canvas tetap terblokir browser
-      alert("Gagal menyimpan otomatis karena kebijakan keamanan browser. Silakan gunakan Screenshot (Print Screen) layar untuk menyimpan desain Anda.");
+      alert("Gagal menyimpan gambar desain. Pastikan foto utama sudah terunggah.");
     } finally {
       setIsDownloading(false);
     }
