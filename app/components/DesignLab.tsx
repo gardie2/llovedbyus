@@ -93,7 +93,6 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
     const onMouseMove = (e: MouseEvent) => handleGlobalMove(e.clientX, e.clientY);
     const onTouchMove = (e: TouchEvent) => {
       if (e.touches.length === 2 && initialPinchDistance.current !== null) {
-        // Logika Pinch-to-Zoom dengan dua jari di HP
         const dist = Math.hypot(
           e.touches[0].clientX - e.touches[1].clientX,
           e.touches[0].clientY - e.touches[1].clientY
@@ -301,17 +300,17 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
               }}
             />
 
-            {/* LAYER 2: AREA EDIT (Disesuaikan posisinya persis menutupi badan case dengan clipPath melengkung halus) */}
+            {/* LAYER 2: AREA EDIT (Disempurnakan path-nya tanpa celah sedikit pun di dekat kamera) */}
             <div 
               style={{
                 position: "absolute",
-                top: isPhoneCase ? "28px" : "85px",
-                left: isPhoneCase ? "42px" : "55px",
-                width: isPhoneCase ? "172px" : "146px",
-                height: isPhoneCase ? "344px" : "235px",
+                top: isPhoneCase ? "27px" : "85px",
+                left: isPhoneCase ? "41px" : "55px",
+                width: isPhoneCase ? "174px" : "146px",
+                height: isPhoneCase ? "346px" : "235px",
                 zIndex: 15,
                 clipPath: isPhoneCase 
-                  ? "path('M 15 0 L 157 0 C 165 0 172 7 172 15 L 172 329 C 172 337 165 344 157 344 L 15 344 C 7 344 0 337 0 329 L 0 15 C 0 7 7 0 15 0 Z')" 
+                  ? "path('M 15 0 L 158 0 C 166 0 174 8 174 16 L 174 330 C 174 338 166 346 158 346 L 15 346 C 7 346 0 338 0 330 L 0 16 C 0 8 7 0 15 0 Z')" 
                   : "inset(0px round 6px)",
                 overflow: "hidden",
                 touchAction: "none"
@@ -370,7 +369,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                 </div>
               )}
 
-              {/* LAYER 3: IKON & ELEMEN DEKORASI */}
+              {/* LAYER 3: IKON & ELEMEN DEKORASI (Dilengkapi tombol rotasi aktif) */}
               {placedElements.map((el) => {
                 const isActive = activeSelection === el.id;
                 return (
@@ -407,31 +406,63 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                     />
 
                     {isActive && (
-                      <button
-                        onClick={(e) => handleRemoveElement(el.id, e)}
-                        style={{
-                          position: "absolute",
-                          top: "-6px",
-                          right: "-6px",
-                          width: "18px",
-                          height: "18px",
-                          borderRadius: "50%",
-                          backgroundColor: "#f472b6",
-                          color: "#09090b",
-                          border: "none",
-                          fontSize: "10px",
-                          fontWeight: "900",
-                          cursor: "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          zIndex: 40,
-                          boxShadow: "0 2px 4px rgba(0,0,0,0.4)"
-                        }}
-                        title="Hapus"
-                      >
-                        ×
-                      </button>
+                      <>
+                        <button
+                          onClick={(e) => handleRemoveElement(el.id, e)}
+                          style={{
+                            position: "absolute",
+                            top: "-6px",
+                            right: "-6px",
+                            width: "18px",
+                            height: "18px",
+                            borderRadius: "50%",
+                            backgroundColor: "#f472b6",
+                            color: "#09090b",
+                            border: "none",
+                            fontSize: "10px",
+                            fontWeight: "900",
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            zIndex: 40,
+                            boxShadow: "0 2px 4px rgba(0,0,0,0.4)"
+                          }}
+                          title="Hapus"
+                        >
+                          ×
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPlacedElements((prev) =>
+                              prev.map((item) => (item.id === el.id ? { ...item, rotation: (item.rotation + 45) % 360 } : item))
+                            );
+                          }}
+                          style={{
+                            position: "absolute",
+                            bottom: "-6px",
+                            right: "-6px",
+                            width: "18px",
+                            height: "18px",
+                            borderRadius: "50%",
+                            backgroundColor: "#f4f4f5",
+                            color: "#09090b",
+                            border: "none",
+                            fontSize: "9px",
+                            fontWeight: "900",
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            zIndex: 40,
+                            boxShadow: "0 2px 4px rgba(0,0,0,0.4)"
+                          }}
+                          title="Putar"
+                        >
+                          ↻
+                        </button>
+                      </>
                     )}
                   </div>
                 );
