@@ -20,7 +20,11 @@ export default function Navbar() {
           </span>
         </Link>
 
+
         {/* MENU NAVBAR (TANPA TOMBOL START) */}
+
+        {/* MENU NAVBAR */}
+
         <div className="hidden md:flex items-center gap-8 text-xs font-bold tracking-wider uppercase text-zinc-400">
           <Link href="#" className="hover:text-pink-300 transition">Products</Link>
           <Link href="#design-lab" className="hover:text-pink-300 transition">Design Lab</Link>

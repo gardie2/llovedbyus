@@ -4,3 +4,11 @@ import "./.next/dev/types/routes.d.ts";
 
 // NOTE: This file should not be edited
 // see https://nextjs.org/docs/app/api-reference/config/typescript for more information.
+import { defineconfig } from "@opennextjs/cloudflare";
+
+export default defineconfig({
+  // Konfigurasi worker self reference agar sesuai dengan nama "llovedbyus"
+  override: {
+    wrapper: "cloudflare-pages",
+  },
+});
