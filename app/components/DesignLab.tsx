@@ -51,7 +51,6 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
   const activeDraggingElementId = useRef<number | null>(null);
   const isDraggingPhoto = useRef(false);
 
-  // State untuk interaksi geser/zoom foto di dalam slot
   const activeSlotDrag = useRef<{ elementId: number; slotIndex: number } | null>(null);
   const slotLastPos = useRef({ x: 0, y: 0 });
 
@@ -537,11 +536,12 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                           touchAction: "none"
                         }}
                       >
-                        {/* 1. ELM 24 (Slot tengah & bawah digeser ke atas, fitur zoom/pan foto slot aktif) */}
+                        {/* 1. ELM 24 (Dua slot bawah digeser ke atas lagi agar pas rapat) */}
                         {isElm24 && (
                           <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "auto" }}>
                             {[1, 2, 3].map((slotIdx) => {
-                              const topPos = slotIdx === 1 ? "1%" : slotIdx === 2 ? "31%" : "61%";
+                              // Slot 1 (Atas) tetap, Slot 2 & 3 ditarik ke atas sedikit lagi
+                              const topPos = slotIdx === 1 ? "1%" : slotIdx === 2 ? "30.5%" : "60%";
                               const slotImg = el.slotImages?.[slotIdx];
                               const slotT = el.slotTransforms?.[slotIdx] || { x: 0, y: 0, scale: 1 };
 
@@ -581,7 +581,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                           </div>
                         )}
 
-                        {/* 2. ELM 25 (Area atas ditarik ke atas, zoom/pan aktif) */}
+                        {/* 2. ELM 25 (Lebar slot dipotong dikit dari samping kanan-kiri agar ngepas) */}
                         {isElm25 && (
                           <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "auto" }}>
                             {(() => {
@@ -596,7 +596,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                                       handleStartSlotDrag(el.id, 1, e.touches[0].clientX, e.touches[0].clientY, e);
                                     }
                                   }}
-                                  style={{ position: "absolute", top: "1%", left: "6%", right: "6%", height: "48%", backgroundColor: "#18181b", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", cursor: slotImg ? "grab" : "default" }}
+                                  style={{ position: "absolute", top: "1%", left: "9%", right: "9%", height: "48%", backgroundColor: "#18181b", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", cursor: slotImg ? "grab" : "default" }}
                                 >
                                   {slotImg ? (
                                     <img 
@@ -622,7 +622,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                           </div>
                         )}
 
-                        {/* 3. ELM 32 (Bulat sempurna, zoom/pan aktif) */}
+                        {/* 3. ELM 32 (Tetap pas sempurna) */}
                         {isElm32 && (
                           <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "auto" }}>
                             {(() => {
