@@ -531,8 +531,8 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                     const isElm25 = el.src.includes("elm25.png");
                     const isElm32 = el.src.includes("elm32.png");
 
-                    const boxWidth = isElm24 ? "85px" : isElm25 ? "110px" : isElm32 ? "90px" : "60px";
-                    const boxHeight = isElm24 ? "210px" : isElm25 ? "145px" : isElm32 ? "125px" : "60px";
+                    const boxWidth = isElm24 ? "85px" : isElm25 ? "110px" : isElm32 ? "90px" : "100px";
+                    const boxHeight = isElm24 ? "210px" : isElm25 ? "145px" : isElm32 ? "125px" : "100px";
 
                     return (
                       <div
@@ -555,7 +555,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                           touchAction: "none"
                         }}
                       >
-                        {/* 1. ELM 24 */}
+                        {/* 1. ELM 24 (POSISI SLOT TETEP AKURAT SESUAI PERMINTAAN) */}
                         {isElm24 && (
                           <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "auto" }}>
                             {[1, 2, 3].map((slotIdx) => {
@@ -599,7 +599,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                           </div>
                         )}
 
-                        {/* 2. ELM 25 */}
+                        {/* 2. ELM 25 (POSISI SLOT TETEP AKURAT SESUAI PERMINTAAN) */}
                         {isElm25 && (
                           <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "auto" }}>
                             {(() => {
@@ -640,7 +640,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                           </div>
                         )}
 
-                        {/* 3. ELM 32 */}
+                        {/* 3. ELM 32 (POSISI SLOT TETEP AKURAT SESUAI PERMINTAAN) */}
                         {isElm32 && (
                           <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "auto" }}>
                             {(() => {
@@ -681,7 +681,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                           </div>
                         )}
 
-                        {/* Gambar Bingkai Utama PNG */}
+                        {/* Gambar Bingkai Utama PNG / Stiker Lain */}
                         <img 
                           src={el.src} 
                           alt="element frame" 
