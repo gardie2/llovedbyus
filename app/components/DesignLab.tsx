@@ -23,7 +23,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
   const [isRemovingBg, setIsRemovingBg] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   
-  const [placedElements, setPlacedElements] = useState<Array<{ id: number; src: string; x: number; y: number; scale: number; rotation: number; flipX: boolean; flipY: boolean }>>([]);
+  const [placedElements, setPlacedElements] = useState<Array<{ id: number; src: string; x: number; y: number; scale: number; rotation: number; flipX: boolean; flipY: boolean; slotImage?: string | null }>>([]);
   const [activeElementId, setActiveElementId] = useState<number | null>(null);
 
   const [scale, setScale] = useState(1);
@@ -74,6 +74,14 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
     }
   };
 
+  const handleSlotImageUpload = (elementId: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setPlacedElements(prev => prev.map(el => el.id === elementId ? { ...el, slotImage: url } : el));
+    }
+  };
+
   const handleRemoveBackground = async () => {
     if (!uploadedImage) return;
     try {
@@ -119,6 +127,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
       rotation: 0,
       flipX: false,
       flipY: false,
+      slotImage: null,
     };
     setPlacedElements((prev) => [...prev, newElement]);
     setActiveElementId(newElement.id);
@@ -255,11 +264,8 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
 
   const handleWhatsAppOrder = () => {
     const phoneNumber = "62881025376311";
-    const styleInfo = isTshirt ? ` (${tshirtStyle.toUpperCase()})` : "";
-    const modeDesc = isPhoneCase ? (activeTab === "edit" ? "Custom Foto & Icons" : `Template ${selectedTemplate} + Icons`) : "Custom Foto & Icons";
-    const elementsList = placedElements.length > 0 ? `%0A- Stiker/Frame: ${placedElements.map(el => el.src).join(", ")}` : "";
-    const message = `Halo, saya ingin memesan ${productTitle}${styleInfo}.%0A- Mode: ${modeDesc}%0A- Detail/Ukuran: ${phoneModel || "Tidak diisi"}${elementsList}`;
-    window.open(`https://wa.me/${phoneNumber}?text=${message}`, "_blank");
+    const message = `Halo, saya ingin memesan Custom Phone Case. Berikut adalah desain saya:`;
+    window.open(`https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`, "_blank");
   };
 
   return (
@@ -368,6 +374,11 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
 
             {placedElements.map((el) => {
               const isActive = activeElementId === el.id;
+              const isEl24 = el.src.includes("elm24.png");
+              const isEl25 = el.src.includes("elm25.png");
+              const isEl32 = el.src.includes("elm32.png");
+              const hasSlot = isEl24 || isEl25 || isEl32;
+
               return (
                 <div
                   key={el.id}
@@ -397,17 +408,42 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                     touchAction: "none"
                   }}
                 >
-                  <img 
-                    src={el.src} 
-                    alt="element icon" 
-                    style={{ 
-                      width: "55px", 
-                      height: "55px", 
-                      objectFit: "contain", 
-                      pointerEvents: "none",
-                      transform: `scaleX(${el.flipX ? -1 : 1}) scaleY(${el.flipY ? -1 : 1})`
-                    }} 
-                  />
+                  <div style={{ position: "relative", display: "inline-block" }}>
+                    {hasSlot && (
+                      <div style={{
+                        position: "absolute",
+                        ...(isEl24 ? { top: "12px", left: "14px", width: "42px", height: "82px" } :
+                           isEl25 ? { top: "18px", left: "12px", width: "70px", height: "70px", borderRadius: "50%" } :
+                           { top: "15px", left: "15px", width: "75px", height: "75px" }),
+                        overflow: "hidden",
+                        zIndex: 1,
+                        backgroundColor: "#000"
+                      }}>
+                        {el.slotImage ? (
+                          <img src={el.slotImage} alt="Slot Filled" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        ) : (
+                          <label style={{ display: "flex", width: "100%", height: "100%", alignItems: "center", justifyContent: "center", fontSize: "8px", color: "#f472b6", cursor: "pointer", textAlign: "center", padding: "2px" }} onClick={(e) => e.stopPropagation()}>
+                            Upload
+                            <input type="file" accept="image/*" onChange={(e) => handleSlotImageUpload(el.id, e)} style={{ display: "none" }} />
+                          </label>
+                        )}
+                      </div>
+                    )}
+
+                    <img 
+                      src={el.src} 
+                      alt="element icon" 
+                      style={{ 
+                        width: "100px", 
+                        height: "100px", 
+                        objectFit: "contain", 
+                        pointerEvents: "none",
+                        position: "relative",
+                        zIndex: 2,
+                        transform: `scaleX(${el.flipX ? -1 : 1}) scaleY(${el.flipY ? -1 : 1})`
+                      }} 
+                    />
+                  </div>
 
                   {isActive && (
                     <button
@@ -613,7 +649,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
 
               <div>
                 <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase", marginBottom: "8px" }}>
-                  Stiker & Frame
+                  TAMBAH STIKER & FRAME
                 </label>
                 <div style={{ maxHeight: "150px", overflowY: "auto", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px" }}>
                   {Array.from({ length: 35 }, (_, i) => i + 1).map((num) => {
@@ -667,7 +703,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
 
               <div>
                 <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase", marginBottom: "8px" }}>
-                  Stiker & Frame
+                  TAMBAH STIKER & FRAME
                 </label>
                 <div style={{ maxHeight: "150px", overflowY: "auto", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px" }}>
                   {Array.from({ length: 35 }, (_, i) => i + 1).map((num) => {
