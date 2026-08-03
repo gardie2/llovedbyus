@@ -21,7 +21,17 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
   const [phoneModel, setPhoneModel] = useState("");
   const [isRemovingBg, setIsRemovingBg] = useState(false);
   
-  const [placedElements, setPlacedElements] = useState<Array<{ id: number; src: string; x: number; y: number; scale: number; rotation: number; flipX: boolean; flipY: boolean }>>([]);
+  const [placedElements, setPlacedElements] = useState<Array<{ 
+    id: number; 
+    src: string; 
+    x: number; 
+    y: number; 
+    scale: number; 
+    rotation: number; 
+    flipX: boolean; 
+    flipY: boolean;
+    slotImages?: { [key: number]: string }; 
+  }>>([]);
   
   const [activeSelection, setActiveSelection] = useState<"photo" | number | null>("photo");
 
@@ -212,15 +222,37 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
     const newElement = {
       id: Date.now(),
       src: `/${imageName}`,
-      x: 70,
-      y: 100,
+      x: 30,
+      y: 50,
       scale: 1,
       rotation: 0,
       flipX: false,
       flipY: false,
+      slotImages: {},
     };
     setPlacedElements((prev) => [...prev, newElement]);
     setActiveSelection(newElement.id);
+  };
+
+  const handleSlotImageUpload = (elementId: number, slotIndex: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setPlacedElements((prev) =>
+        prev.map((el) => {
+          if (el.id === elementId) {
+            return {
+              ...el,
+              slotImages: {
+                ...(el.slotImages || {}),
+                [slotIndex]: url,
+              },
+            };
+          }
+          return el;
+        })
+      );
+    }
   };
 
   const handleStartDragPhoto = (clientX: number, clientY: number, e: React.MouseEvent | React.TouchEvent) => {
@@ -285,7 +317,8 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
     const phoneNumber = "62881025376311";
     const styleInfo = isTshirt ? ` (${tshirtStyle.toUpperCase()})` : "";
     const modeDesc = isPhoneCase ? (activeTab === "edit" ? "Custom Foto & Icons" : `Template ${selectedTemplate} + Icons`) : "Custom Foto & Icons";
-    const message = `Halo, saya ingin memesan ${productTitle}${styleInfo}.%0A- Mode: ${modeDesc}%0A- Detail/Ukuran: ${phoneModel || "Termasuk Kustomisasi"}`;
+    const totalCustomElements = placedElements.length;
+    const message = `Halo, saya ingin memesan ${productTitle}${styleInfo}.%0A- Mode: ${modeDesc}%0A- Jumlah Frame/Elemen Tambahan: ${totalCustomElements}%0A- Detail/Ukuran: ${phoneModel || "Termasuk Kustomisasi"}`;
     window.open(`https://wa.me/${phoneNumber}?text=${message}`, "_blank");
   };
 
@@ -316,9 +349,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
             }}
           >
             
-            {/* KONDISI TAMPILAN BERDASARKAN TAB */}
             {isPhoneCase && activeTab === "template" ? (
-              /* KALO PILIH TEMPLATE: TAMPILKAN GAMBAR FULL SATU BADAN HP DARI CANVA */
               <div 
                 style={{ 
                   position: "absolute", 
@@ -343,7 +374,6 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                 />
               </div>
             ) : (
-              /* KALO UPLOAD FOTO / KAOS: MENGGUNAKAN MOCKUP & AREA EDIT CUSTOM */
               <>
                 <img 
                   src={mockupBase} 
@@ -414,6 +444,9 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
 
                   {placedElements.map((el) => {
                     const isActive = activeSelection === el.id;
+                    const isElm24 = el.src.includes("elm24.png");
+                    const isElm25 = el.src.includes("elm25.png");
+
                     return (
                       <div
                         key={el.id}
@@ -430,20 +463,80 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                           transform: `scale(${el.scale}) rotate(${el.rotation}deg)`,
                           zIndex: 25,
                           cursor: "grab",
-                          padding: "4px",
+                          padding: "2px",
                           border: isActive ? "1px dashed #f472b6" : "none",
                           touchAction: "none"
                         }}
                       >
+                        {/* Jika elemen adalah elm24 (3 slot foto) */}
+                        {isElm24 && (
+                          <div style={{ position: "relative", width: "120px", height: "160px" }}>
+                            {/* Slot 1 */}
+                            <div style={{ position: "absolute", top: "10px", left: "10px", width: "45px", height: "60px", backgroundColor: "#27272a", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid rgba(255,255,255,0.2)" }}>
+                              {el.slotImages?.[1] ? (
+                                <img src={el.slotImages[1]} alt="slot 1" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                              ) : (
+                                <label style={{ cursor: "pointer", color: "#f472b6", fontSize: "16px", fontWeight: "bold" }}>
+                                  +
+                                  <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => handleSlotImageUpload(el.id, 1, e)} />
+                                </label>
+                              )}
+                            </div>
+                            {/* Slot 2 */}
+                            <div style={{ position: "absolute", top: "10px", right: "10px", width: "45px", height: "60px", backgroundColor: "#27272a", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid rgba(255,255,255,0.2)" }}>
+                              {el.slotImages?.[2] ? (
+                                <img src={el.slotImages[2]} alt="slot 2" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                              ) : (
+                                <label style={{ cursor: "pointer", color: "#f472b6", fontSize: "16px", fontWeight: "bold" }}>
+                                  +
+                                  <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => handleSlotImageUpload(el.id, 2, e)} />
+                                </label>
+                              )}
+                            </div>
+                            {/* Slot 3 */}
+                            <div style={{ position: "absolute", bottom: "10px", left: "20px", right: "20px", height: "60px", backgroundColor: "#27272a", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid rgba(255,255,255,0.2)" }}>
+                              {el.slotImages?.[3] ? (
+                                <img src={el.slotImages[3]} alt="slot 3" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                              ) : (
+                                <label style={{ cursor: "pointer", color: "#f472b6", fontSize: "16px", fontWeight: "bold" }}>
+                                  +
+                                  <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => handleSlotImageUpload(el.id, 3, e)} />
+                                </label>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Jika elemen adalah elm25 (1 slot foto) */}
+                        {isElm25 && (
+                          <div style={{ position: "relative", width: "120px", height: "140px" }}>
+                            <div style={{ position: "absolute", top: "15px", left: "15px", right: "15px", bottom: "15px", backgroundColor: "#27272a", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid rgba(255,255,255,0.2)" }}>
+                              {el.slotImages?.[1] ? (
+                                <img src={el.slotImages[1]} alt="slot 1" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                              ) : (
+                                <label style={{ cursor: "pointer", color: "#f472b6", fontSize: "18px", fontWeight: "bold" }}>
+                                  +
+                                  <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => handleSlotImageUpload(el.id, 1, e)} />
+                                </label>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Gambar Utama Frame / Stiker / Icon */}
                         <img 
                           src={el.src} 
                           alt="element icon" 
                           style={{ 
-                            width: "55px", 
-                            height: "55px", 
+                            position: isElm24 || isElm25 ? "absolute" : "relative",
+                            top: 0,
+                            left: 0,
+                            width: isElm24 || isElm25 ? "100%" : "55px", 
+                            height: isElm24 || isElm25 ? "100%" : "55px", 
                             objectFit: "contain", 
                             pointerEvents: "none",
-                            transform: `scaleX(${el.flipX ? -1 : 1}) scaleY(${el.flipY ? -1 : 1})`
+                            transform: `scaleX(${el.flipX ? -1 : 1}) scaleY(${el.flipY ? -1 : 1})`,
+                            zIndex: 5
                           }} 
                         />
 
@@ -452,21 +545,21 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                             onClick={(e) => handleRemoveElement(el.id, e)}
                             style={{
                               position: "absolute",
-                              top: "-6px",
-                              right: "-6px",
-                              width: "18px",
-                              height: "18px",
+                              top: "-8px",
+                              right: "-8px",
+                              width: "20px",
+                              height: "20px",
                               borderRadius: "50%",
                               backgroundColor: "#f472b6",
                               color: "#09090b",
                               border: "none",
-                              fontSize: "10px",
+                              fontSize: "11px",
                               fontWeight: "900",
                               cursor: "pointer",
                               display: "flex",
                               alignItems: "center",
                               justifyContent: "center",
-                              zIndex: 40,
+                              zIndex: 50,
                               boxShadow: "0 2px 4px rgba(0,0,0,0.4)"
                             }}
                             title="Hapus"
@@ -608,7 +701,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
               
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase" }}>
-                  Upload Foto Kamu
+                  Upload Foto Utama
                 </label>
                 <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
                   <input 
@@ -686,18 +779,20 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
 
               <div>
                 <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase", marginBottom: "8px" }}>
-                  Tambah Icons & Elements (Klik untuk pasang)
+                  Tambah Stiker & Frame (Termasuk Elm 24 & 25)
                 </label>
                 <div style={{ maxHeight: "150px", overflowY: "auto", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px" }}>
-                  {Array.from({ length: 21 }, (_, i) => i + 1).map((num) => {
+                  {Array.from({ length: 35 }, (_, i) => i + 1).map((num) => {
                     const imageName = `elm${num}.png`;
                     return (
                       <div 
                         key={num}
                         onClick={() => handleAddElementToCase(imageName)}
                         style={{ backgroundColor: "#18181b", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", padding: "6px", textAlign: "center", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                        title={`Klik pasang ${imageName}`}
                       >
-                        <img src={`/${imageName}`} alt={`icon ${num}`} style={{ width: "35px", height: "35px", objectFit: "contain" }} />
+                        <span style={{ fontSize: "9px", color: "#f472b6", marginRight: "4px" }}>{num}</span>
+                        <img src={`/${imageName}`} alt={`icon ${num}`} style={{ width: "30px", height: "30px", objectFit: "contain" }} onError={(e)=>{(e.target as HTMLElement).style.display='none'}} />
                       </div>
                     );
                   })}
