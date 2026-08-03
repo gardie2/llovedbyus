@@ -174,7 +174,7 @@ export default function Home() {
         }
       `}</style>
 
-      {/* NAVBAR (TANPA TOMBOL START) */}
+      {/* NAVBAR */}
       <nav className="bg-[#0d0e12]/80 backdrop-blur-xl border-b border-zinc-800/80 sticky top-0 z-50 py-4 px-6">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Link href="/" className="flex flex-col group">
@@ -217,6 +217,7 @@ export default function Home() {
             Design custom phone cases, sweatshirts, hoodies, t-shirts, tote bags, and more products the way you want.
           </p>
 
+          {/* HANYA MENYISAKAN 1 TOMBOL UTAMA */}
           <div className="flex items-center gap-4 pt-2">
             <button 
               onClick={() => { setSelectedProductTitle("Custom Phone Case"); setShowDesignLab(true); }}
@@ -224,9 +225,6 @@ export default function Home() {
             >
               Pick Product & Design
             </button>
-            <a href="#products" className="cute-click border border-zinc-700/80 hover:border-pink-400/50 text-zinc-300 font-bold px-8 py-4 rounded-full text-xs uppercase tracking-widest bg-zinc-900/60 backdrop-blur-md hover:bg-zinc-800 transition text-center">
-              Explore Products
-            </a>
           </div>
         </div>
 
