@@ -260,31 +260,23 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                 height: "100%", 
                 objectFit: "contain", 
                 zIndex: 10, 
-                pointerEvents: "none",
-                transition: "opacity 0.4s ease-in-out, transform 0.4s ease-in-out"
+                pointerEvents: "none" 
               }}
             />
 
-            {/* LAYER 2: AREA EDIT DENGAN MASKING OTOMATIS BERBASIS GAMBAR TRANSPARAN */}
+            {/* LAYER 2: AREA EDIT (Disesuaikan posisinya persis menutupi badan case dengan clipPath melengkung halus) */}
             <div 
               style={{
                 position: "absolute",
-                inset: 0,
-                width: "100%",
-                height: "100%",
+                top: isPhoneCase ? "28px" : "85px",
+                left: isPhoneCase ? "42px" : "55px",
+                width: isPhoneCase ? "172px" : "146px",
+                height: isPhoneCase ? "344px" : "235px",
                 zIndex: 15,
-                ...(isPhoneCase && mockupTp ? {
-                  maskImage: `url(${mockupTp})`,
-                  WebkitMaskImage: `url(${mockupTp})`,
-                  maskSize: "contain",
-                  WebkitMaskSize: "contain",
-                  maskRepeat: "no-repeat",
-                  WebkitMaskRepeat: "no-repeat",
-                  maskPosition: "center",
-                  WebkitMaskPosition: "center"
-                } : {
-                  overflow: "hidden"
-                }),
+                clipPath: isPhoneCase 
+                  ? "path('M 15 0 L 157 0 C 165 0 172 7 172 15 L 172 329 C 172 337 165 344 157 344 L 15 344 C 7 344 0 337 0 329 L 0 15 C 0 7 7 0 15 0 Z')" 
+                  : "inset(0px round 6px)",
+                overflow: "hidden",
                 touchAction: "none"
               }}
               onWheel={handleWheel}
@@ -303,8 +295,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                         display: "flex", 
                         alignItems: "center", 
                         justifyContent: "center", 
-                        touchAction: "none",
-                        border: activeSelection === "photo" ? "1px dashed #f472b6" : "none" 
+                        touchAction: "none" 
                       }}
                       onMouseDown={(e) => handleStartDragPhoto(e.clientX, e.clientY, e)}
                       onTouchStart={(e) => { if (e.touches[0]) handleStartDragPhoto(e.touches[0].clientX, e.touches[0].clientY, e); }}
@@ -316,7 +307,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                           transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
                           width: "100%",
                           height: "100%",
-                          objectFit: "contain",
+                          objectFit: "cover",
                           pointerEvents: "none",
                           userSelect: "none"
                         }}
