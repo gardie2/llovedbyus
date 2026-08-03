@@ -385,7 +385,14 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
     try {
       setActiveSelection(null);
       setIsDownloading(true);
-      const dataUrl = await toPng(mockupRef.current, { cacheBust: true, quality: 0.95 });
+      const dataUrl = await toPng(mockupRef.current, { 
+        cacheBust: true, 
+        quality: 0.95,
+        filter: (node) => {
+          const exclusionSelectors = ['button'];
+          return !exclusionSelectors.some((selector) => node.tagName === selector && (node as HTMLElement).classList?.contains('remove-btn'));
+        }
+      });
       const link = document.createElement("a");
       link.download = `Custom-Design-${Date.now()}.png`;
       link.href = dataUrl;
@@ -555,7 +562,6 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                           touchAction: "none"
                         }}
                       >
-                        {/* 1. ELM 24 (POSISI SLOT TETEP AKURAT SESUAI PERMINTAAN) */}
                         {isElm24 && (
                           <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "auto" }}>
                             {[1, 2, 3].map((slotIdx) => {
@@ -599,7 +605,6 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                           </div>
                         )}
 
-                        {/* 2. ELM 25 (POSISI SLOT TETEP AKURAT SESUAI PERMINTAAN) */}
                         {isElm25 && (
                           <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "auto" }}>
                             {(() => {
@@ -640,7 +645,6 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                           </div>
                         )}
 
-                        {/* 3. ELM 32 (POSISI SLOT TETEP AKURAT SESUAI PERMINTAAN) */}
                         {isElm32 && (
                           <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "auto" }}>
                             {(() => {
@@ -681,7 +685,6 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                           </div>
                         )}
 
-                        {/* Gambar Bingkai Utama PNG / Stiker Lain */}
                         <img 
                           src={el.src} 
                           alt="element frame" 
@@ -701,6 +704,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                         {isActive && (
                           <button
                             onClick={(e) => handleRemoveElement(el.id, e)}
+                            className="remove-btn"
                             style={{
                               position: "absolute",
                               top: "-4px",
