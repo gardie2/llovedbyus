@@ -265,7 +265,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
               }}
             />
 
-            {/* LAYER 2: AREA EDIT DENGAN CLIP-PATH DAN OVERFLOW HIDDEN YANG PRESISI */}
+            {/* LAYER 2: AREA EDIT DENGAN CLIP-PATH YANG RAPI TERPOTONG DI DALAM BODI HP */}
             <div 
               style={{
                 position: "absolute",
@@ -323,7 +323,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                   <img 
                     src={`/template-${selectedTemplate}.png`} 
                     alt={`Template ${selectedTemplate}`} 
-                    style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
                   />
                 </div>
               )}
@@ -654,7 +654,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
               <hr style={{ border: "none", borderTop: "1px solid rgba(255,255,255,0.1)", margin: "4px 0" }} />
 
               <div>
-                <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase", marginBottom: "8px" }}>
+                <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase",marginBottom: "8px" }}>
                   Tambah Icons ke Template (Klik untuk pasang)
                 </label>
                 <div style={{ maxHeight: "150px", overflowY: "auto", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px" }}>
