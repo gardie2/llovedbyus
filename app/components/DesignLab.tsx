@@ -448,7 +448,6 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                     const isElm25 = el.src.includes("elm25.png");
                     const isElm32 = el.src.includes("elm32.png");
 
-                    // Ukuran kotak elemen disesuaikan persis dengan proporsi gambar yang sudah di-crop rapat
                     const boxWidth = isElm24 ? "85px" : isElm25 ? "110px" : isElm32 ? "90px" : "60px";
                     const boxHeight = isElm24 ? "210px" : isElm25 ? "145px" : isElm32 ? "125px" : "60px";
 
@@ -473,11 +472,11 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                           touchAction: "none"
                         }}
                       >
-                        {/* 1. ELM 24 (3 Slot Persis di Dalam Gambar yang Sudah Di-crop) */}
+                        {/* 1. ELM 24 (Slot digeser ke atas pas) */}
                         {isElm24 && (
                           <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "auto" }}>
                             {/* Slot Atas */}
-                            <div style={{ position: "absolute", top: "4.5%", left: "6%", right: "6%", height: "29%", backgroundColor: "#18181b", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <div style={{ position: "absolute", top: "1%", left: "6%", right: "6%", height: "29%", backgroundColor: "#18181b", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
                               {el.slotImages?.[1] ? (
                                 <img src={el.slotImages[1]} alt="slot 1" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                               ) : (
@@ -488,7 +487,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                               )}
                             </div>
                             {/* Slot Tengah */}
-                            <div style={{ position: "absolute", top: "35.5%", left: "6%", right: "6%", height: "29%", backgroundColor: "#18181b", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <div style={{ position: "absolute", top: "32%", left: "6%", right: "6%", height: "29%", backgroundColor: "#18181b", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
                               {el.slotImages?.[2] ? (
                                 <img src={el.slotImages[2]} alt="slot 2" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                               ) : (
@@ -499,7 +498,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                               )}
                             </div>
                             {/* Slot Bawah */}
-                            <div style={{ position: "absolute", top: "66.5%", left: "6%", right: "6%", height: "29%", backgroundColor: "#18181b", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <div style={{ position: "absolute", top: "63%", left: "6%", right: "6%", height: "29%", backgroundColor: "#18181b", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
                               {el.slotImages?.[3] ? (
                                 <img src={el.slotImages[3]} alt="slot 3" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                               ) : (
@@ -512,10 +511,10 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                           </div>
                         )}
 
-                        {/* 2. ELM 25 (1 Slot Presisi Pemutar Musik) */}
+                        {/* 2. ELM 25 (Pas di tengah layar pemutar musik) */}
                         {isElm25 && (
                           <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "auto" }}>
-                            <div style={{ position: "absolute", top: "3%", left: "6%", right: "6%", height: "45%", backgroundColor: "#18181b", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <div style={{ position: "absolute", top: "4%", left: "6%", right: "6%", height: "45%", backgroundColor: "#18181b", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
                               {el.slotImages?.[1] ? (
                                 <img src={el.slotImages[1]} alt="slot 1" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                               ) : (
@@ -528,10 +527,10 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                           </div>
                         )}
 
-                        {/* 3. ELM 32 (1 Slot Bulat Presisi Kepala Boneka) */}
+                        {/* 3. ELM 32 (Slot bulat digeser ke atas pas) */}
                         {isElm32 && (
                           <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "auto" }}>
-                            <div style={{ position: "absolute", top: "25%", left: "18%", right: "18%", height: "45%", backgroundColor: "#18181b", borderRadius: "50%", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <div style={{ position: "absolute", top: "20%", left: "18%", right: "18%", height: "45%", backgroundColor: "#18181b", borderRadius: "50%", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
                               {el.slotImages?.[1] ? (
                                 <img src={el.slotImages[1]} alt="slot 1" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                               ) : (
@@ -544,7 +543,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                           </div>
                         )}
 
-                        {/* Gambar Bingkai Utama PNG yang Sudah Di-crop */}
+                        {/* Gambar Bingkai Utama PNG */}
                         <img 
                           src={el.src} 
                           alt="element frame" 
