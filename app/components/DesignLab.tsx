@@ -460,13 +460,13 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
 
                 ctx.beginPath();
                 if (el.src.includes("elm24.png")) {
-                  const topOffsets = [2, 118, 232];
-                  const tTop = topOffsets[slotIdx - 1] || 2;
-                  ctx.rect(-37 * scaleX, (-100 + tTop) * scaleY, 74 * scaleX, 60 * scaleY);
+                  const slotHeights = (boxH * scaleY) / 3;
+                  const currentSlotTop = (-boxH * scaleY / 2) + ((slotIdx - 1) * slotHeights);
+                  ctx.rect((-boxW * scaleX / 2) + (6 * scaleX), currentSlotTop + (2 * scaleY), (boxW * scaleX) - (12 * scaleX), slotHeights - (4 * scaleY));
                 } else if (el.src.includes("elm25.png")) {
-                  ctx.rect(-44 * scaleX, -70 * scaleY, 88 * scaleX, 65 * scaleY);
+                  ctx.rect((-boxW * scaleX / 2) + (15 * scaleX), (-boxH * scaleY / 2) + (3 * scaleY), (boxW * scaleX) - (30 * scaleX), (boxH * scaleY) * 0.46);
                 } else if (el.src.includes("elm32.png")) {
-                  ctx.arc(0, -10 * scaleY, 35 * scaleX, 0, Math.PI * 2);
+                  ctx.arc(0, (-boxH * scaleY / 2) + ((boxH * scaleY) * 0.425), (boxW * scaleX) * 0.32, 0, Math.PI * 2);
                 } else {
                   ctx.rect(-40 * scaleX, -40 * scaleY, 80 * scaleX, 80 * scaleX);
                 }
@@ -521,17 +521,31 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
         });
       })
       .then(() => {
-        const dataUrl = canvas.toDataURL("image/png");
-        const link = document.createElement("a");
-        link.download = `Custom-Design-${Date.now()}.png`;
-        link.href = dataUrl;
-        link.click();
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            alert("Gagal merakit gambar.");
+            setIsDownloading(false);
+            return;
+          }
+          const blobUrl = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = blobUrl;
+          link.download = `Custom-Design-${Date.now()}.png`;
+          
+          const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+          if (isIOS) {
+            window.open(blobUrl, "_blank");
+          } else {
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          }
+          setIsDownloading(false);
+        }, "image/png");
       })
       .catch((err) => {
         console.error("Gagal mendownload gambar:", err);
         alert("Gagal menyimpan gambar desain.");
-      })
-      .finally(() => {
         setIsDownloading(false);
       });
   };
