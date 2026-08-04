@@ -414,10 +414,19 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
         return drawUserImage.catch(() => null).then((userImg) => {
           if (userImg) {
             ctx.save();
-            ctx.translate(canvas.width / 2 + position.x, canvas.height / 2 + position.y);
+            const areaLeft = 512 * (41 / 256);
+            const areaTop = 800 * (27 / 400);
+            const areaWidth = 512 * (174 / 256);
+            const areaHeight = 800 * (346 / 400);
+
+            ctx.beginPath();
+            ctx.rect(areaLeft, areaTop, areaWidth, areaHeight);
+            ctx.clip();
+
+            ctx.translate(areaLeft + areaWidth / 2 + position.x * (canvas.width / 256), areaTop + areaHeight / 2 + position.y * (canvas.height / 400));
             ctx.rotate((rotation * Math.PI) / 180);
             ctx.scale(scale, scale);
-            ctx.drawImage(userImg, -100, -150, 200, 300);
+            ctx.drawImage(userImg, -areaWidth / 2, -areaHeight / 2, areaWidth, areaHeight);
             ctx.restore();
           }
           return userImg;
@@ -433,12 +442,19 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                 const slotT = el.slotTransforms?.[slotIdx] || { x: 0, y: 0, scale: 1 };
                 
                 ctx.save();
-                const scaleFactorX = canvas.width / 256;
-                const scaleFactorY = canvas.height / 400;
-                const renderX = el.x * scaleFactorX;
-                const renderY = el.y * scaleFactorY;
+                const scaleX = canvas.width / 256;
+                const scaleY = canvas.height / 400;
+                
+                const areaLeft = 512 * (41 / 256);
+                const areaTop = 800 * (27 / 400);
 
-                ctx.translate(renderX + (50 * el.scale), renderY + (50 * el.scale));
+                const renderX = areaLeft + (el.x * scaleX);
+                const renderY = areaTop + (el.y * scaleY);
+
+                const boxW = el.src.includes("elm24.png") ? 85 : el.src.includes("elm25.png") ? 110 : el.src.includes("elm32.png") ? 90 : 100;
+                const boxH = el.src.includes("elm24.png") ? 210 : el.src.includes("elm25.png") ? 145 : el.src.includes("elm32.png") ? 125 : 100;
+
+                ctx.translate(renderX + (boxW * scaleX * el.scale) / 2, renderY + (boxH * scaleY * el.scale) / 2);
                 ctx.rotate((el.rotation * Math.PI) / 180);
                 ctx.scale(el.scale, el.scale);
 
@@ -446,19 +462,19 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                 if (el.src.includes("elm24.png")) {
                   const topOffsets = [2, 118, 232];
                   const tTop = topOffsets[slotIdx - 1] || 2;
-                  ctx.rect(-37, -100 + tTop, 74, 60);
+                  ctx.rect(-37 * scaleX, (-100 + tTop) * scaleY, 74 * scaleX, 60 * scaleY);
                 } else if (el.src.includes("elm25.png")) {
-                  ctx.rect(-44, -70, 88, 65);
+                  ctx.rect(-44 * scaleX, -70 * scaleY, 88 * scaleX, 65 * scaleY);
                 } else if (el.src.includes("elm32.png")) {
-                  ctx.arc(0, -10, 35, 0, Math.PI * 2);
+                  ctx.arc(0, -10 * scaleY, 35 * scaleX, 0, Math.PI * 2);
                 } else {
-                  ctx.rect(-40, -40, 80, 80);
+                  ctx.rect(-40 * scaleX, -40 * scaleY, 80 * scaleX, 80 * scaleX);
                 }
                 ctx.clip();
 
                 ctx.translate(slotT.x, slotT.y);
                 ctx.scale(slotT.scale, slotT.scale);
-                ctx.drawImage(slotImg, -40, -40, 80, 80);
+                ctx.drawImage(slotImg, -40 * scaleX, -40 * scaleY, 80 * scaleX, 80 * scaleX);
                 ctx.restore();
               } catch (e) {
                 console.warn("Gagal memuat gambar slot:", e);
@@ -469,18 +485,25 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
           try {
             const elImg = await loadImage(el.src);
             ctx.save();
-            const scaleFactorX = canvas.width / 256;
-            const scaleFactorY = canvas.height / 400;
-            const renderX = el.x * scaleFactorX;
-            const renderY = el.y * scaleFactorY;
+            const scaleX = canvas.width / 256;
+            const scaleY = canvas.height / 400;
+            
+            const areaLeft = 512 * (41 / 256);
+            const areaTop = 800 * (27 / 400);
 
-            ctx.translate(renderX + (50 * el.scale), renderY + (50 * el.scale));
+            const renderX = areaLeft + (el.x * scaleX);
+            const renderY = areaTop + (el.y * scaleY);
+
+            const boxW = el.src.includes("elm24.png") ? 85 : el.src.includes("elm25.png") ? 110 : el.src.includes("elm32.png") ? 90 : 100;
+            const boxH = el.src.includes("elm24.png") ? 210 : el.src.includes("elm25.png") ? 145 : el.src.includes("elm32.png") ? 125 : 100;
+
+            ctx.translate(renderX + (boxW * scaleX * el.scale) / 2, renderY + (boxH * scaleY * el.scale) / 2);
             ctx.rotate((el.rotation * Math.PI) / 180);
             ctx.scale(el.scale, el.scale);
             if (el.flipX) ctx.scale(-1, 1);
             if (el.flipY) ctx.scale(1, -1);
 
-            ctx.drawImage(elImg, -50, -50, 100, 100);
+            ctx.drawImage(elImg, -(boxW * scaleX) / 2, -(boxH * scaleY) / 2, boxW * scaleX, boxH * scaleY);
             ctx.restore();
           } catch (e) {
             console.warn("Gagal memuat elemen stiker:", e);
