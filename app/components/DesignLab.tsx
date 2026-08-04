@@ -16,11 +16,7 @@ interface LayerItem {
 
 type ProductType = 'case' | 'tshirt' | 'hoodie' | 'sweatshirt' | 'totebag';
 
-interface DesignLabProps {
-  productTitle?: string;
-}
-
-export default function DesignLab({ productTitle }: DesignLabProps) {
+export default function DesignLab() {
   const [product, setProduct] = useState<ProductType>('case');
   const [caseModel, setCaseModel] = useState<string>('iphone15pro');
   const [apparelColor, setApparelColor] = useState<string>('#ffffff');
@@ -44,8 +40,8 @@ export default function DesignLab({ productTitle }: DesignLabProps) {
         id: `layer-${Date.now()}`,
         type: 'image',
         content: imageUrl,
-        x: 200,
-        y: 250,
+        x: 180,
+        y: 200,
         scale: 1,
         rotation: 0,
         opacity: 1,
@@ -63,8 +59,8 @@ export default function DesignLab({ productTitle }: DesignLabProps) {
       id: `layer-${Date.now()}`,
       type: 'text',
       content: textInput,
-      x: 200,
-      y: 250,
+      x: 180,
+      y: 200,
       scale: 1,
       rotation: 0,
       opacity: 1,
@@ -103,14 +99,9 @@ export default function DesignLab({ productTitle }: DesignLabProps) {
   };
 
   const handleMove = (clientX: number, clientY: number) => {
-    if (!isDragging || !selectedLayerId || !containerRef.current) return;
-    
-    const rect = containerRef.current.getBoundingClientRect();
-    const scaleX = 400 / rect.width;
-    const scaleY = 500 / rect.height;
-
-    const dx = (clientX - dragStart.x) * scaleX;
-    const dy = (clientY - dragStart.y) * scaleY;
+    if (!isDragging || !selectedLayerId) return;
+    const dx = clientX - dragStart.x;
+    const dy = clientY - dragStart.y;
 
     setLayers((prev) =>
       prev.map((l) => {
@@ -129,8 +120,8 @@ export default function DesignLab({ productTitle }: DesignLabProps) {
 
   const handleDownload = () => {
     const canvas = document.createElement('canvas');
-    canvas.width = 1200;
-    canvas.height = 1500;
+    canvas.width = 1000;
+    canvas.height = 1000;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
@@ -144,18 +135,14 @@ export default function DesignLab({ productTitle }: DesignLabProps) {
       return;
     }
 
-    const scaleFactor = 3;
-
     renderableLayers.forEach((layer) => {
       if (layer.type === 'text') {
         ctx.save();
-        ctx.translate(layer.x * scaleFactor, layer.y * scaleFactor);
+        ctx.translate(layer.x * 2.5, layer.y * 2.5);
         ctx.rotate((layer.rotation * Math.PI) / 180);
         ctx.globalAlpha = layer.opacity;
-        ctx.font = `bold ${32 * layer.scale * scaleFactor}px sans-serif`;
+        ctx.font = `${32 * layer.scale * 2}px sans-serif`;
         ctx.fillStyle = '#ffffff';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
         ctx.fillText(layer.content, 0, 0);
         ctx.restore();
 
@@ -169,18 +156,11 @@ export default function DesignLab({ productTitle }: DesignLabProps) {
         img.src = layer.content;
         img.onload = () => {
           ctx.save();
-          ctx.translate(layer.x * scaleFactor, layer.y * scaleFactor);
+          ctx.translate(layer.x * 2.5, layer.y * 2.5);
           ctx.rotate((layer.rotation * Math.PI) / 180);
           ctx.globalAlpha = layer.opacity;
-          
-          const maxW = 150 * layer.scale * scaleFactor;
-          const maxH = 150 * layer.scale * scaleFactor;
-          let w = img.width;
-          let h = img.height;
-          const ratio = Math.min(maxW / w, maxH / h);
-          w *= ratio;
-          h *= ratio;
-
+          const w = img.width * layer.scale * 0.5;
+          const h = img.height * layer.scale * 0.5;
           ctx.drawImage(img, -w / 2, -h / 2, w, h);
           ctx.restore();
 
@@ -204,18 +184,16 @@ export default function DesignLab({ productTitle }: DesignLabProps) {
 
   return (
     <div className="min-h-screen bg-neutral-950 text-neutral-100 p-4 md:p-8 flex flex-col items-center">
-      {/* Header */}
       <div className="w-full max-w-6xl mb-6 flex flex-col md:flex-row justify-between items-center gap-4 border-b border-neutral-800 pb-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-black bg-gradient-to-r from-white to-neutral-400 bg-clip-text text-transparent">
-            {productTitle || 'DESIGN LAB STUDIO'}
+            LLOVEDBYUS DESIGN STUDIO
           </h1>
           <p className="text-xs md:text-sm text-neutral-400">
             Kreasikan custom case & apparel kamu secara langsung
           </p>
         </div>
 
-        {/* Product Switcher */}
         <div className="flex bg-neutral-900 border border-neutral-800 rounded-xl p-1 gap-1">
           {(['case', 'tshirt', 'hoodie', 'sweatshirt', 'totebag'] as ProductType[]).map((p) => (
             <button
@@ -236,9 +214,7 @@ export default function DesignLab({ productTitle }: DesignLabProps) {
         </div>
       </div>
 
-      {/* Main Studio Grid */}
       <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* WORKSPACE PREVIEW */}
         <div className="lg:col-span-7 bg-neutral-900 border border-neutral-800 rounded-2xl p-6 flex flex-col items-center justify-center relative min-h-[500px]">
           <div
             ref={containerRef}
@@ -253,16 +229,17 @@ export default function DesignLab({ productTitle }: DesignLabProps) {
             onTouchEnd={handleEnd}
             className="relative w-[350px] h-[450px] md:w-[400px] md:h-[500px] flex items-center justify-center overflow-hidden rounded-2xl select-none touch-none"
           >
-            {/* Mockup Case Background Dipastikan Muncul Kembali */}
-            {product === 'case' ? (
+            {product === 'case' && (
               <img
                 src="/mockup-case.png"
                 alt="Mockup Case Background"
-                className="absolute inset-0 w-full h-full object-contain z-0"
+                className="absolute inset-0 w-full h-full object-contain pointer-events-none z-0"
               />
-            ) : (
+            )}
+
+            {product !== 'case' && (
               <div
-                className="absolute inset-0 w-full h-full rounded-xl transition-colors duration-300 z-0"
+                className="absolute inset-0 w-full h-full rounded-xl transition-colors duration-300"
                 style={{ backgroundColor: apparelColor }}
               />
             )}
@@ -283,7 +260,7 @@ export default function DesignLab({ productTitle }: DesignLabProps) {
                     top: `${layer.y}px`,
                     transform: `translate(-50%, -50%) rotate(${layer.rotation}deg) scale(${layer.scale})`,
                     opacity: layer.opacity,
-                    zIndex: layer.zIndex + 10,
+                    zIndex: layer.zIndex,
                     cursor: isDragging ? 'grabbing' : 'grab',
                   }}
                   className={`p-1 transition-shadow ${
@@ -316,7 +293,6 @@ export default function DesignLab({ productTitle }: DesignLabProps) {
           </p>
         </div>
 
-        {/* SIDEBAR TOOLS */}
         <div className="lg:col-span-5 flex flex-col gap-5">
           <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5">
             <h3 className="text-sm font-bold uppercase tracking-wider text-neutral-400 mb-3">
