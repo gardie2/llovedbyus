@@ -429,7 +429,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
     ctx.drawImage(img, sX, sY, sW, sH, x, y, w, h);
   };
 
-  // DOWNLOAD MURNI AREA DESAIN SAJA (TANPA MOCKUP LUAR)
+  // DOWNLOAD MURNI AREA DESAIN (SEMUA STIKER & FOTO PROPORSIONAL TANPA GEPENG)
   const handleDownloadDesign = async () => {
     try {
       setActiveSelection(null);
@@ -476,7 +476,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
           tImg.src = `/template-${selectedTemplate}.png`;
         });
       } else {
-        // 1. Gambar Foto Utama dengan Cover Matematis
+        // 1. Gambar Foto Utama
         if (uploadedImage) {
           await new Promise<void>((resolve) => {
             const uImg = new Image();
@@ -495,7 +495,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
           });
         }
 
-        // 2. Gambar Stiker dan Elemen Placed
+        // 2. Gambar Stiker & Frame dengan Menjaga Rasio Asli Agar Tidak Gepeng
         for (const el of placedElements) {
           await new Promise<void>((resolve) => {
             const stikerImg = new Image();
@@ -544,7 +544,25 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
               }
 
               ctx.scale(el.flipX ? -1 : 1, el.flipY ? -1 : 1);
-              ctx.drawImage(stikerImg, -el.width / 2, -el.height / 2, el.width, el.height);
+
+              // HITUNG RASIO ASLI STIKER AGAR TIDAK GEPENG/KETARIK
+              const imgNatW = stikerImg.naturalWidth || 100;
+              const imgNatH = stikerImg.naturalHeight || 100;
+              const naturalRatio = imgNatW / imgNatH;
+
+              let renderW = el.width;
+              let renderH = el.height;
+
+              // Khusus untuk stiker non-elm24, sesuaikan dimensinya dengan rasio asli gambar
+              if (!el.src.includes("elm24.png")) {
+                if (naturalRatio > 1) {
+                  renderH = el.width / naturalRatio;
+                } else {
+                  renderW = el.height * naturalRatio;
+                }
+              }
+
+              ctx.drawImage(stikerImg, -renderW / 2, -renderH / 2, renderW, renderH);
               ctx.restore();
               resolve();
             };
