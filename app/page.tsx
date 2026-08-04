@@ -1,388 +1,1113 @@
 "use client";
+import { useState, useRef, useEffect, useMemo } from "react";
+import { removeBackground } from "@imgly/background-removal";
 
-import Link from "next/link";
-import { useState, useEffect, useRef } from "react";
-import DesignLab from "./components/DesignLab";
-
-function useScrollReveal() {
-  const ref = useRef<HTMLDivElement>(null);
-  const [isVisible, setIsVisible] = useState(false);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    if (ref.current) {
-      observer.observe(ref.current);
-    }
-
-    return () => {
-      if (ref.current) {
-        observer.unobserve(ref.current);
-      }
-    };
-  }, []);
-
-  return { ref, isVisible };
+interface DesignLabProps {
+  productTitle?: string;
 }
 
-export default function Home() {
-  const [showDesignLab, setShowDesignLab] = useState(false);
-  const [selectedProductTitle, setSelectedProductTitle] = useState("Custom Phone Case");
+export default function DesignLab({ productTitle = "Custom Phone Case" }: DesignLabProps) {
+  const titleLower = productTitle.toLowerCase();
+  const isPhoneCase = titleLower.includes("case");
+  const isTshirt = titleLower.includes("t-shirt");
 
-  // KUNCI LAYAR BELAKANG DI HP/IPAD SAAT MODAL KEBUKA
-  useEffect(() => {
-    if (showDesignLab) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
+  const [activeTab, setActiveTab] = useState<"edit" | "template">("edit");
+  const [selectedTemplate, setSelectedTemplate] = useState(1);
+  const [tshirtStyle, setTshirtStyle] = useState<"white" | "black" | "croptop">("white");
+  
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [originalImage, setOriginalImage] = useState<string | null>(null);
+  const [fileName, setFileName] = useState<string>("");
+  const [phoneModel, setPhoneModel] = useState("");
+  const [isRemovingBg, setIsRemovingBg] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  
+  const [placedElements, setPlacedElements] = useState<Array<{ 
+    id: number; 
+    src: string; 
+    x: number; 
+    y: number; 
+    width: number;
+    height: number;
+    rotation: number; 
+    flipX: boolean; 
+    flipY: boolean;
+    slotImages?: { [key: number]: string }; 
+    slotTransforms?: { [key: number]: { x: number; y: number; scale: number } };
+  }>>([]);
+  
+  const [activeSelection, setActiveSelection] = useState<"photo" | number | null>("photo");
+
+  const [scale, setScale] = useState(1);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [rotation, setRotation] = useState(0);
+  
+  const isInteracting = useRef(false);
+  const lastClientPos = useRef({ x: 0, y: 0 });
+  
+  const initialPinchDistance = useRef<number | null>(null);
+  const initialScaleOnPinch = useRef(1);
+  const initialTouchAngle = useRef<number | null>(null);
+  const initialRotationOnTouch = useRef(0);
+  
+  const activeDraggingElementId = useRef<number | null>(null);
+  const isDraggingPhoto = useRef(false);
+
+  const activeSlotDrag = useRef<{ elementId: number; slotIndex: number } | null>(null);
+  const slotLastPos = useRef({ x: 0, y: 0 });
+  const mockupRef = useRef<HTMLDivElement>(null);
+  const designAreaRef = useRef<HTMLDivElement>(null);
+
+  const { mockupBase, mockupTp } = useMemo(() => {
+    if (isPhoneCase) {
+      return {
+        mockupBase: "/mockup-case.png",
+        mockupTp: "/mockup-case-transparent.png"
+      };
+    } else if (isTshirt) {
+      if (tshirtStyle === "black") {
+        return { mockupBase: "/blackshirtmu.png", mockupTp: "/blackshirtmu-tp.png" };
+      } else if (tshirtStyle === "croptop") {
+        return { mockupBase: "/croptopmu.png", mockupTp: "/croptopmu-tp.png" };
+      }
+      return { mockupBase: "/t-shirtmu.png", mockupTp: "/t-shirtmu-tp.png" };
+    } else if (titleLower.includes("hoodie")) {
+      return { mockupBase: "/hoodiemu.png", mockupTp: "/hoodiemu-tp.png" };
+    } else if (titleLower.includes("sweatshirt")) {
+      return { mockupBase: "/sweatshirtmu.png", mockupTp: "/sweatshirtmu-tp.png" };
+    } else if (titleLower.includes("tote")) {
+      return { mockupBase: "/totebagmu.png", mockupTp: "/totebagmu-tp.png" };
     }
-  }, [showDesignLab]);
+    return { mockupBase: "/mockup-case.png", mockupTp: "/mockup-case-transparent.png" };
+  }, [isPhoneCase, isTshirt, tshirtStyle, titleLower]);
 
-  // URUTAN PRODUK DENGAN T-SHIRT DI POSISI KEDUA
-  const productList = [
-    { 
-      id: 1, 
-      name: "Custom Phone Case", 
-      desc: "Protection case with custom photo support.", 
-      image: "/case.png" 
-    },
-    { 
-      id: 4, 
-      name: "Custom T-Shirt", 
-      desc: "Boxy fit premium cotton material.", 
-      image: "/t-shirt.png" 
-    },
-    { 
-      id: 2, 
-      name: "Custom Sweatshirt", 
-      desc: "Heavyweight cotton fleece material.", 
-      image: "/sweatshirt.png" 
-    },
-    { 
-      id: 3, 
-      name: "Custom Hoodie", 
-      desc: "Cozy fleece hoodie with custom print.", 
-      image: "/hoodie.PNG" 
-    },
-    { 
-      id: 5, 
-      name: "Custom Tote Bag", 
-      desc: "Sturdy canvas material with custom print.", 
-      image: "/totebag.png" 
-    },
-  ];
+  useEffect(() => {
+    const handleGlobalMove = (clientX: number, clientY: number) => {
+      if (!isInteracting.current) return;
 
-  const handleProductClick = (item: typeof productList[0]) => {
-    setSelectedProductTitle(item.name);
-    setShowDesignLab(true);
+      const dx = clientX - lastClientPos.current.x;
+      const dy = clientY - lastClientPos.current.y;
+
+      if (activeSlotDrag.current !== null) {
+        const { elementId, slotIndex } = activeSlotDrag.current;
+        const sDx = clientX - slotLastPos.current.x;
+        const sDy = clientY - slotLastPos.current.y;
+
+        setPlacedElements((prev) =>
+          prev.map((el) => {
+            if (el.id === elementId) {
+              const currentT = el.slotTransforms?.[slotIndex] || { x: 0, y: 0, scale: 1 };
+              return {
+                ...el,
+                slotTransforms: {
+                  ...(el.slotTransforms || {}),
+                  [slotIndex]: {
+                    ...currentT,
+                    x: currentT.x + sDx,
+                    y: currentT.y + sDy,
+                  },
+                },
+              };
+            }
+            return el;
+          })
+        );
+        slotLastPos.current = { x: clientX, y: clientY };
+      } else if (activeDraggingElementId.current !== null) {
+        const id = activeDraggingElementId.current;
+        setPlacedElements((prev) =>
+          prev.map((el) => {
+            if (el.id === id) {
+              return {
+                ...el,
+                x: el.x + dx,
+                y: el.y + dy,
+              };
+            }
+            return el;
+          })
+        );
+        lastClientPos.current = { x: clientX, y: clientY };
+      } else if (isDraggingPhoto.current) {
+        setPosition((prev) => ({
+          x: prev.x + dx,
+          y: prev.y + dy,
+        }));
+        lastClientPos.current = { x: clientX, y: clientY };
+      }
+    };
+
+    const onMouseMove = (e: MouseEvent) => handleGlobalMove(e.clientX, e.clientY);
+    const onTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        const x1 = e.touches[0].clientX;
+        const y1 = e.touches[0].clientY;
+        const x2 = e.touches[1].clientX;
+        const y2 = e.touches[1].clientY;
+
+        const currentDist = Math.hypot(x1 - x2, y1 - y2);
+        const currentAngle = Math.atan2(y2 - y1, x2 - x1) * (180 / Math.PI);
+
+        if (initialPinchDistance.current !== null && initialTouchAngle.current !== null) {
+          const factor = currentDist / initialPinchDistance.current;
+          const angleDelta = currentAngle - initialTouchAngle.current;
+
+          if (activeSelection === "photo") {
+            const newScale = Math.min(Math.max(0.3, initialScaleOnPinch.current * factor), 4.0);
+            const newRot = initialRotationOnTouch.current + angleDelta;
+            setScale(newScale);
+            setRotation(newRot);
+          } else if (typeof activeSelection === "number") {
+            setPlacedElements((prev) =>
+              prev.map((el) => {
+                if (el.id === activeSelection) {
+                  const newScaleFactor = Math.min(Math.max(0.3, initialScaleOnPinch.current * factor), 4.0);
+                  const baseW = el.src.includes("elm24.png") ? 85 : 100;
+                  const baseH = el.src.includes("elm24.png") ? 210 : 100;
+                  return {
+                    ...el,
+                    width: baseW * newScaleFactor,
+                    height: baseH * newScaleFactor,
+                    rotation: initialRotationOnTouch.current + angleDelta,
+                  };
+                }
+                return el;
+              })
+            );
+          }
+        }
+        return;
+      }
+
+      if (e.touches[0]) handleGlobalMove(e.touches[0].clientX, e.touches[0].clientY);
+    };
+
+    const onEnd = () => {
+      isInteracting.current = false;
+      activeDraggingElementId.current = null;
+      isDraggingPhoto.current = false;
+      activeSlotDrag.current = null;
+      initialPinchDistance.current = null;
+      initialTouchAngle.current = null;
+    };
+
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onEnd);
+    window.addEventListener("touchmove", onTouchMove, { passive: false });
+    window.addEventListener("touchend", onEnd);
+
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onEnd);
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("touchend", onEnd);
+    };
+  }, [activeSelection]);
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const result = event.target?.result as string;
+        setUploadedImage(result);
+        setOriginalImage(result);
+        setFileName(file.name);
+        setScale(1);
+        setPosition({ x: 0, y: 0 });
+        setRotation(0);
+        setActiveSelection("photo");
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
-  const heroReveal = useScrollReveal();
-  const productsReveal = useScrollReveal();
-  const socialsReveal = useScrollReveal();
+  const handleRemoveBackground = async () => {
+    if (!uploadedImage) return;
+    try {
+      setIsRemovingBg(true);
+      const blob = await removeBackground(uploadedImage);
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const result = event.target?.result as string;
+        setUploadedImage(result);
+      };
+      reader.readAsDataURL(blob);
+    } catch (error) {
+      console.error("Gagal menghapus background:", error);
+      alert("Gagal memproses background otomatis.");
+    } finally {
+      setIsRemovingBg(false);
+    }
+  };
+
+  const handleResetBackground = () => {
+    if (originalImage) {
+      setUploadedImage(originalImage);
+    }
+  };
+
+  const handleRemoveUploadedImage = () => {
+    setUploadedImage(null);
+    setOriginalImage(null);
+    setFileName("");
+    if (activeSelection === "photo") {
+      setActiveSelection(null);
+    }
+  };
+
+  const handleRemoveElement = (id: number, e: React.MouseEvent | React.TouchEvent) => {
+    e.stopPropagation();
+    setPlacedElements((prev) => prev.filter((el) => el.id !== id));
+    if (activeSelection === id) {
+      setActiveSelection(null);
+    }
+  };
+
+  const handleAddElementToCase = (imageName: string) => {
+    const isElm24 = imageName.includes("elm24.png");
+    const newElement = {
+      id: Date.now(),
+      src: `/${imageName}`,
+      x: 30,
+      y: 30,
+      width: isElm24 ? 85 : 100,
+      height: isElm24 ? 210 : 100,
+      rotation: 0,
+      flipX: false,
+      flipY: false,
+      slotImages: {},
+      slotTransforms: {},
+    };
+    setPlacedElements((prev) => [...prev, newElement]);
+    setActiveSelection(newElement.id);
+  };
+
+  const handleSlotImageUpload = (elementId: number, slotIndex: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const result = event.target?.result as string;
+        setPlacedElements((prev) =>
+          prev.map((el) => {
+            if (el.id === elementId) {
+              return {
+                ...el,
+                slotImages: {
+                  ...(el.slotImages || {}),
+                  [slotIndex]: result,
+                },
+                slotTransforms: {
+                  ...(el.slotTransforms || {}),
+                  [slotIndex]: { x: 0, y: 0, scale: 1 },
+                },
+              };
+            }
+            return el;
+          })
+        );
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleStartSlotDrag = (elementId: number, slotIndex: number, clientX: number, clientY: number, e: React.MouseEvent | React.TouchEvent) => {
+    e.stopPropagation();
+    isInteracting.current = true;
+    activeSlotDrag.current = { elementId, slotIndex };
+    slotLastPos.current = { x: clientX, y: clientY };
+  };
+
+  const handleSlotWheel = (elementId: number, slotIndex: number, e: React.WheelEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const zoomFactor = e.deltaY < 0 ? 0.1 : -0.1;
+    setPlacedElements((prev) =>
+      prev.map((el) => {
+        if (el.id === elementId) {
+          const currentT = el.slotTransforms?.[slotIndex] || { x: 0, y: 0, scale: 1 };
+          const newScale = Math.min(Math.max(0.3, currentT.scale + zoomFactor), 4.0);
+          return {
+            ...el,
+            slotTransforms: {
+              ...(el.slotTransforms || {}),
+              [slotIndex]: { ...currentT, scale: newScale },
+            },
+          };
+        }
+        return el;
+      })
+    );
+  };
+
+  const handleStartDragPhoto = (clientX: number, clientY: number, e: React.MouseEvent | React.TouchEvent) => {
+    e.stopPropagation();
+    setActiveSelection("photo");
+    isInteracting.current = true;
+    isDraggingPhoto.current = true;
+    activeDraggingElementId.current = null;
+    lastClientPos.current = { x: clientX, y: clientY };
+  };
+
+  const handleStartDragElement = (id: number, clientX: number, clientY: number, e: React.MouseEvent | React.TouchEvent) => {
+    e.stopPropagation();
+    setActiveSelection(id);
+    isInteracting.current = true;
+    isDraggingPhoto.current = false;
+    activeDraggingElementId.current = id;
+    lastClientPos.current = { x: clientX, y: clientY };
+  };
+
+  const handleTouchStartContainer = (e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      const x1 = e.touches[0].clientX;
+      const y1 = e.touches[0].clientY;
+      const x2 = e.touches[1].clientX;
+      const y2 = e.touches[1].clientY;
+
+      initialPinchDistance.current = Math.hypot(x1 - x2, y1 - y2);
+      initialTouchAngle.current = Math.atan2(y2 - y1, x2 - x1) * (180 / Math.PI);
+
+      if (activeSelection === "photo") {
+        initialScaleOnPinch.current = scale;
+        initialRotationOnTouch.current = rotation;
+      } else if (typeof activeSelection === "number") {
+        const found = placedElements.find((el) => el.id === activeSelection);
+        if (found) {
+          const baseW = found.src.includes("elm24.png") ? 85 : 100;
+          initialScaleOnPinch.current = found.width / baseW;
+          initialRotationOnTouch.current = found.rotation;
+        }
+      }
+    }
+  };
+
+  const handleWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    const zoomFactor = e.deltaY < 0 ? 5 : -5;
+    if (typeof activeSelection === "number") {
+      setPlacedElements((prev) =>
+        prev.map((el) => {
+          if (el.id === activeSelection) {
+            const newW = Math.min(Math.max(30, el.width + zoomFactor), 400);
+            const ratio = el.height / el.width;
+            return { ...el, width: newW, height: newW * ratio };
+          }
+          return el;
+        })
+      );
+    } else if (activeSelection === "photo") {
+      const zoomPhotoFactor = e.deltaY < 0 ? 0.1 : -0.1;
+      setScale((prev) => Math.min(Math.max(0.5, prev + zoomPhotoFactor), 3.5));
+    }
+  };
+
+  // HELPER PURE CANVAS UNTUK OBJECT-FIT: COVER MATEMATIS
+  const drawImageCover = (
+    ctx: CanvasRenderingContext2D,
+    img: HTMLImageElement,
+    x: number,
+    y: number,
+    w: number,
+    h: number
+  ) => {
+    const imgRatio = img.naturalWidth / img.naturalHeight;
+    const boxRatio = w / h;
+    let sW = img.naturalWidth;
+    let sH = img.naturalHeight;
+    let sX = 0;
+    let sY = 0;
+
+    if (imgRatio > boxRatio) {
+      sW = img.naturalHeight * boxRatio;
+      sX = (img.naturalWidth - sW) / 2;
+    } else {
+      sH = img.naturalWidth / boxRatio;
+      sY = (img.naturalHeight - sH) / 2;
+    }
+    ctx.drawImage(img, sX, sY, sW, sH, x, y, w, h);
+  };
+
+  // DOWNLOAD MURNI AREA DESAIN SAJA (TANPA MOCKUP LUAR)
+  const handleDownloadDesign = async () => {
+    try {
+      setActiveSelection(null);
+      setIsDownloading(true);
+
+      const canvasWidth = isPhoneCase ? 174 : 146;
+      const canvasHeight = isPhoneCase ? 346 : 235;
+      const exportScale = 3;
+
+      const exportCanvas = document.createElement("canvas");
+      exportCanvas.width = canvasWidth * exportScale;
+      exportCanvas.height = canvasHeight * exportScale;
+      const ctx = exportCanvas.getContext("2d");
+
+      if (!ctx) {
+        setIsDownloading(false);
+        return;
+      }
+
+      ctx.scale(exportScale, exportScale);
+      ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+      // Terapkan clipping path lekukan casing HP
+      ctx.save();
+      ctx.beginPath();
+      if (isPhoneCase) {
+        const p = new Path2D("M 15 0 L 158 0 C 166 0 174 8 174 16 L 174 330 C 174 338 166 346 158 346 L 15 346 C 7 346 0 338 0 330 L 0 16 C 0 8 7 0 15 0 Z");
+        ctx.clip(p);
+      } else {
+        ctx.roundRect(0, 0, canvasWidth, canvasHeight, 6);
+        ctx.clip();
+      }
+
+      // Jika template aktif
+      if (isPhoneCase && activeTab === "template") {
+        await new Promise<void>((resolve) => {
+          const tImg = new Image();
+          tImg.crossOrigin = "anonymous";
+          tImg.onload = () => {
+            drawImageCover(ctx, tImg, 0, 0, canvasWidth, canvasHeight);
+            resolve();
+          };
+          tImg.onerror = () => resolve();
+          tImg.src = `/template-${selectedTemplate}.png`;
+        });
+      } else {
+        // 1. Gambar Foto Utama dengan Cover Matematis
+        if (uploadedImage) {
+          await new Promise<void>((resolve) => {
+            const uImg = new Image();
+            uImg.crossOrigin = "anonymous";
+            uImg.onload = () => {
+              ctx.save();
+              ctx.translate(canvasWidth / 2 + position.x, canvasHeight / 2 + position.y);
+              ctx.rotate((rotation * Math.PI) / 180);
+              ctx.scale(scale, scale);
+              drawImageCover(ctx, uImg, -canvasWidth / 2, -canvasHeight / 2, canvasWidth, canvasHeight);
+              ctx.restore();
+              resolve();
+            };
+            uImg.onerror = () => resolve();
+            uImg.src = uploadedImage;
+          });
+        }
+
+        // 2. Gambar Stiker dan Elemen Placed
+        for (const el of placedElements) {
+          await new Promise<void>((resolve) => {
+            const stikerImg = new Image();
+            stikerImg.crossOrigin = "anonymous";
+            stikerImg.onload = async () => {
+              ctx.save();
+              ctx.translate(el.x + el.width / 2, el.y + el.height / 2);
+              ctx.rotate((el.rotation * Math.PI) / 180);
+
+              // Jika elm24 (slot foto)
+              if (el.src.includes("elm24.png") && el.slotImages) {
+                const slots = [
+                  { top: 0.01, height: 0.295 },
+                  { top: 0.295, height: 0.295 },
+                  { top: 0.58, height: 0.295 },
+                ];
+                for (let sIdx = 1; sIdx <= 3; sIdx++) {
+                  const sImgSrc = el.slotImages[sIdx];
+                  if (sImgSrc) {
+                    await new Promise<void>((sResolve) => {
+                      const slotImgObj = new Image();
+                      slotImgObj.crossOrigin = "anonymous";
+                      slotImgObj.onload = () => {
+                        ctx.save();
+                        const slotX = -el.width / 2 + el.width * 0.06;
+                        const slotY = -el.height / 2 + el.height * slots[sIdx - 1].top;
+                        const slotW = el.width * 0.88;
+                        const slotH = el.height * slots[sIdx - 1].height;
+
+                        ctx.beginPath();
+                        ctx.rect(slotX, slotY, slotW, slotH);
+                        ctx.clip();
+
+                        const sTransform = el.slotTransforms?.[sIdx] || { x: 0, y: 0, scale: 1 };
+                        ctx.translate(slotX + slotW / 2 + sTransform.x, slotY + slotH / 2 + sTransform.y);
+                        ctx.scale(sTransform.scale, sTransform.scale);
+                        drawImageCover(ctx, slotImgObj, -slotW / 2, -slotH / 2, slotW, slotH);
+                        ctx.restore();
+                        sResolve();
+                      };
+                      slotImgObj.onerror = () => sResolve();
+                      slotImgObj.src = sImgSrc;
+                    });
+                  }
+                }
+              }
+
+              ctx.scale(el.flipX ? -1 : 1, el.flipY ? -1 : 1);
+              ctx.drawImage(stikerImg, -el.width / 2, -el.height / 2, el.width, el.height);
+              ctx.restore();
+              resolve();
+            };
+            stikerImg.onerror = () => resolve();
+            stikerImg.src = el.src;
+          });
+        }
+      }
+
+      ctx.restore();
+
+      exportCanvas.toBlob((blob) => {
+        if (!blob) {
+          alert("Gagal merakit gambar.");
+          setIsDownloading(false);
+          return;
+        }
+        const blobUrl = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = blobUrl;
+        link.download = `Custom-Design-${Date.now()}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setIsDownloading(false);
+      }, "image/png");
+
+    } catch (err) {
+      console.error("Gagal mendownload gambar:", err);
+      alert("Gagal menyimpan gambar desain.");
+      setIsDownloading(false);
+    }
+  };
+
+  const handleWhatsAppOrder = () => {
+    const phoneNumber = "62881025376311";
+    const message = `Halo, saya ingin memesan Custom Phone Case. Berikut adalah desain saya:`;
+    window.open(`https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`, "_blank");
+  };
 
   return (
-    <main className="text-zinc-100 min-h-screen selection:bg-pink-500 selection:text-white font-sans relative overflow-hidden">
+    <div style={{ width: "100%", maxWidth: "850px", margin: "0 auto", padding: "20px 10px", color: "#f4f4f5", fontFamily: "sans-serif", boxSizing: "border-box" }}>
       
-      {/* BACKGROUND WEB MELAYANG: Agak Buram, Grayscale, & Transparan */}
-      <div 
-        className="fixed inset-0 w-full h-full -z-20 pointer-events-none"
-        style={{
-          backgroundImage: "url('/background-web.png')",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          filter: "blur(12px) grayscale(100%) brightness(0.75)",
-          opacity: 0.45,
-        }}
-      />
-
-      {/* BACKGROUND GRADASI HITAM ABU-ABU LAPIS KEDUA */}
-      <div className="fixed inset-0 w-full h-full -z-10 pointer-events-none bg-[#050507]/80 bg-[radial-gradient(circle_at_20%_20%,rgba(100,100,100,0.1)_0%,transparent_50%),radial-gradient(circle_at_80%_80%,rgba(50,50,70,0.12)_0%,transparent_60%)]"></div>
-
-      {/* GLOBAL CSS: CHROME, SMOOTH SCROLL, & OUTLINE MARQUEE TEXT */}
-      <style jsx global>{`
-        html {
-          scroll-behavior: smooth;
-        }
-
-        .chrome-text {
-          font-weight: 900;
-          text-transform: uppercase;
-          background: linear-gradient(
-            to bottom,
-            #ffffff 0%,
-            #e2e8f0 35%,
-            #94a3b8 50%,
-            #cbd5e1 55%,
-            #475569 80%,
-            #f8fafc 100%
-          );
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          filter: drop-shadow(0 2px 2px rgba(0,0,0,0.9)) 
-                drop-shadow(0 0 15px rgba(255,255,255,0.4))
-                drop-shadow(0 5px 10px rgba(0,0,0,0.6));
-          letter-spacing: -0.02em;
-        }
-
-        .outline-marquee-text {
-          font-weight: 900;
-          text-transform: uppercase;
-          color: transparent;
-          -webkit-text-stroke: 1.5px rgba(244, 244, 245, 0.4);
-          letter-spacing: 0.05em;
-          transition: -webkit-text-stroke 0.3s ease, color 0.3s ease;
-        }
-        .outline-marquee-text:hover {
-          -webkit-text-stroke: 1.5px #f472b6;
-          color: rgba(244, 114, 182, 0.15);
-        }
-
-        @keyframes marquee {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
-        }
-
-        .animate-marquee {
-          display: flex;
-          width: max-content;
-          will-change: transform;
-          animation: marquee 25s linear infinite;
-        }
-
-        .cute-click {
-          transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
-        }
-        .cute-click:active {
-          transform: scale(0.95);
-        }
-
-        @keyframes fadeIn {
-          from { opacity: 0; transform: scale(0.97) translateY(8px); }
-          to { opacity: 1; transform: scale(1) translateY(0); }
-        }
-
-        .animate-smooth-modal {
-          animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-      `}</style>
-
-      {/* NAVBAR */}
-      <nav className="bg-[#0d0e12]/80 backdrop-blur-xl border-b border-zinc-800/80 sticky top-0 z-50 py-4 px-6">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Link href="/" className="flex flex-col group">
-            <div className="flex items-center gap-1 font-black text-2xl tracking-tighter uppercase italic">
-              <span className="chrome-text">LL</span>
-              <span className="chrome-text text-pink-300">OVEDBYUS</span>
-            </div>
-            <span className="text-[8px] font-bold tracking-[0.3em] text-zinc-400 -mt-1 uppercase">
-              STORE
-            </span>
-          </Link>
-
-          <div className="hidden md:flex items-center gap-8 text-xs font-bold tracking-wider uppercase text-zinc-400">
-            <a href="#products" className="hover:text-pink-300 transition">Products</a>
-            <a href="#socials" className="hover:text-pink-300 transition">Official Links</a>
-            <a href="#" className="hover:text-pink-300 transition">About</a>
-          </div>
-        </div>
-      </nav>
-
-      {/* HERO SECTION */}
-      <section 
-        ref={heroReveal.ref}
-        className={`relative py-20 px-6 max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center z-20 transition-all duration-1000 transform ${
-          heroReveal.isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
-        }`}
-      >
-        <div className="space-y-6 relative">
-          <span className="inline-block text-[11px] font-extrabold tracking-[0.3em] bg-gradient-to-r from-pink-300 via-zinc-200 to-pink-400 bg-clip-text text-transparent uppercase border border-pink-500/20 px-3 py-1 rounded-full bg-pink-500/5">
-            LLOVEDBYUS STUDIO
-          </span>
-
-          <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tight leading-[0.95] chrome-text italic">
-            Design It, <br />
-            Wear It, <br />
-            <span className="text-pink-300">Own It.</span>
-          </h1>
-
-          <p className="text-zinc-300 text-sm md:text-base max-w-md font-medium leading-relaxed drop-shadow">
-            Design custom phone cases, sweatshirts, hoodies, t-shirts, tote bags, and more products the way you want.
-          </p>
-
-          {/* TOMBOL BERUBAH MENJADI LINK SCROLL KE #products */}
-          <div className="flex items-center gap-4 pt-2">
-            <a 
-              href="#products" 
-              className="cute-click bg-gradient-to-r from-zinc-100 via-pink-200 to-zinc-200 hover:from-white hover:to-pink-100 text-zinc-950 font-black px-8 py-4 rounded-full text-xs uppercase tracking-widest shadow-[0_0_25px_rgba(244,114,182,0.3)] inline-block text-center cursor-pointer"
-            >
-              Pick Product & Design
-            </a>
-          </div>
-        </div>
-
-        {/* KOLASE PRODUK */}
-        <div className="flex justify-center md:justify-end relative">
-          <div className="relative w-[320px] h-[520px] bg-zinc-900/60 backdrop-blur-md rounded-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.9)] overflow-hidden border border-zinc-800/80 flex items-center justify-center p-2 group hover:border-pink-500/40 transition duration-500">
-            <img 
-              src="/hero-collage.png" 
-              alt="LLOVEDBYUS Product Collage" 
-              className="w-full h-full object-cover rounded-2xl group-hover:scale-105 transition-transform duration-700"
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* INFINITE MARQUEE SLOGAN */}
-      <div className="py-5 bg-zinc-950/80 backdrop-blur-md border-y border-zinc-800/80 overflow-hidden relative z-20 flex whitespace-nowrap shadow-xl">
-        <div className="animate-marquee flex items-center">
-          {[...Array(2)].map((_, groupIndex) => (
-            <div key={groupIndex} className="flex items-center shrink-0">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="flex items-center gap-8 mx-6 text-xl md:text-2xl italic outline-marquee-text">
-                  <span>DESIGN YOUR OWN STUFF</span>
-                  <span className="text-pink-400/60 not-italic">✦</span>
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
+      <div style={{ textAlign: "center", marginBottom: "25px" }}>
+        <h2 style={{ fontSize: "26px", fontWeight: "900", textTransform: "uppercase", fontStyle: "italic", letterSpacing: "1px", margin: 0 }}>
+          Customize <span style={{ background: "linear-gradient(to right, #f4f4f5, #f472b6, #a1a1aa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{productTitle} {isTshirt ? `(${tshirtStyle})` : ""}</span>
+        </h2>
       </div>
 
-      {/* PRODUCTS PREVIEW GRID */}
-      <section 
-        id="products" 
-        ref={productsReveal.ref}
-        className={`py-20 px-6 max-w-7xl mx-auto relative z-20 transition-all duration-1000 transform ${
-          productsReveal.isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
-        }`}
-      >
-        <div className="text-center mb-12">
-          <span className="text-xs font-bold tracking-[0.25em] bg-gradient-to-r from-zinc-300 via-pink-300 to-zinc-400 bg-clip-text text-transparent uppercase">
-            PRODUCTS
-          </span>
-          <h2 className="text-3xl md:text-4xl font-black uppercase tracking-wider mt-1 italic chrome-text">
-            Explore Our Products
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
-          {productList.map((item) => (
-            <div 
-              key={item.id}
-              onClick={() => handleProductClick(item)}
-              className="cute-click group bg-[#121318]/80 backdrop-blur-md border border-zinc-800 rounded-3xl p-5 cursor-pointer hover:border-pink-500/50 transition-all duration-300 hover:shadow-[0_0_30px_rgba(244,114,182,0.2)] flex flex-col items-center transform hover:-translate-y-1"
-            >
-              <div className="w-full aspect-[4/5] bg-zinc-950 rounded-2xl overflow-hidden relative flex items-center justify-center border border-zinc-800/60 mb-4">
+      <div style={{ display: "flex", flexDirection: "row", gap: "20px", alignItems: "flex-start", justifyContent: "center", flexWrap: "wrap" }}>
+        
+        <div style={{ width: "280px", backgroundColor: "#121318", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "20px", padding: "12px", display: "flex", flexDirection: "column", alignItems: "center", position: "relative", boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.5)", boxSizing: "border-box" }}>
+          
+          <div 
+            ref={mockupRef}
+            style={{ 
+              width: "256px", 
+              height: "400px", 
+              backgroundColor: "#1e1e24", 
+              borderRadius: "14px", 
+              position: "relative", 
+              display: "flex", 
+              alignItems: "center", 
+              justifyContent: "center", 
+              overflow: "hidden",
+              touchAction: "none" 
+            }}
+          >
+            
+            {isPhoneCase && activeTab === "template" ? (
+              <div 
+                style={{ 
+                  position: "absolute", 
+                  inset: 0, 
+                  width: "100%", 
+                  height: "100%", 
+                  zIndex: 20,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center"
+                }}
+              >
                 <img 
-                  src={item.image} 
-                  alt={item.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  src={`/template-${selectedTemplate}.png`} 
+                  alt={`Template ${selectedTemplate}`} 
+                  style={{ 
+                    width: "100%", 
+                    height: "100%", 
+                    objectFit: "cover",
+                    borderRadius: "14px"
+                  }} 
                 />
               </div>
-              <h3 className="text-sm font-black uppercase tracking-wide text-zinc-200 group-hover:text-pink-300 transition text-center">{item.name}</h3>
-              <p className="text-xs text-zinc-400 text-center mt-1">{item.desc}</p>
-              
-              <span className="mt-3 text-[10px] font-extrabold bg-pink-500/10 text-pink-300 border border-pink-500/30 px-3 py-1 rounded-full uppercase tracking-widest group-hover:bg-pink-500 group-hover:text-zinc-950 transition">
-                Buka Studio Design
-              </span>
-            </div>
-          ))}
+            ) : (
+              <>
+                <div 
+                  ref={designAreaRef}
+                  style={{
+                    position: "absolute",
+                    top: isPhoneCase ? "27px" : "85px",
+                    left: isPhoneCase ? "41px" : "55px",
+                    width: isPhoneCase ? "174px" : "146px",
+                    height: isPhoneCase ? "346px" : "235px",
+                    zIndex: 15,
+                    clipPath: isPhoneCase 
+                      ? "path('M 15 0 L 158 0 C 166 0 174 8 174 16 L 174 330 C 174 338 166 346 158 346 L 15 346 C 7 346 0 338 0 330 L 0 16 C 0 8 7 0 15 0 Z')" 
+                      : "inset(0px round 6px)",
+                    overflow: "hidden",
+                    touchAction: "none"
+                  }}
+                  onWheel={handleWheel}
+                  onTouchStart={handleTouchStartContainer}
+                  onClick={() => {
+                    setActiveSelection(null);
+                  }}
+                >
+                  {uploadedImage && (
+                    <div 
+                      style={{ 
+                        position: "absolute", 
+                        inset: 0, 
+                        cursor: "grab", 
+                        display: "flex", 
+                        alignItems: "center", 
+                        justifyContent: "center", 
+                        touchAction: "none" 
+                      }}
+                      onMouseDown={(e) => handleStartDragPhoto(e.clientX, e.clientY, e)}
+                      onTouchStart={(e) => { 
+                        if (e.touches.length === 1 && e.touches[0]) {
+                          handleStartDragPhoto(e.touches[0].clientX, e.touches[0].clientY, e);
+                        }
+                      }}
+                    >
+                      <img 
+                        src={uploadedImage} 
+                        alt="Uploaded Custom" 
+                        style={{
+                          transform: `translate(${position.x}px, ${position.y}px) scale(${scale}) rotate(${rotation}deg)`,
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                          pointerEvents: "none",
+                          userSelect: "none"
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {placedElements.map((el) => {
+                    const isActive = activeSelection === el.id;
+                    const isElm24 = el.src.includes("elm24.png");
+
+                    return (
+                      <div
+                        key={el.id}
+                        onMouseDown={(e) => handleStartDragElement(el.id, e.clientX, e.clientY, e)}
+                        onTouchStart={(e) => {
+                          if (e.touches.length === 1 && e.touches[0]) {
+                            handleStartDragElement(el.id, e.touches[0].clientX, e.touches[0].clientY, e);
+                          }
+                        }}
+                        style={{
+                          position: "absolute",
+                          left: `${el.x}px`,
+                          top: `${el.y}px`,
+                          width: `${el.width}px`,
+                          height: `${el.height}px`,
+                          transform: `rotate(${el.rotation}deg)`,
+                          zIndex: 25,
+                          cursor: "grab",
+                          touchAction: "none"
+                        }}
+                      >
+                        {isElm24 && (
+                          <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "auto", overflow: "hidden" }}>
+                            {[1, 2, 3].map((slotIdx) => {
+                              const topPos = slotIdx === 1 ? "1%" : slotIdx === 2 ? "29.5%" : "58%";
+                              const slotImg = el.slotImages?.[slotIdx];
+                              const slotT = el.slotTransforms?.[slotIdx] || { x: 0, y: 0, scale: 1 };
+
+                              return (
+                                <div 
+                                  key={slotIdx}
+                                  onWheel={(e) => slotImg && handleSlotWheel(el.id, slotIdx, e)}
+                                  onMouseDown={(e) => slotImg && handleStartSlotDrag(el.id, slotIdx, e.clientX, e.clientY, e)}
+                                  onTouchStart={(e) => {
+                                    if (slotImg && e.touches.length === 1 && e.touches[0]) {
+                                      handleStartSlotDrag(el.id, slotIdx, e.touches[0].clientX, e.touches[0].clientY, e);
+                                    }
+                                  }}
+                                  style={{ position: "absolute", top: topPos, left: "6%", right: "6%", height: "29.5%", backgroundColor: "#18181b", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", cursor: slotImg ? "grab" : "default" }}
+                                >
+                                  {slotImg ? (
+                                    <div style={{ width: "100%", height: "100%", position: "relative", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                      <img 
+                                        src={slotImg} 
+                                        alt={`slot ${slotIdx}`} 
+                                        style={{ 
+                                          width: "100%", 
+                                          height: "100%", 
+                                          objectFit: "cover", 
+                                          transform: `translate(${slotT.x}px, ${slotT.y}px) scale(${slotT.scale})`,
+                                          pointerEvents: "none" 
+                                        }} 
+                                      />
+                                    </div>
+                                  ) : (
+                                    <label style={{ cursor: "pointer", color: "#f472b6", fontSize: "16px", fontWeight: "bold" }}>
+                                      +
+                                      <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => handleSlotImageUpload(el.id, slotIdx, e)} />
+                                    </label>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        <img 
+                          src={el.src} 
+                          alt="element frame" 
+                          style={{ 
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            width: "100%", 
+                            height: "100%", 
+                            objectFit: "contain", 
+                            pointerEvents: "none",
+                            transform: `scaleX(${el.flipX ? -1 : 1}) scaleY(${el.flipY ? -1 : 1})`,
+                            zIndex: 2
+                          }} 
+                        />
+
+                        {isActive && (
+                          <button
+                            onClick={(e) => handleRemoveElement(el.id, e)}
+                            className="remove-btn"
+                            style={{
+                              position: "absolute",
+                              top: "-4px",
+                              right: "-4px",
+                              width: "20px",
+                              height: "20px",
+                              borderRadius: "50%",
+                              backgroundColor: "#f472b6",
+                              color: "#09090b",
+                              border: "none",
+                              fontSize: "11px",
+                              fontWeight: "900",
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              zIndex: 50,
+                              boxShadow: "0 2px 4px rgba(0,0,0,0.4)"
+                            }}
+                            title="Hapus"
+                          >
+                            ×
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {mockupTp && (
+                  <img 
+                    src={mockupTp} 
+                    alt="Mockup Overlay" 
+                    style={{ 
+                      position: "absolute", 
+                      inset: 0, 
+                      width: "100%", 
+                      height: "100%", 
+                      objectFit: "contain", 
+                      zIndex: 35, 
+                      pointerEvents: "none" 
+                    }}
+                  />
+                )}
+              </>
+            )}
+
+          </div>
+
         </div>
-      </section>
 
-      {/* SECTION LINK RESMI */}
-      <section 
-        id="socials" 
-        ref={socialsReveal.ref}
-        className={`py-20 px-6 max-w-4xl mx-auto border-t border-zinc-800/85 text-center relative z-20 transition-all duration-1000 transform ${
-          socialsReveal.isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
-        }`}
-      >
-        <span className="text-xs font-bold tracking-[0.25em] bg-gradient-to-r from-zinc-300 via-pink-300 to-zinc-400 bg-clip-text text-transparent uppercase">
-          CONNECT WITH US
-        </span>
-        <h2 className="text-3xl md:text-4xl font-black uppercase tracking-wider mt-1 italic chrome-text mb-10">
-          Official Links
-        </h2>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <div style={{ flex: "1", minWidth: "280px", display: "flex", flexDirection: "column", gap: "14px" }}>
           
-          {/* Shopee Store */}
-          <a 
-            href="https://shopee.co.id/llovedbyus" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="cute-click group bg-[#121318]/80 backdrop-blur-md border border-zinc-800 hover:border-pink-500/60 rounded-3xl p-6 flex flex-col items-center transition-all duration-300 hover:shadow-[0_0_30px_rgba(244,114,182,0.15)]"
-          >
-            <div className="w-14 h-14 bg-zinc-900 rounded-2xl flex items-center justify-center border border-zinc-800 mb-4 group-hover:scale-110 transition overflow-hidden p-2">
-              <img src="/shopee.png" alt="Shopee Logo" className="w-full h-full object-contain" />
+          {isTshirt && (
+            <div style={{ backgroundColor: "#121318", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "14px", padding: "14px" }}>
+              <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase", marginBottom: "8px" }}>
+                Pilih Model & Warna Kaos
+              </label>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "6px" }}>
+                <button
+                  onClick={() => setTshirtStyle("white")}
+                  style={{
+                    padding: "10px 4px",
+                    borderRadius: "10px",
+                    fontSize: "9px",
+                    fontWeight: "900",
+                    textTransform: "uppercase",
+                    cursor: "pointer",
+                    border: tshirtStyle === "white" ? "1px solid #f472b6" : "1px solid rgba(255,255,255,0.1)",
+                    background: tshirtStyle === "white" ? "#f4f4f5" : "#18181b",
+                    color: tshirtStyle === "white" ? "#09090b" : "#a1a1aa",
+                    transition: "all 0.3s ease"
+                  }}
+                >
+                  White
+                </button>
+                <button
+                  onClick={() => setTshirtStyle("black")}
+                  style={{
+                    padding: "10px 4px",
+                    borderRadius: "10px",
+                    fontSize: "9px",
+                    fontWeight: "900",
+                    textTransform: "uppercase",
+                    cursor: "pointer",
+                    border: tshirtStyle === "black" ? "1px solid #f472b6" : "1px solid rgba(255,255,255,0.1)",
+                    background: tshirtStyle === "black" ? "#27272a" : "#18181b",
+                    color: tshirtStyle === "black" ? "#fff" : "#a1a1aa",
+                    transition: "all 0.3s ease"
+                  }}
+                >
+                  Black
+                </button>
+                <button
+                  onClick={() => setTshirtStyle("croptop")}
+                  style={{
+                    padding: "10px 4px",
+                    borderRadius: "10px",
+                    fontSize: "9px",
+                    fontWeight: "900",
+                    textTransform: "uppercase",
+                    cursor: "pointer",
+                    border: tshirtStyle === "croptop" ? "1px solid #f472b6" : "1px solid rgba(255,255,255,0.1)",
+                    background: tshirtStyle === "croptop" ? "#f472b6" : "#18181b",
+                    color: tshirtStyle === "croptop" ? "#09090b" : "#a1a1aa",
+                    transition: "all 0.3s ease"
+                  }}
+                >
+                  Crop Top
+                </button>
+              </div>
             </div>
-            <h3 className="text-sm font-black uppercase tracking-wide text-zinc-200 group-hover:text-pink-300 transition">Shopee Store</h3>
-            <p className="text-[11px] text-zinc-400 mt-1">Belanja via e-commerce</p>
-          </a>
+          )}
 
-          {/* Instagram */}
-          <a 
-            href="https://instagram.com/prellovedbyus" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="cute-click group bg-[#121318]/80 backdrop-blur-md border border-zinc-800 hover:border-pink-500/60 rounded-3xl p-6 flex flex-col items-center transition-all duration-300 hover:shadow-[0_0_30px_rgba(244,114,182,0.15)]"
-          >
-            <div className="w-14 h-14 bg-zinc-900 rounded-2xl flex items-center justify-center border border-zinc-800 mb-4 group-hover:scale-110 transition overflow-hidden p-2">
-              <img src="/instagram.png" alt="Instagram Logo" className="w-full h-full object-contain" />
+          {isPhoneCase && (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", backgroundColor: "#18181b", padding: "5px", borderRadius: "14px", border: "1px solid rgba(255,255,255,0.1)" }}>
+              <button
+                onClick={() => setActiveTab("edit")}
+                style={{
+                  padding: "10px",
+                  borderRadius: "10px",
+                  fontSize: "10px",
+                  fontWeight: "900",
+                  textTransform: "uppercase",
+                  border: "none",
+                  cursor: "pointer",
+                  backgroundColor: activeTab === "edit" ? "#f472b6" : "transparent",
+                  color: activeTab === "edit" ? "#09090b" : "#a1a1aa",
+                  transition: "all 0.2s"
+                }}
+              >
+                Upload Foto
+              </button>
+              <button
+                onClick={() => setActiveTab("template")}
+                style={{
+                  padding: "10px",
+                  borderRadius: "10px",
+                  fontSize: "10px",
+                  fontWeight: "900",
+                  textTransform: "uppercase",
+                  border: "none",
+                  cursor: "pointer",
+                  backgroundColor: activeTab === "template" ? "#f472b6" : "transparent",
+                  color: activeTab === "template" ? "#09090b" : "#a1a1aa",
+                  transition: "all 0.2s"
+                }}
+              >
+                Template
+              </button>
             </div>
-            <h3 className="text-sm font-black uppercase tracking-wide text-zinc-200 group-hover:text-pink-300 transition">Instagram</h3>
-            <p className="text-[11px] text-zinc-400 mt-1">Lihat katalog & testimoni</p>
-          </a>
+          )}
 
-          {/* WhatsApp Admin */}
-          <a 
-            href="https://wa.me/62881025376311" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="cute-click group bg-[#121318]/80 backdrop-blur-md border border-zinc-800 hover:border-pink-500/60 rounded-3xl p-6 flex flex-col items-center transition-all duration-300 hover:shadow-[0_0_30px_rgba(244,114,182,0.15)]"
-          >
-            <div className="w-14 h-14 bg-zinc-900 rounded-2xl flex items-center justify-center border border-zinc-800 mb-4 group-hover:scale-110 transition overflow-hidden p-2">
-              <img src="/whatsapp.png" alt="WhatsApp Logo" className="w-full h-full object-contain" />
+          {(!isPhoneCase || activeTab === "edit") && (
+            <div style={{ backgroundColor: "#121318", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "14px", padding: "16px", display: "flex", flexDirection: "column", gap: "14px" }}>
+              
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase" }}>
+                  Upload Foto Utama
+                </label>
+                <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                  <input 
+                    type="file" 
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    style={{ width: "100%", fontSize: "11px", color: "#a1a1aa" }}
+                  />
+                  {uploadedImage && (
+                    <button
+                      onClick={handleRemoveUploadedImage}
+                      style={{
+                        backgroundColor: "#27272a",
+                        color: "#f472b6",
+                        border: "1px solid rgba(244,114,182,0.3)",
+                        borderRadius: "8px",
+                        padding: "6px 12px",
+                        fontSize: "12px",
+                        fontWeight: "900",
+                        cursor: "pointer",
+                        whiteSpace: "nowrap"
+                      }}
+                      title="Hapus foto yang di-upload"
+                    >
+                      ✕ Hapus Foto
+                    </button>
+                  )}
+                </div>
+                {fileName && (
+                  <p style={{ fontSize: "10px", color: "#f472b6", fontWeight: "bold" }}>
+                    Foto terpilih: {fileName}
+                  </p>
+                )}
+
+                {uploadedImage && (
+                  <div style={{ display: "flex", gap: "6px", marginTop: "5px" }}>
+                    <button
+                      onClick={handleRemoveBackground}
+                      disabled={isRemovingBg}
+                      style={{
+                        flex: 1,
+                        padding: "10px",
+                        borderRadius: "10px",
+                        fontSize: "9px",
+                        fontWeight: "900",
+                        textTransform: "uppercase",
+                        backgroundColor: "#f472b6",
+                        color: "#09090b",
+                        border: "none",
+                        cursor: "pointer"
+                      }}
+                    >
+                      {isRemovingBg ? "Proses..." : "Hapus Background"}
+                    </button>
+                    <button
+                      onClick={handleResetBackground}
+                      style={{
+                        padding: "10px",
+                        borderRadius: "10px",
+                        fontSize: "9px",
+                        fontWeight: "bold",
+                        backgroundColor: "#27272a",
+                        color: "#a1a1aa",
+                        border: "none",
+                        cursor: "pointer"
+                      }}
+                    >
+                      Reset Background
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <hr style={{ border: "none", borderTop: "1px solid rgba(255,255,255,0.1)", margin: "4px 0" }} />
+
+              <div>
+                <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase", marginBottom: "8px" }}>
+                  TAMBAH STIKER & FRAME
+                </label>
+                <div style={{ maxHeight: "150px", overflowY: "auto", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px" }}>
+                  {Array.from({ length: 35 }, (_, i) => i + 1).map((num) => {
+                    const imageName = `elm${num}.png`;
+                    return (
+                      <div 
+                        key={num}
+                        onClick={() => handleAddElementToCase(imageName)}
+                        style={{ backgroundColor: "#18181b", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", padding: "6px", textAlign: "center", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                        title={`Klik pasang ${imageName}`}
+                      >
+                        <span style={{ fontSize: "9px", color: "#f472b6", marginRight: "4px" }}>{num}</span>
+                        <img src={`/${imageName}`} alt={`icon ${num}`} style={{ width: "30px", height: "30px", objectFit: "contain" }} onError={(e)=>{(e.target as HTMLElement).style.display='none'}} />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
             </div>
-            <h3 className="text-sm font-black uppercase tracking-wide text-zinc-200 group-hover:text-pink-300 transition">WhatsApp Admin</h3>
-            <p className="text-[11px] text-zinc-400 mt-1">Chat & konsultasi pesanan</p>
-          </a>
+          )}
 
-        </div>
-      </section>
+          {isPhoneCase && activeTab === "template" && (
+            <div style={{ backgroundColor: "#121318", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "14px", padding: "16px", display: "flex", flexDirection: "column", gap: "14px" }}>
+              <div>
+                <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase", marginBottom: "10px" }}>
+                  Pilih Template (1 - 4)
+                </label>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "8px" }}>
+                  {[1, 2, 3, 4].map((num) => (
+                    <button
+                      key={num}
+                      onClick={() => setSelectedTemplate(num)}
+                      style={{
+                        padding: "10px",
+                        borderRadius: "10px",
+                        fontSize: "10px",
+                        fontWeight: "900",
+                        textTransform: "uppercase",
+                        cursor: "pointer",
+                        border: selectedTemplate === num ? "1px solid #f472b6" : "1px solid rgba(255,255,255,0.1)",
+                        background: selectedTemplate === num ? "linear-gradient(to right, #f4f4f5, #f472b6)" : "#18181b",
+                        color: selectedTemplate === num ? "#09090b" : "#a1a1aa"
+                      }}
+                    >
+                      Template {num}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-      {/* FOOTER */}
-      <footer className="py-8 text-center text-zinc-500 text-xs border-t border-zinc-900/80 relative z-20 bg-black/40 backdrop-blur-md">
-        <p>© 2026 LLOVEDBYUS. All Rights Reserved.</p>
-      </footer>
+            </div>
+          )}
 
-      {/* MODAL DESIGN LAB */}
-      {showDesignLab && (
-        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-xl flex flex-col overflow-y-auto animate-smooth-modal">
-          <div className="sticky top-0 z-50 bg-[#0d0e12]/90 backdrop-blur-md border-b border-zinc-800 px-6 py-4 flex items-center justify-between shadow-lg">
-            <span className="text-xs font-black tracking-widest text-pink-400 uppercase">✦ LLOVEDBYUS DESIGN STUDIO</span>
+          <div style={{ backgroundColor: "#121318", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "14px", padding: "16px" }}>
+            <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase", marginBottom: "10px" }}>
+              Catatan / Ukuran & Detail
+            </label>
+            <input 
+              type="text" 
+              placeholder={isPhoneCase ? "Contoh: iPhone 13 / Samsung S22" : "Contoh: Size L / Warna Hitam"}
+              value={phoneModel}
+              onChange={(e) => setPhoneModel(e.target.value)}
+              style={{ width: "100%", backgroundColor: "#121318", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "10px", fontSize: "11px", color: "#f4f4f5", outline: "none", boxSizing: "border-box" }}
+            />
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             <button 
-              onClick={() => setShowDesignLab(false)}
-              className="cute-click bg-zinc-800 hover:bg-pink-500 hover:text-zinc-950 text-zinc-300 px-4 py-2 rounded-full font-bold text-xs uppercase tracking-widest transition cursor-pointer"
+              onClick={handleDownloadDesign}
+              disabled={isDownloading}
+              style={{ width: "100%", background: "#27272a", color: "#f4f4f5", fontWeight: "900", padding: "12px", borderRadius: "14px", fontSize: "11px", textTransform: "uppercase", letterSpacing: "1px", border: "1px solid rgba(255,255,255,0.2)", cursor: "pointer" }}
             >
-              ✕ Tutup Studio
+              {isDownloading ? "Menyimpan Gambar..." : "Download Hasil Desain (PNG)"}
+            </button>
+
+            <button 
+              onClick={handleWhatsAppOrder}
+              style={{ width: "100%", background: "linear-gradient(to right, #f4f4f5, #f472b6, #f4f4f5)", color: "#09090b", fontWeight: "900", padding: "14px", borderRadius: "14px", fontSize: "11px", textTransform: "uppercase", letterSpacing: "1px", border: "none", cursor: "pointer", boxShadow: "0 0 20px rgba(244,114,182,0.3)" }}
+            >
+              Pesan via WhatsApp Sekarang
             </button>
           </div>
-          <div className="p-4 md:p-8 flex-1">
-            <DesignLab productTitle={selectedProductTitle} />
-          </div>
-        </div>
-      )}
 
-    </main>
+        </div>
+
+      </div>
+    </div>
   );
 }
