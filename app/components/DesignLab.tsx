@@ -380,188 +380,139 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
     }
   };
 
-  const handleDownloadDesign = async () => {
+  const handleDownloadDesign = () => {
     if (!mockupRef.current) return;
-    try {
-      setActiveSelection(null);
-      setIsDownloading(true);
+    setActiveSelection(null);
+    setIsDownloading(true);
 
-      const canvas = document.createElement("canvas");
-      canvas.width = 512;
-      canvas.height = 800;
-      const ctx = canvas.getContext("2d");
+    const canvas = document.createElement("canvas");
+    canvas.width = 512;
+    canvas.height = 800;
+    const ctx = canvas.getContext("2d");
 
-      if (!ctx) throw new Error("Canvas context tidak didukung");
+    if (!ctx) {
+      setIsDownloading(false);
+      alert("Canvas context tidak didukung");
+      return;
+    }
 
-      const loadImage = (src: string): Promise<HTMLImageElement> => {
-        return new Promise((resolve, reject) => {
-          const img = new Image();
-          img.crossOrigin = "anonymous";
-          img.onload = () => resolve(img);
-          img.onerror = (err) => reject(err);
-          img.src = src;
-        });
-      };
+    const loadImage = (src: string): Promise<HTMLImageElement> => {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => resolve(img);
+        img.onerror = (err) => reject(err);
+        img.src = src;
+      });
+    };
 
-      // 1. Render Mockup Base
-      try {
-        const baseImg = await loadImage(mockupBase);
+    loadImage(mockupBase)
+      .then((baseImg) => {
         ctx.drawImage(baseImg, 0, 0, canvas.width, canvas.height);
-      } catch (e) {
-        console.warn("Gagal memuat mockup base:", e);
-      }
 
-      // 2. Render Foto Utama
-      if (uploadedImage) {
-        try {
-          const userImg = await loadImage(uploadedImage);
-          ctx.save();
-          ctx.translate(canvas.width / 2 + position.x, canvas.height / 2 + position.y);
-          ctx.rotate((rotation * Math.PI) / 180);
-          ctx.scale(scale, scale);
-          ctx.drawImage(userImg, -100, -150, 200, 300);
-          ctx.restore();
-        } catch (e) {
-          console.warn("Gagal memuat foto utama:", e);
-        }
-      }
+        const drawUserImage = uploadedImage ? loadImage(uploadedImage) : Promise.resolve(null);
+        return drawUserImage.catch(() => null).then((userImg) => {
+          if (userImg) {
+            ctx.save();
+            ctx.translate(canvas.width / 2 + position.x, canvas.height / 2 + position.y);
+            ctx.rotate((rotation * Math.PI) / 180);
+            ctx.scale(scale, scale);
+            ctx.drawImage(userImg, -100, -150, 200, 300);
+            ctx.restore();
+          }
+          return userImg;
+        });
+      })
+      .then(() => {
+        const elementPromises = placedElements.map(async (el) => {
+          if (el.slotImages) {
+            for (const [slotIdxStr, slotImgUrl] of Object.entries(el.slotImages)) {
+              const slotIdx = Number(slotIdxStr);
+              try {
+                const slotImg = await loadImage(slotImgUrl);
+                const slotT = el.slotTransforms?.[slotIdx] || { x: 0, y: 0, scale: 1 };
+                
+                ctx.save();
+                const scaleFactorX = canvas.width / 256;
+                const scaleFactorY = canvas.height / 400;
+                const renderX = el.x * scaleFactorX;
+                const renderY = el.y * scaleFactorY;
 
-      // 3. Render Stiker & Elemen Dekorasi beserta Slot Foto di dalamnya
-      for (const el of placedElements) {
-        if (el.slotImages) {
-          for (const [slotIdxStr, slotImgUrl] of Object.entries(el.slotImages)) {
-            const slotIdx = Number(slotIdxStr);
-            try {
-              const slotImg = await loadImage(slotImgUrl);
-              const slotT = el.slotTransforms?.[slotIdx] || { x: 0, y: 0, scale: 1 };
-              
-              ctx.save();
-              const scaleFactorX = canvas.width / 256;
-              const scaleFactorY = canvas.height / 400;
-              const renderX = el.x * scaleFactorX;
-              const renderY = el.y * scaleFactorY;
+                ctx.translate(renderX + (50 * el.scale), renderY + (50 * el.scale));
+                ctx.rotate((el.rotation * Math.PI) / 180);
+                ctx.scale(el.scale, el.scale);
 
-              ctx.translate(renderX + (50 * el.scale), renderY + (50 * el.scale));
-              ctx.rotate((el.rotation * Math.PI) / 180);
-              ctx.scale(el.scale, el.scale);
+                ctx.beginPath();
+                if (el.src.includes("elm24.png")) {
+                  const topOffsets = [2, 118, 232];
+                  const tTop = topOffsets[slotIdx - 1] || 2;
+                  ctx.rect(-37, -100 + tTop, 74, 60);
+                } else if (el.src.includes("elm25.png")) {
+                  ctx.rect(-44, -70, 88, 65);
+                } else if (el.src.includes("elm32.png")) {
+                  ctx.arc(0, -10, 35, 0, Math.PI * 2);
+                } else {
+                  ctx.rect(-40, -40, 80, 80);
+                }
+                ctx.clip();
 
-              ctx.beginPath();
-              if (el.src.includes("elm24.png")) {
-                const topOffsets = [2, 118, 232];
-                const tTop = topOffsets[slotIdx - 1] || 2;
-                ctx.rect(-37, -100 + tTop, 74, 60);
-              } else if (el.src.includes("elm25.png")) {
-                ctx.rect(-44, -70, 88, 65);
-              } else if (el.src.includes("elm32.png")) {
-                ctx.arc(0, -10, 35, 0, Math.PI * 2);
-              } else {
-                ctx.rect(-40, -40, 80, 80);
+                ctx.translate(slotT.x, slotT.y);
+                ctx.scale(slotT.scale, slotT.scale);
+                ctx.drawImage(slotImg, -40, -40, 80, 80);
+                ctx.restore();
+              } catch (e) {
+                console.warn("Gagal memuat gambar slot:", e);
               }
-              ctx.clip();
-
-              ctx.translate(slotT.x, slotT.y);
-              ctx.scale(slotT.scale, slotT.scale);
-              ctx.drawImage(slotImg, -40, -40, 80, 80);
-              ctx.restore();
-            } catch (e) {
-              console.warn("Gagal memuat gambar slot:", e);
             }
           }
-        }
 
-        try {
-          const elImg = await loadImage(el.src);
-          ctx.save();
-          const scaleFactorX = canvas.width / 256;
-          const scaleFactorY = canvas.height / 400;
-          const renderX = el.x * scaleFactorX;
-          const renderY = el.y * scaleFactorY;
+          try {
+            const elImg = await loadImage(el.src);
+            ctx.save();
+            const scaleFactorX = canvas.width / 256;
+            const scaleFactorY = canvas.height / 400;
+            const renderX = el.x * scaleFactorX;
+            const renderY = el.y * scaleFactorY;
 
-          ctx.translate(renderX + (50 * el.scale), renderY + (50 * el.scale));
-          ctx.rotate((el.rotation * Math.PI) / 180);
-          ctx.scale(el.scale, el.scale);
-          if (el.flipX) ctx.scale(-1, 1);
-          if (el.flipY) ctx.scale(1, -1);
+            ctx.translate(renderX + (50 * el.scale), renderY + (50 * el.scale));
+            ctx.rotate((el.rotation * Math.PI) / 180);
+            ctx.scale(el.scale, el.scale);
+            if (el.flipX) ctx.scale(-1, 1);
+            if (el.flipY) ctx.scale(1, -1);
 
-          ctx.drawImage(elImg, -50, -50, 100, 100);
-          ctx.restore();
-        } catch (e) {
-          console.warn("Gagal memuat elemen stiker:", e);
-        }
-      }
+            ctx.drawImage(elImg, -50, -50, 100, 100);
+            ctx.restore();
+          } catch (e) {
+            console.warn("Gagal memuat elemen stiker:", e);
+          }
+        });
 
-      // 4. Render Mockup Overlay
-      if (mockupTp) {
-        try {
-          const tpImg = await loadImage(mockupTp);
-          ctx.drawImage(tpImg, 0, 0, canvas.width, canvas.height);
-        } catch (e) {
-          console.warn("Gagal memuat mockup overlay:", e);
-        }
-      }
-
-      const dataUrl = canvas.toDataURL("image/png");
-      const link = document.createElement("a");
-      link.download = `Custom-Design-${Date.now()}.png`;
-      link.href = dataUrl;
-      link.click();
-
-    } catch (err) {
-      console.error("Gagal mendownload gambar:", err);
-      alert("Gagal menyimpan gambar desain.");
-    } finally {
-      setIsDownloading(false);
-    }
+        return Promise.all(elementPromises);
+      })
+      .then(() => {
+        const drawTp = mockupTp ? loadImage(mockupTp) : Promise.resolve(null);
+        return drawTp.catch(() => null).then((tpImg) => {
+          if (tpImg) {
+            ctx.drawImage(tpImg, 0, 0, canvas.width, canvas.height);
+          }
+        });
+      })
+      .then(() => {
+        const dataUrl = canvas.toDataURL("image/png");
+        const link = document.createElement("a");
+        link.download = `Custom-Design-${Date.now()}.png`;
+        link.href = dataUrl;
+        link.click();
+      })
+      .catch((err) => {
+        console.error("Gagal mendownload gambar:", err);
+        alert("Gagal menyimpan gambar desain.");
+      })
+      .finally(() => {
+        setIsDownloading(false);
+      });
   };
 
-      // 1. Gambar Background Mockup
-      try {
-        const baseImg = await loadImage(mockupBase);
-        ctx.drawImage(baseImg, 0, 0, canvas.width, canvas.height);
-      } catch (e) {
-        console.warn("Gagal memuat mockup base:", e);
-      }
-
-      // 2. Gambar Foto Utama yang di-upload
-      if (uploadedImage) {
-        try {
-          const userImg = await loadImage(uploadedImage);
-          ctx.save();
-          // Sesuaikan posisi koordinat berdasarkan ukuran canvas 512x800
-          ctx.translate(canvas.width / 2 + position.x, canvas.height / 2 + position.y);
-          ctx.rotate((rotation * Math.PI) / 180);
-          ctx.scale(scale, scale);
-          ctx.drawImage(userImg, -100, -150, 200, 300);
-          ctx.restore();
-        } catch (e) {
-          console.warn("Gagal memuat foto utama:", e);
-        }
-      }
-
-      // 3. Gambar Mockup Overlay (Bagian Depan/Transparan)
-      if (mockupTp) {
-        try {
-          const tpImg = await loadImage(mockupTp);
-          ctx.drawImage(tpImg, 0, 0, canvas.width, canvas.height);
-        } catch (e) {
-          console.warn("Gagal memuat mockup overlay:", e);
-        }
-      }
-
-      // Konversi canvas menjadi file PNG siap download
-      const dataUrl = canvas.toDataURL("image/png");
-      const link = document.createElement("a");
-      link.download = `Custom-Design-${Date.now()}.png`;
-      link.href = dataUrl;
-      link.click();
-
-    } catch (err) {
-      console.error("Gagal mendownload gambar:", err);
-      alert("Gagal menyimpan gambar desain. Pastikan foto utama sudah terunggah.");
-    } finally {
-      setIsDownloading(false);
-    }
-  };
   const handleWhatsAppOrder = () => {
     const phoneNumber = "62881025376311";
     const message = `Halo, saya ingin memesan Custom Phone Case. Berikut adalah desain saya:`;
