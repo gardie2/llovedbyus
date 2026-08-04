@@ -93,7 +93,6 @@ export default function DesignLab({ productTitle }: DesignLabProps) {
     setSelectedLayerId(null);
   };
 
-  // Penanganan Drag & Touch yang stabil berbasis ukuran container asli
   const handleStart = (clientX: number, clientY: number, id: string, e?: React.SyntheticEvent) => {
     if (e && 'touches' in e && (e.touches as TouchList).length > 1) {
       return;
@@ -107,8 +106,8 @@ export default function DesignLab({ productTitle }: DesignLabProps) {
     if (!isDragging || !selectedLayerId || !containerRef.current) return;
     
     const rect = containerRef.current.getBoundingClientRect();
-    const scaleX = 400 / rect.width;   // Rasio lebar canvas internal (400px)
-    const scaleY = 500 / rect.height;  // Rasio tinggi canvas internal (500px)
+    const scaleX = 400 / rect.width;
+    const scaleY = 500 / rect.height;
 
     const dx = (clientX - dragStart.x) * scaleX;
     const dy = (clientY - dragStart.y) * scaleY;
@@ -128,7 +127,6 @@ export default function DesignLab({ productTitle }: DesignLabProps) {
     setIsDragging(false);
   };
 
-  // Fungsi Download yang akurat 1:1 dengan posisi tampilan canvas (Ukuran 400x500 diskalakan ke 1200x1500)
   const handleDownload = () => {
     const canvas = document.createElement('canvas');
     canvas.width = 1200;
@@ -146,7 +144,7 @@ export default function DesignLab({ productTitle }: DesignLabProps) {
       return;
     }
 
-    const scaleFactor = 3; // Mengubah ukuran canvas 400x500 menjadi tajam 1200x1500
+    const scaleFactor = 3;
 
     renderableLayers.forEach((layer) => {
       if (layer.type === 'text') {
@@ -255,17 +253,16 @@ export default function DesignLab({ productTitle }: DesignLabProps) {
             onTouchEnd={handleEnd}
             className="relative w-[350px] h-[450px] md:w-[400px] md:h-[500px] flex items-center justify-center overflow-hidden rounded-2xl select-none touch-none"
           >
-            {product === 'case' && (
+            {/* Mockup Case Background Dipastikan Muncul Kembali */}
+            {product === 'case' ? (
               <img
                 src="/mockup-case.png"
                 alt="Mockup Case Background"
-                className="absolute inset-0 w-full h-full object-contain pointer-events-none z-0"
+                className="absolute inset-0 w-full h-full object-contain z-0"
               />
-            )}
-
-            {product !== 'case' && (
+            ) : (
               <div
-                className="absolute inset-0 w-full h-full rounded-xl transition-colors duration-300"
+                className="absolute inset-0 w-full h-full rounded-xl transition-colors duration-300 z-0"
                 style={{ backgroundColor: apparelColor }}
               />
             )}
@@ -286,7 +283,7 @@ export default function DesignLab({ productTitle }: DesignLabProps) {
                     top: `${layer.y}px`,
                     transform: `translate(-50%, -50%) rotate(${layer.rotation}deg) scale(${layer.scale})`,
                     opacity: layer.opacity,
-                    zIndex: layer.zIndex,
+                    zIndex: layer.zIndex + 10,
                     cursor: isDragging ? 'grabbing' : 'grab',
                   }}
                   className={`p-1 transition-shadow ${
