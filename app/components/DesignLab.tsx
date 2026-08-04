@@ -380,174 +380,30 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
     }
   };
 
-  const handleDownloadDesign = () => {
+  const handleDownloadDesign = async () => {
     if (!mockupRef.current) return;
-    setActiveSelection(null);
-    setIsDownloading(true);
+    try {
+      setActiveSelection(null);
+      setIsDownloading(true);
 
-    const canvas = document.createElement("canvas");
-    canvas.width = 512;
-    canvas.height = 800;
-    const ctx = canvas.getContext("2d");
+      const dataUrl = await toPng(mockupRef.current, { cacheBust: true, pixelRatio: 2 });
+      
+      const link = document.createElement("a");
+      link.download = `Custom-Design-${Date.now()}.png`;
+      link.href = dataUrl;
 
-    if (!ctx) {
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      if (isIOS) {
+        window.open(dataUrl, "_blank");
+      } else {
+        link.click();
+      }
+    } catch (err) {
+      console.error("Gagal mendownload gambar:", err);
+      alert("Gagal menyimpan gambar desain.");
+    } finally {
       setIsDownloading(false);
-      alert("Canvas context tidak didukung");
-      return;
     }
-
-    const loadImage = (src: string): Promise<HTMLImageElement> => {
-      return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.crossOrigin = "anonymous";
-        img.onload = () => resolve(img);
-        img.onerror = (err) => reject(err);
-        img.src = src;
-      });
-    };
-
-    loadImage(mockupBase)
-      .then((baseImg) => {
-        ctx.drawImage(baseImg, 0, 0, canvas.width, canvas.height);
-
-        const drawUserImage = uploadedImage ? loadImage(uploadedImage) : Promise.resolve(null);
-        return drawUserImage.catch(() => null).then((userImg) => {
-          if (userImg) {
-            ctx.save();
-            const areaLeft = 512 * (41 / 256);
-            const areaTop = 800 * (27 / 400);
-            const areaWidth = 512 * (174 / 256);
-            const areaHeight = 800 * (346 / 400);
-
-            ctx.beginPath();
-            ctx.rect(areaLeft, areaTop, areaWidth, areaHeight);
-            ctx.clip();
-
-            ctx.translate(areaLeft + areaWidth / 2 + position.x * (canvas.width / 256), areaTop + areaHeight / 2 + position.y * (canvas.height / 400));
-            ctx.rotate((rotation * Math.PI) / 180);
-            ctx.scale(scale, scale);
-            ctx.drawImage(userImg, -areaWidth / 2, -areaHeight / 2, areaWidth, areaHeight);
-            ctx.restore();
-          }
-          return userImg;
-        });
-      })
-      .then(() => {
-        const elementPromises = placedElements.map(async (el) => {
-          if (el.slotImages) {
-            for (const [slotIdxStr, slotImgUrl] of Object.entries(el.slotImages)) {
-              const slotIdx = Number(slotIdxStr);
-              try {
-                const slotImg = await loadImage(slotImgUrl);
-                const slotT = el.slotTransforms?.[slotIdx] || { x: 0, y: 0, scale: 1 };
-                
-                ctx.save();
-                const scaleX = canvas.width / 256;
-                const scaleY = canvas.height / 400;
-                
-                const areaLeft = 512 * (41 / 256);
-                const areaTop = 800 * (27 / 400);
-
-                const renderX = areaLeft + (el.x * scaleX);
-                const renderY = areaTop + (el.y * scaleY);
-
-                const boxW = el.src.includes("elm24.png") ? 85 : el.src.includes("elm25.png") ? 110 : el.src.includes("elm32.png") ? 90 : 100;
-                const boxH = el.src.includes("elm24.png") ? 210 : el.src.includes("elm25.png") ? 145 : el.src.includes("elm32.png") ? 125 : 100;
-
-                ctx.translate(renderX + (boxW * scaleX * el.scale) / 2, renderY + (boxH * scaleY * el.scale) / 2);
-                ctx.rotate((el.rotation * Math.PI) / 180);
-                ctx.scale(el.scale, el.scale);
-
-                ctx.beginPath();
-                if (el.src.includes("elm24.png")) {
-                  const slotHeights = (boxH * scaleY) / 3;
-                  const currentSlotTop = (-boxH * scaleY / 2) + ((slotIdx - 1) * slotHeights);
-                  ctx.rect((-boxW * scaleX / 2) + (6 * scaleX), currentSlotTop + (2 * scaleY), (boxW * scaleX) - (12 * scaleX), slotHeights - (4 * scaleY));
-                } else if (el.src.includes("elm25.png")) {
-                  ctx.rect((-boxW * scaleX / 2) + (15 * scaleX), (-boxH * scaleY / 2) + (3 * scaleY), (boxW * scaleX) - (30 * scaleX), (boxH * scaleY) * 0.46);
-                } else if (el.src.includes("elm32.png")) {
-                  ctx.arc(0, (-boxH * scaleY / 2) + ((boxH * scaleY) * 0.425), (boxW * scaleX) * 0.32, 0, Math.PI * 2);
-                } else {
-                  ctx.rect(-40 * scaleX, -40 * scaleY, 80 * scaleX, 80 * scaleX);
-                }
-                ctx.clip();
-
-                ctx.translate(slotT.x, slotT.y);
-                ctx.scale(slotT.scale, slotT.scale);
-                ctx.drawImage(slotImg, -40 * scaleX, -40 * scaleY, 80 * scaleX, 80 * scaleX);
-                ctx.restore();
-              } catch (e) {
-                console.warn("Gagal memuat gambar slot:", e);
-              }
-            }
-          }
-
-          try {
-            const elImg = await loadImage(el.src);
-            ctx.save();
-            const scaleX = canvas.width / 256;
-            const scaleY = canvas.height / 400;
-            
-            const areaLeft = 512 * (41 / 256);
-            const areaTop = 800 * (27 / 400);
-
-            const renderX = areaLeft + (el.x * scaleX);
-            const renderY = areaTop + (el.y * scaleY);
-
-            const boxW = el.src.includes("elm24.png") ? 85 : el.src.includes("elm25.png") ? 110 : el.src.includes("elm32.png") ? 90 : 100;
-            const boxH = el.src.includes("elm24.png") ? 210 : el.src.includes("elm25.png") ? 145 : el.src.includes("elm32.png") ? 125 : 100;
-
-            ctx.translate(renderX + (boxW * scaleX * el.scale) / 2, renderY + (boxH * scaleY * el.scale) / 2);
-            ctx.rotate((el.rotation * Math.PI) / 180);
-            ctx.scale(el.scale, el.scale);
-            if (el.flipX) ctx.scale(-1, 1);
-            if (el.flipY) ctx.scale(1, -1);
-
-            ctx.drawImage(elImg, -(boxW * scaleX) / 2, -(boxH * scaleY) / 2, boxW * scaleX, boxH * scaleY);
-            ctx.restore();
-          } catch (e) {
-            console.warn("Gagal memuat elemen stiker:", e);
-          }
-        });
-
-        return Promise.all(elementPromises);
-      })
-      .then(() => {
-        const drawTp = mockupTp ? loadImage(mockupTp) : Promise.resolve(null);
-        return drawTp.catch(() => null).then((tpImg) => {
-          if (tpImg) {
-            ctx.drawImage(tpImg, 0, 0, canvas.width, canvas.height);
-          }
-        });
-      })
-      .then(() => {
-        canvas.toBlob((blob) => {
-          if (!blob) {
-            alert("Gagal merakit gambar.");
-            setIsDownloading(false);
-            return;
-          }
-          const blobUrl = URL.createObjectURL(blob);
-          const link = document.createElement("a");
-          link.href = blobUrl;
-          link.download = `Custom-Design-${Date.now()}.png`;
-          
-          const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-          if (isIOS) {
-            window.open(blobUrl, "_blank");
-          } else {
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-          }
-          setIsDownloading(false);
-        }, "image/png");
-      })
-      .catch((err) => {
-        console.error("Gagal mendownload gambar:", err);
-        alert("Gagal menyimpan gambar desain.");
-        setIsDownloading(false);
-      });
   };
 
   const handleWhatsAppOrder = () => {
