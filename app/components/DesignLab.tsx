@@ -14,7 +14,12 @@ interface LayerItem {
   zIndex: number;
 }
 
-export default function DesignLab() {
+interface DesignLabProps {
+  productTitle?: string;
+  onClose?: () => void;
+}
+
+export default function DesignLab({ productTitle, onClose }: DesignLabProps) {
   const [layers, setLayers] = useState<LayerItem[]>([]);
   const [selectedLayerId, setSelectedLayerId] = useState<string | null>(null);
   const [noteInput, setNoteInput] = useState<string>('');
@@ -35,7 +40,7 @@ export default function DesignLab() {
         type: 'image',
         content: imageUrl,
         x: 180,
-        y: 220,
+        y: 240,
         scale: 1,
         rotation: 0,
         opacity: 1,
@@ -53,7 +58,7 @@ export default function DesignLab() {
       type: 'image',
       content: stickerSrc,
       x: 180,
-      y: 220,
+      y: 240,
       scale: 1,
       rotation: 0,
       opacity: 1,
@@ -74,8 +79,17 @@ export default function DesignLab() {
 
   const handleMove = (clientX: number, clientY: number) => {
     if (!isDragging || !selectedLayerId) return;
-    const dx = clientX - dragStart.x;
-    const dy = clientY - dragStart.y;
+    
+    let scaleX = 1;
+    let scaleY = 1;
+    if (containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      scaleX = 350 / rect.width;
+      scaleY = 480 / rect.height;
+    }
+
+    const dx = (clientX - dragStart.x) * scaleX;
+    const dy = (clientY - dragStart.y) * scaleY;
 
     setLayers((prev) =>
       prev.map((l) => {
@@ -92,6 +106,53 @@ export default function DesignLab() {
     setIsDragging(false);
   };
 
+  const handleDownload = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1000;
+    canvas.height = 1000;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    let loadedCount = 0;
+    const renderableLayers = [...layers].sort((a, b) => a.zIndex - b.zIndex);
+
+    if (renderableLayers.length === 0) {
+      alert('Belum ada desain untuk di-download!');
+      return;
+    }
+
+    renderableLayers.forEach((layer) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.src = layer.content;
+      img.onload = () => {
+        ctx.save();
+        ctx.translate(layer.x * 2.5, layer.y * 2.5);
+        ctx.rotate((layer.rotation * Math.PI) / 180);
+        ctx.globalAlpha = layer.opacity;
+        const w = img.width * layer.scale * 0.5;
+        const h = img.height * layer.scale * 0.5;
+        ctx.drawImage(img, -w / 2, -h / 2, w, h);
+        ctx.restore();
+
+        loadedCount++;
+        if (loadedCount === renderableLayers.length) {
+          const link = document.createElement('a');
+          link.download = `custom-case-${Date.now()}.png`;
+          link.href = canvas.toDataURL('image/png');
+          link.click();
+        }
+      };
+    });
+  };
+
+  const handleWhatsApp = () => {
+    const message = encodeURIComponent(`Halo, saya ingin memesan custom case dengan catatan: ${noteInput || 'Tidak ada catatan'}`);
+    window.open(`https://wa.me/6281234567890?text=${message}`, '_blank');
+  };
+
   const stickersList = [
     { id: 1, src: '/stiker-1.png' },
     { id: 2, src: '/stiker-2.png' },
@@ -105,14 +166,26 @@ export default function DesignLab() {
   ];
 
   return (
-    <div className="min-h-screen bg-black text-white p-4 md:p-8 flex flex-col items-center font-sans">
-      {/* Header Judul */}
+    <div className="min-h-screen bg-black text-white p-4 md:p-8 flex flex-col items-center font-sans relative">
+      <div className="w-full max-w-5xl flex justify-between items-center mb-6 border-b border-neutral-900 pb-3">
+        <span className="text-xs md:text-sm font-black tracking-widest text-pink-400">
+          + LLOVEDBYUS DESIGN STUDIO
+        </span>
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="text-xs uppercase tracking-wider bg-neutral-900 hover:bg-neutral-800 text-neutral-300 px-3 py-1.5 rounded-lg border border-neutral-800 transition-all"
+          >
+            ✕ TUTUP STUDIO
+          </button>
+        )}
+      </div>
+
       <h1 className="text-xl md:text-3xl font-black italic tracking-wider mb-8 text-center bg-gradient-to-r from-white via-neutral-200 to-pink-400 bg-clip-text text-transparent">
-        CUSTOMIZE CUSTOM PHONE CASE
+        {productTitle || 'CUSTOMIZE CUSTOM PHONE CASE'}
       </h1>
 
       <div className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* KIRI: PREVIEW CASE */}
         <div className="lg:col-span-5 bg-neutral-950 border border-neutral-800 rounded-2xl p-6 flex flex-col items-center justify-center relative min-h-[550px]">
           <div
             ref={containerRef}
@@ -127,14 +200,12 @@ export default function DesignLab() {
             onTouchEnd={handleEnd}
             className="relative w-[340px] h-[480px] flex items-center justify-center overflow-hidden select-none touch-none"
           >
-            {/* Background Mockup Case */}
             <img
               src="/mockup-case.png"
               alt="Mockup Case"
               className="absolute inset-0 w-full h-full object-contain pointer-events-none z-0"
             />
 
-            {/* Layer Elemen Desain */}
             <div className="relative z-10 w-full h-full flex items-center justify-center">
               {layers.map((layer) => (
                 <div
@@ -169,9 +240,7 @@ export default function DesignLab() {
           </div>
         </div>
 
-        {/* KANAN: PANEL KONTROL ASLI */}
         <div className="lg:col-span-7 flex flex-col gap-6">
-          {/* Tombol Upload & Template */}
           <div className="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-4 flex gap-4">
             <label className="flex-1 bg-pink-400 hover:bg-pink-500 text-black font-black py-3.5 px-6 rounded-xl text-center cursor-pointer transition-all shadow-lg text-sm tracking-wide">
               UPLOAD FOTO
@@ -187,7 +256,6 @@ export default function DesignLab() {
             </button>
           </div>
 
-          {/* Upload Foto Utama */}
           <div className="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-5 flex flex-col gap-3">
             <h3 className="text-xs font-black tracking-widest text-neutral-300 uppercase">
               UPLOAD FOTO UTAMA
@@ -195,7 +263,6 @@ export default function DesignLab() {
             <p className="text-xs text-neutral-400">Choose File No file chosen</p>
           </div>
 
-          {/* Tambah Stiker & Frame */}
           <div className="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-5 flex flex-col gap-3">
             <h3 className="text-xs font-black tracking-widest text-neutral-300 uppercase">
               TAMBAH STIKER & FRAME
@@ -216,7 +283,6 @@ export default function DesignLab() {
             </div>
           </div>
 
-          {/* Catatan / Ukuran & Detail */}
           <div className="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-5 flex flex-col gap-3">
             <h3 className="text-xs font-black tracking-widest text-neutral-300 uppercase">
               CATATAN / UKURAN & DETAIL
@@ -229,6 +295,20 @@ export default function DesignLab() {
               className="bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-pink-500"
             />
           </div>
+
+          <button
+            onClick={handleDownload}
+            className="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-black py-3.5 px-4 rounded-xl text-center border border-neutral-700 transition-all text-xs tracking-widest"
+          >
+            DOWNLOAD HASIL DESAIN (PNG)
+          </button>
+
+          <button
+            onClick={handleWhatsApp}
+            className="w-full bg-gradient-to-r from-pink-400 to-pink-500 hover:from-pink-500 hover:to-pink-600 text-black font-black py-4 px-4 rounded-xl text-center shadow-xl transition-all text-xs tracking-widest active:scale-95"
+          >
+            PESAN VIA WHATSAPP SEKARANG
+          </button>
         </div>
       </div>
     </div>
