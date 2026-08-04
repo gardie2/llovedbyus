@@ -27,7 +27,8 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
     src: string; 
     x: number; 
     y: number; 
-    scale: number; 
+    width: number;
+    height: number;
     rotation: number; 
     flipX: boolean; 
     flipY: boolean;
@@ -55,6 +56,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
   const activeSlotDrag = useRef<{ elementId: number; slotIndex: number } | null>(null);
   const slotLastPos = useRef({ x: 0, y: 0 });
   const mockupRef = useRef<HTMLDivElement>(null);
+  const designAreaRef = useRef<HTMLDivElement>(null);
 
   const { mockupBase, mockupTp } = useMemo(() => {
     if (isPhoneCase) {
@@ -159,9 +161,13 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
             setPlacedElements((prev) =>
               prev.map((el) => {
                 if (el.id === activeSelection) {
+                  const newScaleFactor = Math.min(Math.max(0.3, initialScaleOnPinch.current * factor), 4.0);
+                  const baseW = el.src.includes("elm24.png") ? 85 : 100;
+                  const baseH = el.src.includes("elm24.png") ? 210 : 100;
                   return {
                     ...el,
-                    scale: Math.min(Math.max(0.3, initialScaleOnPinch.current * factor), 4.0),
+                    width: baseW * newScaleFactor,
+                    height: baseH * newScaleFactor,
                     rotation: initialRotationOnTouch.current + angleDelta,
                   };
                 }
@@ -201,14 +207,18 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const url = URL.createObjectURL(file);
-      setUploadedImage(url);
-      setOriginalImage(url);
-      setFileName(file.name);
-      setScale(1);
-      setPosition({ x: 0, y: 0 });
-      setRotation(0);
-      setActiveSelection("photo");
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const result = event.target?.result as string;
+        setUploadedImage(result);
+        setOriginalImage(result);
+        setFileName(file.name);
+        setScale(1);
+        setPosition({ x: 0, y: 0 });
+        setRotation(0);
+        setActiveSelection("photo");
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -217,8 +227,12 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
     try {
       setIsRemovingBg(true);
       const blob = await removeBackground(uploadedImage);
-      const newUrl = URL.createObjectURL(blob);
-      setUploadedImage(newUrl);
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const result = event.target?.result as string;
+        setUploadedImage(result);
+      };
+      reader.readAsDataURL(blob);
     } catch (error) {
       console.error("Gagal menghapus background:", error);
       alert("Gagal memproses background otomatis.");
@@ -251,12 +265,14 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
   };
 
   const handleAddElementToCase = (imageName: string) => {
+    const isElm24 = imageName.includes("elm24.png");
     const newElement = {
       id: Date.now(),
       src: `/${imageName}`,
       x: 30,
       y: 30,
-      scale: 1,
+      width: isElm24 ? 85 : 100,
+      height: isElm24 ? 210 : 100,
       rotation: 0,
       flipX: false,
       flipY: false,
@@ -270,25 +286,29 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
   const handleSlotImageUpload = (elementId: number, slotIndex: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const url = URL.createObjectURL(file);
-      setPlacedElements((prev) =>
-        prev.map((el) => {
-          if (el.id === elementId) {
-            return {
-              ...el,
-              slotImages: {
-                ...(el.slotImages || {}),
-                [slotIndex]: url,
-              },
-              slotTransforms: {
-                ...(el.slotTransforms || {}),
-                [slotIndex]: { x: 0, y: 0, scale: 1 },
-              },
-            };
-          }
-          return el;
-        })
-      );
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const result = event.target?.result as string;
+        setPlacedElements((prev) =>
+          prev.map((el) => {
+            if (el.id === elementId) {
+              return {
+                ...el,
+                slotImages: {
+                  ...(el.slotImages || {}),
+                  [slotIndex]: result,
+                },
+                slotTransforms: {
+                  ...(el.slotTransforms || {}),
+                  [slotIndex]: { x: 0, y: 0, scale: 1 },
+                },
+              };
+            }
+            return el;
+          })
+        );
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -355,7 +375,8 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
       } else if (typeof activeSelection === "number") {
         const found = placedElements.find((el) => el.id === activeSelection);
         if (found) {
-          initialScaleOnPinch.current = found.scale;
+          const baseW = found.src.includes("elm24.png") ? 85 : 100;
+          initialScaleOnPinch.current = found.width / baseW;
           initialRotationOnTouch.current = found.rotation;
         }
       }
@@ -364,175 +385,216 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
 
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault();
-    const zoomFactor = e.deltaY < 0 ? 0.1 : -0.1;
+    const zoomFactor = e.deltaY < 0 ? 5 : -5;
     if (typeof activeSelection === "number") {
       setPlacedElements((prev) =>
         prev.map((el) => {
           if (el.id === activeSelection) {
-            return { ...el, scale: Math.min(Math.max(0.3, el.scale + zoomFactor), 3.0) };
+            const newW = Math.min(Math.max(30, el.width + zoomFactor), 400);
+            const ratio = el.height / el.width;
+            return { ...el, width: newW, height: newW * ratio };
           }
           return el;
         })
       );
     } else if (activeSelection === "photo") {
-      setScale((prev) => Math.min(Math.max(0.5, prev + zoomFactor), 3.5));
+      const zoomPhotoFactor = e.deltaY < 0 ? 0.1 : -0.1;
+      setScale((prev) => Math.min(Math.max(0.5, prev + zoomPhotoFactor), 3.5));
     }
   };
 
-  const handleDownloadDesign = () => {
-    if (!mockupRef.current) return;
-    setActiveSelection(null);
-    setIsDownloading(true);
+  // HELPER PURE CANVAS UNTUK OBJECT-FIT: COVER MATEMATIS
+  const drawImageCover = (
+    ctx: CanvasRenderingContext2D,
+    img: HTMLImageElement,
+    x: number,
+    y: number,
+    w: number,
+    h: number
+  ) => {
+    const imgRatio = img.naturalWidth / img.naturalHeight;
+    const boxRatio = w / h;
+    let sW = img.naturalWidth;
+    let sH = img.naturalHeight;
+    let sX = 0;
+    let sY = 0;
 
-    const canvas = document.createElement("canvas");
-    canvas.width = 512;
-    canvas.height = 800;
-    const ctx = canvas.getContext("2d");
-
-    if (!ctx) {
-      setIsDownloading(false);
-      alert("Canvas context tidak didukung");
-      return;
+    if (imgRatio > boxRatio) {
+      sW = img.naturalHeight * boxRatio;
+      sX = (img.naturalWidth - sW) / 2;
+    } else {
+      sH = img.naturalWidth / boxRatio;
+      sY = (img.naturalHeight - sH) / 2;
     }
+    ctx.drawImage(img, sX, sY, sW, sH, x, y, w, h);
+  };
 
-    const loadImage = (src: string): Promise<HTMLImageElement> => {
-      return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.crossOrigin = "anonymous";
-        img.onload = () => resolve(img);
-        img.onerror = (err) => reject(err);
-        img.src = src;
-      });
-    };
+  // DOWNLOAD MURNI AREA DESAIN (SEMUA STIKER & FOTO PROPORSIONAL TANPA GEPENG)
+  const handleDownloadDesign = async () => {
+    try {
+      setActiveSelection(null);
+      setIsDownloading(true);
 
-    loadImage(mockupBase)
-      .then((baseImg) => {
-        ctx.drawImage(baseImg, 0, 0, canvas.width, canvas.height);
+      const canvasWidth = isPhoneCase ? 174 : 146;
+      const canvasHeight = isPhoneCase ? 346 : 235;
+      const exportScale = 3;
 
-        const drawUserImage = uploadedImage ? loadImage(uploadedImage) : Promise.resolve(null);
-        return drawUserImage.catch(() => null).then((userImg) => {
-          if (userImg) {
-            ctx.save();
-            const areaLeft = 512 * (41 / 256);
-            const areaTop = 800 * (27 / 400);
-            const areaWidth = 512 * (174 / 256);
-            const areaHeight = 800 * (346 / 400);
+      const exportCanvas = document.createElement("canvas");
+      exportCanvas.width = canvasWidth * exportScale;
+      exportCanvas.height = canvasHeight * exportScale;
+      const ctx = exportCanvas.getContext("2d");
 
-            ctx.beginPath();
-            ctx.rect(areaLeft, areaTop, areaWidth, areaHeight);
-            ctx.clip();
-
-            ctx.translate(areaLeft + areaWidth / 2 + position.x * (canvas.width / 256), areaTop + areaHeight / 2 + position.y * (canvas.height / 400));
-            ctx.rotate((rotation * Math.PI) / 180);
-            ctx.scale(scale, scale);
-            ctx.drawImage(userImg, -areaWidth / 2, -areaHeight / 2, areaWidth, areaHeight);
-            ctx.restore();
-          }
-          return userImg;
-        });
-      })
-      .then(() => {
-        const elementPromises = placedElements.map(async (el) => {
-          const scaleX = canvas.width / 256;
-          const scaleY = canvas.height / 400;
-          
-          const areaLeft = 512 * (41 / 256);
-          const areaTop = 800 * (27 / 400);
-
-          const renderX = areaLeft + (el.x * scaleX);
-          const renderY = areaTop + (el.y * scaleY);
-
-          const boxW = el.src.includes("elm24.png") ? 85 : el.src.includes("elm25.png") ? 110 : el.src.includes("elm32.png") ? 90 : 100;
-          const boxH = el.src.includes("elm24.png") ? 210 : el.src.includes("elm25.png") ? 145 : el.src.includes("elm32.png") ? 125 : 100;
-
-          if (el.slotImages) {
-            for (const [slotIdxStr, slotImgUrl] of Object.entries(el.slotImages)) {
-              const slotIdx = Number(slotIdxStr);
-              try {
-                const slotImg = await loadImage(slotImgUrl);
-                const slotT = el.slotTransforms?.[slotIdx] || { x: 0, y: 0, scale: 1 };
-                
-                ctx.save();
-                ctx.translate(renderX + (boxW * scaleX * el.scale) / 2, renderY + (boxH * scaleY * el.scale) / 2);
-                ctx.rotate((el.rotation * Math.PI) / 180);
-                ctx.scale(el.scale, el.scale);
-
-                ctx.beginPath();
-                if (el.src.includes("elm24.png")) {
-                  const sH = (boxH * scaleY) / 3;
-                  const sTop = (-boxH * scaleY / 2) + ((slotIdx - 1) * sH);
-                  ctx.rect((-boxW * scaleX / 2) + (boxW * scaleX * 0.06), sTop + (sH * 0.03), boxW * scaleX * 0.88, sH * 0.94);
-                } else if (el.src.includes("elm25.png")) {
-                  ctx.rect((-boxW * scaleX / 2) + (boxW * scaleX * 0.14), (-boxH * scaleY / 2) + (boxH * scaleY * 0.02), boxW * scaleX * 0.72, boxH * scaleY * 0.46);
-                } else if (el.src.includes("elm32.png")) {
-                  ctx.arc(0, (-boxH * scaleY / 2) + ((boxH * scaleY) * 0.425), (boxW * scaleX) * 0.32, 0, Math.PI * 2);
-                }
-                ctx.clip();
-
-                ctx.translate(slotT.x * scaleX, slotT.y * scaleY);
-                ctx.scale(slotT.scale, slotT.scale);
-                ctx.drawImage(slotImg, -(boxW * scaleX) / 2, -(boxH * scaleY) / 2, boxW * scaleX, boxH * scaleY);
-                ctx.restore();
-              } catch (e) {
-                console.warn("Gagal memuat gambar slot:", e);
-              }
-            }
-          }
-
-          try {
-            const elImg = await loadImage(el.src);
-            ctx.save();
-            ctx.translate(renderX + (boxW * scaleX * el.scale) / 2, renderY + (boxH * scaleY * el.scale) / 2);
-            ctx.rotate((el.rotation * Math.PI) / 180);
-            ctx.scale(el.scale, el.scale);
-            if (el.flipX) ctx.scale(-1, 1);
-            if (el.flipY) ctx.scale(1, -1);
-
-            ctx.drawImage(elImg, -(boxW * scaleX) / 2, -(boxH * scaleY) / 2, boxW * scaleX, boxH * scaleY);
-            ctx.restore();
-          } catch (e) {
-            console.warn("Gagal memuat elemen stiker:", e);
-          }
-        });
-
-        return Promise.all(elementPromises);
-      })
-      .then(() => {
-        const drawTp = mockupTp ? loadImage(mockupTp) : Promise.resolve(null);
-        return drawTp.catch(() => null).then((tpImg) => {
-          if (tpImg) {
-            ctx.drawImage(tpImg, 0, 0, canvas.width, canvas.height);
-          }
-        });
-      })
-      .then(() => {
-        canvas.toBlob((blob) => {
-          if (!blob) {
-            alert("Gagal merakit gambar.");
-            setIsDownloading(false);
-            return;
-          }
-          const blobUrl = URL.createObjectURL(blob);
-          const link = document.createElement("a");
-          link.href = blobUrl;
-          link.download = `Custom-Design-${Date.now()}.png`;
-
-          const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-          if (isIOS) {
-            window.open(blobUrl, "_blank");
-          } else {
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-          }
-          setIsDownloading(false);
-        }, "image/png");
-      })
-      .catch((err) => {
-        console.error("Gagal mendownload gambar:", err);
-        alert("Gagal menyimpan gambar desain.");
+      if (!ctx) {
         setIsDownloading(false);
-      });
+        return;
+      }
+
+      ctx.scale(exportScale, exportScale);
+      ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+      // Terapkan clipping path lekukan casing HP
+      ctx.save();
+      ctx.beginPath();
+      if (isPhoneCase) {
+        const p = new Path2D("M 15 0 L 158 0 C 166 0 174 8 174 16 L 174 330 C 174 338 166 346 158 346 L 15 346 C 7 346 0 338 0 330 L 0 16 C 0 8 7 0 15 0 Z");
+        ctx.clip(p);
+      } else {
+        ctx.roundRect(0, 0, canvasWidth, canvasHeight, 6);
+        ctx.clip();
+      }
+
+      // Jika template aktif
+      if (isPhoneCase && activeTab === "template") {
+        await new Promise<void>((resolve) => {
+          const tImg = new Image();
+          tImg.crossOrigin = "anonymous";
+          tImg.onload = () => {
+            drawImageCover(ctx, tImg, 0, 0, canvasWidth, canvasHeight);
+            resolve();
+          };
+          tImg.onerror = () => resolve();
+          tImg.src = `/template-${selectedTemplate}.png`;
+        });
+      } else {
+        // 1. Gambar Foto Utama
+        if (uploadedImage) {
+          await new Promise<void>((resolve) => {
+            const uImg = new Image();
+            uImg.crossOrigin = "anonymous";
+            uImg.onload = () => {
+              ctx.save();
+              ctx.translate(canvasWidth / 2 + position.x, canvasHeight / 2 + position.y);
+              ctx.rotate((rotation * Math.PI) / 180);
+              ctx.scale(scale, scale);
+              drawImageCover(ctx, uImg, -canvasWidth / 2, -canvasHeight / 2, canvasWidth, canvasHeight);
+              ctx.restore();
+              resolve();
+            };
+            uImg.onerror = () => resolve();
+            uImg.src = uploadedImage;
+          });
+        }
+
+        // 2. Gambar Stiker & Frame dengan Menjaga Rasio Asli Agar Tidak Gepeng
+        for (const el of placedElements) {
+          await new Promise<void>((resolve) => {
+            const stikerImg = new Image();
+            stikerImg.crossOrigin = "anonymous";
+            stikerImg.onload = async () => {
+              ctx.save();
+              ctx.translate(el.x + el.width / 2, el.y + el.height / 2);
+              ctx.rotate((el.rotation * Math.PI) / 180);
+
+              // Jika elm24 (slot foto)
+              if (el.src.includes("elm24.png") && el.slotImages) {
+                const slots = [
+                  { top: 0.01, height: 0.295 },
+                  { top: 0.295, height: 0.295 },
+                  { top: 0.58, height: 0.295 },
+                ];
+                for (let sIdx = 1; sIdx <= 3; sIdx++) {
+                  const sImgSrc = el.slotImages[sIdx];
+                  if (sImgSrc) {
+                    await new Promise<void>((sResolve) => {
+                      const slotImgObj = new Image();
+                      slotImgObj.crossOrigin = "anonymous";
+                      slotImgObj.onload = () => {
+                        ctx.save();
+                        const slotX = -el.width / 2 + el.width * 0.06;
+                        const slotY = -el.height / 2 + el.height * slots[sIdx - 1].top;
+                        const slotW = el.width * 0.88;
+                        const slotH = el.height * slots[sIdx - 1].height;
+
+                        ctx.beginPath();
+                        ctx.rect(slotX, slotY, slotW, slotH);
+                        ctx.clip();
+
+                        const sTransform = el.slotTransforms?.[sIdx] || { x: 0, y: 0, scale: 1 };
+                        ctx.translate(slotX + slotW / 2 + sTransform.x, slotY + slotH / 2 + sTransform.y);
+                        ctx.scale(sTransform.scale, sTransform.scale);
+                        drawImageCover(ctx, slotImgObj, -slotW / 2, -slotH / 2, slotW, slotH);
+                        ctx.restore();
+                        sResolve();
+                      };
+                      slotImgObj.onerror = () => sResolve();
+                      slotImgObj.src = sImgSrc;
+                    });
+                  }
+                }
+              }
+
+              ctx.scale(el.flipX ? -1 : 1, el.flipY ? -1 : 1);
+
+              // HITUNG RASIO ASLI STIKER AGAR TIDAK GEPENG/KETARIK
+              const imgNatW = stikerImg.naturalWidth || 100;
+              const imgNatH = stikerImg.naturalHeight || 100;
+              const naturalRatio = imgNatW / imgNatH;
+
+              let renderW = el.width;
+              let renderH = el.height;
+
+              // Khusus untuk stiker non-elm24, sesuaikan dimensinya dengan rasio asli gambar
+              if (!el.src.includes("elm24.png")) {
+                if (naturalRatio > 1) {
+                  renderH = el.width / naturalRatio;
+                } else {
+                  renderW = el.height * naturalRatio;
+                }
+              }
+
+              ctx.drawImage(stikerImg, -renderW / 2, -renderH / 2, renderW, renderH);
+              ctx.restore();
+              resolve();
+            };
+            stikerImg.onerror = () => resolve();
+            stikerImg.src = el.src;
+          });
+        }
+      }
+
+      ctx.restore();
+
+      exportCanvas.toBlob((blob) => {
+        if (!blob) {
+          alert("Gagal merakit gambar.");
+          setIsDownloading(false);
+          return;
+        }
+        const blobUrl = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = blobUrl;
+        link.download = `Custom-Design-${Date.now()}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setIsDownloading(false);
+      }, "image/png");
+
+    } catch (err) {
+      console.error("Gagal mendownload gambar:", err);
+      alert("Gagal menyimpan gambar desain.");
+      setIsDownloading(false);
+    }
   };
 
   const handleWhatsAppOrder = () => {
@@ -559,12 +621,13 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
             style={{ 
               width: "256px", 
               height: "400px", 
-              backgroundColor: "transparent", 
+              backgroundColor: "#1e1e24", 
               borderRadius: "14px", 
               position: "relative", 
               display: "flex", 
               alignItems: "center", 
               justifyContent: "center", 
+              overflow: "hidden",
               touchAction: "none" 
             }}
           >
@@ -588,28 +651,15 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                   style={{ 
                     width: "100%", 
                     height: "100%", 
-                    objectFit: "contain",
+                    objectFit: "cover",
                     borderRadius: "14px"
                   }} 
                 />
               </div>
             ) : (
               <>
-                <img 
-                  src={mockupBase} 
-                  alt="Mockup Base" 
-                  style={{ 
-                    position: "absolute", 
-                    inset: 0, 
-                    width: "100%", 
-                    height: "100%", 
-                    objectFit: "contain", 
-                    zIndex: 10, 
-                    pointerEvents: "none" 
-                  }}
-                />
-
                 <div 
+                  ref={designAreaRef}
                   style={{
                     position: "absolute",
                     top: isPhoneCase ? "27px" : "85px",
@@ -665,11 +715,6 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                   {placedElements.map((el) => {
                     const isActive = activeSelection === el.id;
                     const isElm24 = el.src.includes("elm24.png");
-                    const isElm25 = el.src.includes("elm25.png");
-                    const isElm32 = el.src.includes("elm32.png");
-
-                    const boxWidth = isElm24 ? "85px" : isElm25 ? "110px" : isElm32 ? "90px" : "100px";
-                    const boxHeight = isElm24 ? "210px" : isElm25 ? "145px" : isElm32 ? "125px" : "100px";
 
                     return (
                       <div
@@ -684,16 +729,16 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                           position: "absolute",
                           left: `${el.x}px`,
                           top: `${el.y}px`,
-                          width: boxWidth,
-                          height: boxHeight,
-                          transform: `scale(${el.scale}) rotate(${el.rotation}deg)`,
+                          width: `${el.width}px`,
+                          height: `${el.height}px`,
+                          transform: `rotate(${el.rotation}deg)`,
                           zIndex: 25,
                           cursor: "grab",
                           touchAction: "none"
                         }}
                       >
                         {isElm24 && (
-                          <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "auto" }}>
+                          <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "auto", overflow: "hidden" }}>
                             {[1, 2, 3].map((slotIdx) => {
                               const topPos = slotIdx === 1 ? "1%" : slotIdx === 2 ? "29.5%" : "58%";
                               const slotImg = el.slotImages?.[slotIdx];
@@ -712,17 +757,19 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                                   style={{ position: "absolute", top: topPos, left: "6%", right: "6%", height: "29.5%", backgroundColor: "#18181b", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", cursor: slotImg ? "grab" : "default" }}
                                 >
                                   {slotImg ? (
-                                    <img 
-                                      src={slotImg} 
-                                      alt={`slot ${slotIdx}`} 
-                                      style={{ 
-                                        width: "100%", 
-                                        height: "100%", 
-                                        objectFit: "cover",
-                                        transform: `translate(${slotT.x}px, ${slotT.y}px) scale(${slotT.scale})`,
-                                        pointerEvents: "none" 
-                                      }} 
-                                    />
+                                    <div style={{ width: "100%", height: "100%", position: "relative", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                      <img 
+                                        src={slotImg} 
+                                        alt={`slot ${slotIdx}`} 
+                                        style={{ 
+                                          width: "100%", 
+                                          height: "100%", 
+                                          objectFit: "cover", 
+                                          transform: `translate(${slotT.x}px, ${slotT.y}px) scale(${slotT.scale})`,
+                                          pointerEvents: "none" 
+                                        }} 
+                                      />
+                                    </div>
                                   ) : (
                                     <label style={{ cursor: "pointer", color: "#f472b6", fontSize: "16px", fontWeight: "bold" }}>
                                       +
@@ -732,86 +779,6 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
                                 </div>
                               );
                             })}
-                          </div>
-                        )}
-
-                        {isElm25 && (
-                          <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "auto" }}>
-                            {(() => {
-                              const slotImg = el.slotImages?.[1];
-                              const slotT = el.slotTransforms?.[1] || { x: 0, y: 0, scale: 1 };
-                              return (
-                                <div 
-                                  onWheel={(e) => slotImg && handleSlotWheel(el.id, 1, e)}
-                                  onMouseDown={(e) => slotImg && handleStartSlotDrag(el.id, 1, e.clientX, e.clientY, e)}
-                                  onTouchStart={(e) => {
-                                    if (slotImg && e.touches.length === 1 && e.touches[0]) {
-                                      handleStartSlotDrag(el.id, 1, e.touches[0].clientX, e.touches[0].clientY, e);
-                                    }
-                                  }}
-                                  style={{ position: "absolute", top: "2%", left: "14%", right: "14%", height: "46%", backgroundColor: "#18181b", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", cursor: slotImg ? "grab" : "default" }}
-                                >
-                                  {slotImg ? (
-                                    <img 
-                                      src={slotImg} 
-                                      alt="slot 1" 
-                                      style={{ 
-                                        width: "100%", 
-                                        height: "100%", 
-                                        objectFit: "cover",
-                                        transform: `translate(${slotT.x}px, ${slotT.y}px) scale(${slotT.scale})`,
-                                        pointerEvents: "none" 
-                                      }} 
-                                    />
-                                  ) : (
-                                    <label style={{ cursor: "pointer", color: "#f472b6", fontSize: "18px", fontWeight: "bold" }}>
-                                      +
-                                      <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => handleSlotImageUpload(el.id, 1, e)} />
-                                    </label>
-                                  )}
-                                </div>
-                              );
-                            })()}
-                          </div>
-                        )}
-
-                        {isElm32 && (
-                          <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "auto" }}>
-                            {(() => {
-                              const slotImg = el.slotImages?.[1];
-                              const slotT = el.slotTransforms?.[1] || { x: 0, y: 0, scale: 1 };
-                              return (
-                                <div 
-                                  onWheel={(e) => slotImg && handleSlotWheel(el.id, 1, e)}
-                                  onMouseDown={(e) => slotImg && handleStartSlotDrag(el.id, 1, e.clientX, e.clientY, e)}
-                                  onTouchStart={(e) => {
-                                    if (slotImg && e.touches.length === 1 && e.touches[0]) {
-                                      handleStartSlotDrag(el.id, 1, e.touches[0].clientX, e.touches[0].clientY, e);
-                                    }
-                                  }}
-                                  style={{ position: "absolute", top: "20%", left: "18%", right: "18%", height: "45%", backgroundColor: "#18181b", borderRadius: "50%", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", cursor: slotImg ? "grab" : "default" }}
-                                >
-                                  {slotImg ? (
-                                    <img 
-                                      src={slotImg} 
-                                      alt="slot 1" 
-                                      style={{ 
-                                        width: "100%", 
-                                        height: "100%", 
-                                        objectFit: "cover",
-                                        transform: `translate(${slotT.x}px, ${slotT.y}px) scale(${slotT.scale})`,
-                                        pointerEvents: "none" 
-                                      }} 
-                                    />
-                                  ) : (
-                                    <label style={{ cursor: "pointer", color: "#f472b6", fontSize: "18px", fontWeight: "bold" }}>
-                                      +
-                                      <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => handleSlotImageUpload(el.id, 1, e)} />
-                                    </label>
-                                  )}
-                                </div>
-                              );
-                            })()}
                           </div>
                         )}
 
