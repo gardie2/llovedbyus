@@ -16,7 +16,11 @@ interface LayerItem {
 
 type ProductType = 'case' | 'tshirt' | 'hoodie' | 'sweatshirt' | 'totebag';
 
-export default function DesignLab() {
+interface DesignLabProps {
+  productTitle?: string;
+}
+
+export default function DesignLab({ productTitle }: DesignLabProps) {
   const [product, setProduct] = useState<ProductType>('case');
   const [caseModel, setCaseModel] = useState<string>('iphone15pro');
   const [apparelColor, setApparelColor] = useState<string>('#ffffff');
@@ -187,7 +191,7 @@ export default function DesignLab() {
       <div className="w-full max-w-6xl mb-6 flex flex-col md:flex-row justify-between items-center gap-4 border-b border-neutral-800 pb-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-black bg-gradient-to-r from-white to-neutral-400 bg-clip-text text-transparent">
-            LLOVEDBYUS DESIGN STUDIO
+            {productTitle || 'LLOVEDBYUS DESIGN STUDIO'}
           </h1>
           <p className="text-xs md:text-sm text-neutral-400">
             Kreasikan custom case & apparel kamu secara langsung
