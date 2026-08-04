@@ -1,7 +1,6 @@
 "use client";
 import { useState, useRef, useEffect, useMemo } from "react";
 import { removeBackground } from "@imgly/background-removal";
-import { toPng } from "html-to-image";
 
 interface DesignLabProps {
   productTitle?: string;
@@ -386,22 +385,39 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
       setActiveSelection(null);
       setIsDownloading(true);
 
-      const dataUrl = await toPng(mockupRef.current, { cacheBust: true, pixelRatio: 2 });
-      
-      const link = document.createElement("a");
-      link.download = `Custom-Design-${Date.now()}.png`;
-      link.href = dataUrl;
+      const html2canvas = (await import("html2canvas")).default;
+      const canvas = await html2canvas(mockupRef.current, {
+        backgroundColor: null,
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+      });
 
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      if (isIOS) {
-        window.open(dataUrl, "_blank");
-      } else {
-        link.click();
-      }
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          alert("Gagal merakit gambar.");
+          setIsDownloading(false);
+          return;
+        }
+        const blobUrl = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = blobUrl;
+        link.download = `Custom-Design-${Date.now()}.png`;
+
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        if (isIOS) {
+          window.open(blobUrl, "_blank");
+        } else {
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
+        setIsDownloading(false);
+      }, "image/png");
+
     } catch (err) {
       console.error("Gagal mendownload gambar:", err);
       alert("Gagal menyimpan gambar desain.");
-    } finally {
       setIsDownloading(false);
     }
   };
