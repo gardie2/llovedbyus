@@ -1,759 +1,1201 @@
-'use client';
-
-import React, { useState, useRef } from 'react';
-import { Upload, Trash2, Download, MessageCircle, Sparkles, Image as ImageIcon, FileText, X, RefreshCw, Plus } from 'lucide-react';
-import { removeBackground } from '@imgly/background-removal';
-
-interface LayerItem {
-  id: string;
-  type: 'image' | 'text';
-  content: string;
-  x: number;
-  y: number;
-  scale: number;
-  rotation: number;
-  opacity: number;
-  zIndex: number;
-  frameId?: string;
-}
-
-interface FrameSlotState {
-  frameInstanceId: string;
-  elmId: number;
-  slots: { [key: number]: string | null };
-}
+"use client";
+import { useState, useRef, useEffect, useMemo } from "react";
+import { removeBackground } from "@imgly/background-removal";
+import { toPng } from "html-to-image";
 
 interface DesignLabProps {
-  initialProduct?: string;
   productTitle?: string;
-  onClose?: () => void;
 }
 
-const FRAME24_PIXELS = [
-  { left: '28.2%', top: '7.9%', width: '43.4%', height: '24.4%' },
-  { left: '28.2%', top: '37.2%', width: '43.4%', height: '24.4%' },
-  { left: '28.2%', top: '66.5%', width: '43.4%', height: '24.4%' },
-];
+export default function DesignLab({ productTitle = "Custom Phone Case" }: DesignLabProps) {
+  const titleLower = productTitle.toLowerCase();
+  const isPhoneCase = titleLower.includes("case");
+  const isTshirt = titleLower.includes("t-shirt");
 
-export default function DesignLab({ initialProduct = 'case', productTitle, onClose }: DesignLabProps) {
-  const [layers, setLayers] = useState<LayerItem[]>([]);
-  const [selectedLayerId, setSelectedLayerId] = useState<string | null>(null);
-  const [noteInput, setNoteInput] = useState<string>('');
+  const [activeTab, setActiveTab] = useState<"edit" | "template">("edit");
+  const [selectedTemplate, setSelectedTemplate] = useState(1);
+  const [tshirtStyle, setTshirtStyle] = useState<"white" | "black" | "croptop">("white");
   
-  const [activeTab, setActiveTab] = useState<'upload' | 'template'>('upload');
-  const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(null);
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [originalImage, setOriginalImage] = useState<string | null>(null);
+  const [fileName, setFileName] = useState<string>("");
+  const [phoneModel, setPhoneModel] = useState("");
+  const [isRemovingBg, setIsRemovingBg] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  
+  const [placedElements, setPlacedElements] = useState<Array<{ 
+    id: number; 
+    src: string; 
+    x: number; 
+    y: number; 
+    scale: number; 
+    rotation: number; 
+    flipX: boolean; 
+    flipY: boolean;
+    slotImages?: { [key: number]: string }; 
+    slotTransforms?: { [key: number]: { x: number; y: number; scale: number } };
+  }>>([]);
+  
+  const [activeSelection, setActiveSelection] = useState<"photo" | number | null>("photo");
 
-  const [originalImageUrl, setOriginalImageUrl] = useState<string | null>(null);
-  const [currentUploadedImage, setCurrentUploadedImage] = useState<string | null>(null);
-  const [isRemovingBg, setIsRemovingBg] = useState<boolean>(false);
+  const [scale, setScale] = useState(1);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [rotation, setRotation] = useState(0);
+  
+  const isInteracting = useRef(false);
+  const lastClientPos = useRef({ x: 0, y: 0 });
+  
+  const initialPinchDistance = useRef<number | null>(null);
+  const initialScaleOnPinch = useRef(1);
+  const initialTouchAngle = useRef<number | null>(null);
+  const initialRotationOnTouch = useRef(0);
+  
+  const activeDraggingElementId = useRef<number | null>(null);
+  const isDraggingPhoto = useRef(false);
 
-  const [activeFrames, setActiveFrames] = useState<FrameSlotState[]>([]);
-  const [uploadTarget, setUploadTarget] = useState<{ frameInstanceId: string; slotIdx: number } | null>(null);
+  const activeSlotDrag = useRef<{ elementId: number; slotIndex: number } | null>(null);
+  const slotLastPos = useRef({ x: 0, y: 0 });
+  const mockupRef = useRef<HTMLDivElement>(null);
 
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-
-  const [touchStartDist, setTouchStartDist] = useState<number | null>(null);
-  const [touchStartAngle, setTouchStartAngle] = useState<number | null>(null);
-  const [initialScale, setInitialScale] = useState<number>(1);
-  const [initialRotation, setInitialRotation] = useState<number>(0);
-
-  const getBackgroundMockup = () => {
-    if (activeTab === 'template' && selectedTemplateId !== null) {
-      return `/template-${selectedTemplateId}.png`;
+  const { mockupBase, mockupTp } = useMemo(() => {
+    if (isPhoneCase) {
+      return {
+        mockupBase: "/mockup-case.png",
+        mockupTp: "/mockup-case-transparent.png"
+      };
+    } else if (isTshirt) {
+      if (tshirtStyle === "black") {
+        return { mockupBase: "/blackshirtmu.png", mockupTp: "/blackshirtmu-tp.png" };
+      } else if (tshirtStyle === "croptop") {
+        return { mockupBase: "/croptopmu.png", mockupTp: "/croptopmu-tp.png" };
+      }
+      return { mockupBase: "/t-shirtmu.png", mockupTp: "/t-shirtmu-tp.png" };
+    } else if (titleLower.includes("hoodie")) {
+      return { mockupBase: "/hoodiemu.png", mockupTp: "/hoodiemu-tp.png" };
+    } else if (titleLower.includes("sweatshirt")) {
+      return { mockupBase: "/sweatshirtmu.png", mockupTp: "/sweatshirtmu-tp.png" };
+    } else if (titleLower.includes("tote")) {
+      return { mockupBase: "/totebagmu.png", mockupTp: "/totebagmu-tp.png" };
     }
-    return '/mockup-case.png';
-  };
+    return { mockupBase: "/mockup-case.png", mockupTp: "/mockup-case-transparent.png" };
+  }, [isPhoneCase, isTshirt, tshirtStyle, titleLower]);
 
-  const currentMockup = {
-    bg: getBackgroundMockup(),
-    fg: '/mockup-case-transparent.png',
-  };
+  useEffect(() => {
+    const handleGlobalMove = (clientX: number, clientY: number) => {
+      if (!isInteracting.current) return;
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+      const dx = clientX - lastClientPos.current.x;
+      const dy = clientY - lastClientPos.current.y;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const imageUrl = event.target?.result as string;
+      if (activeSlotDrag.current !== null) {
+        const { elementId, slotIndex } = activeSlotDrag.current;
+        const sDx = clientX - slotLastPos.current.x;
+        const sDy = clientY - slotLastPos.current.y;
 
-      if (uploadTarget) {
-        setActiveFrames((prev) =>
-          prev.map((f) => {
-            if (f.frameInstanceId === uploadTarget.frameInstanceId) {
+        setPlacedElements((prev) =>
+          prev.map((el) => {
+            if (el.id === elementId) {
+              const currentT = el.slotTransforms?.[slotIndex] || { x: 0, y: 0, scale: 1 };
               return {
-                ...f,
-                slots: { ...f.slots, [uploadTarget.slotIdx]: imageUrl },
+                ...el,
+                slotTransforms: {
+                  ...(el.slotTransforms || {}),
+                  [slotIndex]: {
+                    ...currentT,
+                    x: currentT.x + sDx,
+                    y: currentT.y + sDy,
+                  },
+                },
               };
             }
-            return f;
+            return el;
           })
         );
-        setUploadTarget(null);
-        if (fileInputRef.current) fileInputRef.current.value = '';
+        slotLastPos.current = { x: clientX, y: clientY };
+      } else if (activeDraggingElementId.current !== null) {
+        const id = activeDraggingElementId.current;
+        setPlacedElements((prev) =>
+          prev.map((el) => {
+            if (el.id === id) {
+              return {
+                ...el,
+                x: el.x + dx,
+                y: el.y + dy,
+              };
+            }
+            return el;
+          })
+        );
+        lastClientPos.current = { x: clientX, y: clientY };
+      } else if (isDraggingPhoto.current) {
+        setPosition((prev) => ({
+          x: prev.x + dx,
+          y: prev.y + dy,
+        }));
+        lastClientPos.current = { x: clientX, y: clientY };
+      }
+    };
+
+    const onMouseMove = (e: MouseEvent) => handleGlobalMove(e.clientX, e.clientY);
+    const onTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        const x1 = e.touches[0].clientX;
+        const y1 = e.touches[0].clientY;
+        const x2 = e.touches[1].clientX;
+        const y2 = e.touches[1].clientY;
+
+        const currentDist = Math.hypot(x1 - x2, y1 - y2);
+        const currentAngle = Math.atan2(y2 - y1, x2 - x1) * (180 / Math.PI);
+
+        if (initialPinchDistance.current !== null && initialTouchAngle.current !== null) {
+          const factor = currentDist / initialPinchDistance.current;
+          const angleDelta = currentAngle - initialTouchAngle.current;
+
+          if (activeSelection === "photo") {
+            const newScale = Math.min(Math.max(0.3, initialScaleOnPinch.current * factor), 4.0);
+            const newRot = initialRotationOnTouch.current + angleDelta;
+            setScale(newScale);
+            setRotation(newRot);
+          } else if (typeof activeSelection === "number") {
+            setPlacedElements((prev) =>
+              prev.map((el) => {
+                if (el.id === activeSelection) {
+                  return {
+                    ...el,
+                    scale: Math.min(Math.max(0.3, initialScaleOnPinch.current * factor), 4.0),
+                    rotation: initialRotationOnTouch.current + angleDelta,
+                  };
+                }
+                return el;
+              })
+            );
+          }
+        }
         return;
       }
 
-      setOriginalImageUrl(imageUrl);
-      setCurrentUploadedImage(imageUrl);
-
-      const newLayer: LayerItem = {
-        id: `layer-${Date.now()}`,
-        type: 'image',
-        content: imageUrl,
-        x: 150,
-        y: 220,
-        scale: 0.6,
-        rotation: 0,
-        opacity: 1,
-        zIndex: layers.length + 1,
-      };
-      setLayers((prev) => [...prev, newLayer]);
-      setSelectedLayerId(newLayer.id);
-      if (fileInputRef.current) fileInputRef.current.value = '';
+      if (e.touches[0]) handleGlobalMove(e.touches[0].clientX, e.touches[0].clientY);
     };
-    reader.readAsDataURL(file);
+
+    const onEnd = () => {
+      isInteracting.current = false;
+      activeDraggingElementId.current = null;
+      isDraggingPhoto.current = false;
+      activeSlotDrag.current = null;
+      initialPinchDistance.current = null;
+      initialTouchAngle.current = null;
+    };
+
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onEnd);
+    window.addEventListener("touchmove", onTouchMove, { passive: false });
+    window.addEventListener("touchend", onEnd);
+
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onEnd);
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("touchend", onEnd);
+    };
+  }, [activeSelection]);
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setUploadedImage(url);
+      setOriginalImage(url);
+      setFileName(file.name);
+      setScale(1);
+      setPosition({ x: 0, y: 0 });
+      setRotation(0);
+      setActiveSelection("photo");
+    }
   };
 
   const handleRemoveBackground = async () => {
-    if (!currentUploadedImage) return;
-    setIsRemovingBg(true);
-
+    if (!uploadedImage) return;
     try {
-      const blob = await removeBackground(currentUploadedImage);
-      const url = URL.createObjectURL(blob);
-      setCurrentUploadedImage(url);
-
-      setLayers((prev) =>
-        prev.map((l) => (l.content === originalImageUrl || l.content === currentUploadedImage ? { ...l, content: url } : l))
-      );
+      setIsRemovingBg(true);
+      const blob = await removeBackground(uploadedImage);
+      const newUrl = URL.createObjectURL(blob);
+      setUploadedImage(newUrl);
     } catch (error) {
-      console.error('Gagal menghapus background:', error);
-      alert('Gagal memproses AI background removal.');
+      console.error("Gagal menghapus background:", error);
+      alert("Gagal memproses background otomatis.");
     } finally {
       setIsRemovingBg(false);
     }
   };
 
   const handleResetBackground = () => {
-    if (!originalImageUrl) return;
-    setCurrentUploadedImage(originalImageUrl);
-    setLayers((prev) =>
-      prev.map((l) => (l.content === currentUploadedImage ? { ...l, content: originalImageUrl } : l))
-    );
-  };
-
-  const addStickerToCanvas = (src: string, id: number) => {
-    const frameInstanceId = `frame-${Date.now()}`;
-    const frameLayer: LayerItem = {
-      id: frameInstanceId,
-      type: 'image',
-      content: src,
-      x: 150,
-      y: 220,
-      scale: 0.85,
-      rotation: 0,
-      opacity: 1,
-      zIndex: layers.length + 1,
-    };
-
-    let newLayers = [...layers, frameLayer];
-
-    if (id === 24) {
-      setActiveFrames((prev) => [
-        ...prev,
-        { frameInstanceId, elmId: 24, slots: { 0: null, 1: null, 2: null } },
-      ]);
-    } else if (id === 25) {
-      setActiveFrames((prev) => [
-        ...prev,
-        { frameInstanceId, elmId: 25, slots: { 0: null } },
-      ]);
+    if (originalImage) {
+      setUploadedImage(originalImage);
     }
-
-    setLayers(newLayers);
-    setSelectedLayerId(frameInstanceId);
   };
 
-  const removeLayerById = (id: string, e: React.MouseEvent) => {
+  const handleRemoveUploadedImage = () => {
+    setUploadedImage(null);
+    setOriginalImage(null);
+    setFileName("");
+    if (activeSelection === "photo") {
+      setActiveSelection(null);
+    }
+  };
+
+  const handleRemoveElement = (id: number, e: React.MouseEvent | React.TouchEvent) => {
     e.stopPropagation();
-    setLayers((prev) => prev.filter((l) => l.id !== id && l.frameId !== id));
-    setActiveFrames((prev) => prev.filter((f) => f.frameInstanceId !== id));
-    if (selectedLayerId === id) setSelectedLayerId(null);
+    setPlacedElements((prev) => prev.filter((el) => el.id !== id));
+    if (activeSelection === id) {
+      setActiveSelection(null);
+    }
   };
 
-  const handleStart = (clientX: number, clientY: number, id: string, e?: React.SyntheticEvent) => {
-    if (e && 'touches' in e && (e.touches as TouchList).length > 1) {
-      return;
-    }
-    setSelectedLayerId(id);
-    setIsDragging(true);
-    setDragStart({ x: clientX, y: clientY });
+  const handleAddElementToCase = (imageName: string) => {
+    const newElement = {
+      id: Date.now(),
+      src: `/${imageName}`,
+      x: 30,
+      y: 30,
+      scale: 1,
+      rotation: 0,
+      flipX: false,
+      flipY: false,
+      slotImages: {},
+      slotTransforms: {},
+    };
+    setPlacedElements((prev) => [...prev, newElement]);
+    setActiveSelection(newElement.id);
   };
 
-  const handleMove = (clientX: number, clientY: number) => {
-    if (!isDragging || !selectedLayerId) return;
-    
-    let scaleX = 1;
-    let scaleY = 1;
-    if (containerRef.current) {
-      const rect = containerRef.current.getBoundingClientRect();
-      scaleX = 300 / rect.width;
-      scaleY = 440 / rect.height;
+  const handleSlotImageUpload = (elementId: number, slotIndex: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setPlacedElements((prev) =>
+        prev.map((el) => {
+          if (el.id === elementId) {
+            return {
+              ...el,
+              slotImages: {
+                ...(el.slotImages || {}),
+                [slotIndex]: url,
+              },
+              slotTransforms: {
+                ...(el.slotTransforms || {}),
+                [slotIndex]: { x: 0, y: 0, scale: 1 },
+              },
+            };
+          }
+          return el;
+        })
+      );
     }
+  };
 
-    const dx = (clientX - dragStart.x) * scaleX;
-    const dy = (clientY - dragStart.y) * scaleY;
+  const handleStartSlotDrag = (elementId: number, slotIndex: number, clientX: number, clientY: number, e: React.MouseEvent | React.TouchEvent) => {
+    e.stopPropagation();
+    isInteracting.current = true;
+    activeSlotDrag.current = { elementId, slotIndex };
+    slotLastPos.current = { x: clientX, y: clientY };
+  };
 
-    setLayers((prev) =>
-      prev.map((l) => {
-        if (l.id === selectedLayerId || l.frameId === selectedLayerId) {
-          return { ...l, x: l.x + dx, y: l.y + dy };
+  const handleSlotWheel = (elementId: number, slotIndex: number, e: React.WheelEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const zoomFactor = e.deltaY < 0 ? 0.1 : -0.1;
+    setPlacedElements((prev) =>
+      prev.map((el) => {
+        if (el.id === elementId) {
+          const currentT = el.slotTransforms?.[slotIndex] || { x: 0, y: 0, scale: 1 };
+          const newScale = Math.min(Math.max(0.3, currentT.scale + zoomFactor), 4.0);
+          return {
+            ...el,
+            slotTransforms: {
+              ...(el.slotTransforms || {}),
+              [slotIndex]: { ...currentT, scale: newScale },
+            },
+          };
         }
-        return l;
+        return el;
       })
     );
-    setDragStart({ x: clientX, y: clientY });
   };
 
-  const handleEnd = () => {
-    setIsDragging(false);
-    setTouchStartDist(null);
-    setTouchStartAngle(null);
+  const handleStartDragPhoto = (clientX: number, clientY: number, e: React.MouseEvent | React.TouchEvent) => {
+    e.stopPropagation();
+    setActiveSelection("photo");
+    isInteracting.current = true;
+    isDraggingPhoto.current = true;
+    activeDraggingElementId.current = null;
+    lastClientPos.current = { x: clientX, y: clientY };
   };
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (e.touches.length === 2 && selectedLayerId) {
-      const t1 = e.touches[0];
-      const t2 = e.touches[1];
-      const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
-      const angle = Math.atan2(t2.clientY - t1.clientY, t2.clientX - t1.clientX) * (180 / Math.PI);
+  const handleStartDragElement = (id: number, clientX: number, clientY: number, e: React.MouseEvent | React.TouchEvent) => {
+    e.stopPropagation();
+    setActiveSelection(id);
+    isInteracting.current = true;
+    isDraggingPhoto.current = false;
+    activeDraggingElementId.current = id;
+    lastClientPos.current = { x: clientX, y: clientY };
+  };
 
-      if (touchStartDist === null || touchStartAngle === null) {
-        setTouchStartDist(dist);
-        setTouchStartAngle(angle);
-        const activeLayer = layers.find((l) => l.id === selectedLayerId);
-        if (activeLayer) {
-          setInitialScale(activeLayer.scale);
-          setInitialRotation(activeLayer.rotation);
+  const handleTouchStartContainer = (e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      const x1 = e.touches[0].clientX;
+      const y1 = e.touches[0].clientY;
+      const x2 = e.touches[1].clientX;
+      const y2 = e.touches[1].clientY;
+
+      initialPinchDistance.current = Math.hypot(x1 - x2, y1 - y2);
+      initialTouchAngle.current = Math.atan2(y2 - y1, x2 - x1) * (180 / Math.PI);
+
+      if (activeSelection === "photo") {
+        initialScaleOnPinch.current = scale;
+        initialRotationOnTouch.current = rotation;
+      } else if (typeof activeSelection === "number") {
+        const found = placedElements.find((el) => el.id === activeSelection);
+        if (found) {
+          initialScaleOnPinch.current = found.scale;
+          initialRotationOnTouch.current = found.rotation;
         }
-      } else {
-        const scaleFactor = dist / touchStartDist;
-        const angleDelta = angle - touchStartAngle;
-
-        setLayers((prev) =>
-          prev.map((l) => {
-            if (l.id === selectedLayerId || l.frameId === selectedLayerId) {
-              return {
-                ...l,
-                scale: Math.max(0.1, Math.min(4, initialScale * scaleFactor)),
-                rotation: (initialRotation + angleDelta) % 360,
-              };
-            }
-            return l;
-          })
-        );
       }
-    } else if (e.touches.length === 1) {
-      handleMove(e.touches[0].clientX, e.touches[0].clientY);
     }
   };
 
   const handleWheel = (e: React.WheelEvent) => {
-    if (!selectedLayerId) return;
     e.preventDefault();
-    const delta = e.deltaY < 0 ? 0.05 : -0.05;
-    setLayers((prev) =>
-      prev.map((l) => {
-        if (l.id === selectedLayerId || l.frameId === selectedLayerId) {
-          return { ...l, scale: Math.max(0.1, Math.min(4, l.scale + delta)) };
-        }
-        return l;
-      })
-    );
+    const zoomFactor = e.deltaY < 0 ? 0.1 : -0.1;
+    if (typeof activeSelection === "number") {
+      setPlacedElements((prev) =>
+        prev.map((el) => {
+          if (el.id === activeSelection) {
+            return { ...el, scale: Math.min(Math.max(0.3, el.scale + zoomFactor), 3.0) };
+          }
+          return el;
+        })
+      );
+    } else if (activeSelection === "photo") {
+      setScale((prev) => Math.min(Math.max(0.5, prev + zoomFactor), 3.5));
+    }
   };
 
-  const handleDownload = () => {
-    const renderableLayers = [...layers].sort((a, b) => a.zIndex - b.zIndex);
+const handleDownloadDesign = async () => {
 
-    if (renderableLayers.length === 0 && activeFrames.length === 0) {
-      alert('Belum ada foto atau stiker yang ditambahkan untuk di-download!');
-      return;
-    }
+    const prevSelected = selectedLayerId;
 
-    const canvas = document.createElement('canvas');
-    canvas.width = 600;
-    canvas.height = 880;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    setSelectedLayerId(null);
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    let allExportItems: { content: string; x: number; y: number; scale: number; rotation: number; opacity: number; zIndex: number; isCover?: boolean; width?: number; height?: number }[] = [];
 
-    renderableLayers.forEach((l) => {
-      const frameState = activeFrames.find((f) => f.frameInstanceId === l.id);
-      if (frameState) {
-        Object.entries(frameState.slots).forEach(([sIndexStr, imgUrl]) => {
-          if (imgUrl) {
-            const sIdx = Number(sIndexStr);
-            let slotOffsetX = 0;
-            let slotOffsetY = 0;
-            let boxW = 86;
-            let boxH = 86;
+    try {
 
-            if (frameState.elmId === 24) {
-              if (sIdx === 0) {
-                slotOffsetX = -1;
-                slotOffsetY = -103;
-                boxW = 84;
-                boxH = 79;
+      const canvas = document.createElement('canvas');
+
+      const width = 208;
+
+      const height = 432;
+
+      const scaleFactor = 4; // Kualitas HD Tajam
+
+
+
+      canvas.width = width * scaleFactor;
+
+      canvas.height = height * scaleFactor;
+
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+      if (!ctx) return;
+
+
+
+      ctx.fillStyle = '#ffffff';
+
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+
+
+      // If we're exporting a template, draw the selected template background first
+      if (activeTab === 'template' && resolvedProductType === 'phone-case' && selectedTemplateId) {
+        const tplImg = await loadImage(getBackgroundMockup());
+        if (tplImg) {
+          // draw template to cover the canvas with the same cropping logic
+          drawObjectCover(ctx, tplImg, 0, 0, canvas.width, canvas.height);
+        }
+      }
+
+      const renderLayers = [...layers].sort((a, b) => a.zIndex - b.zIndex);
+
+
+
+      for (const layer of renderLayers) {
+
+        const frameImg = await loadImage(layer.content);
+
+        if (!frameImg) continue;
+
+
+
+        const frameState = activeFrames.find((f) => f.frameInstanceId === layer.id);
+
+
+
+        ctx.save();
+
+        ctx.translate(layer.x * scaleFactor, layer.y * scaleFactor);
+
+        ctx.rotate((layer.rotation * Math.PI) / 180);
+
+        ctx.scale(layer.scale, layer.scale);
+
+        ctx.globalAlpha = layer.opacity;
+
+
+
+        let baseW = frameImg.width;
+
+        let baseH = frameImg.height;
+
+        const maxDim = 130;
+
+
+
+        if (baseW > maxDim || baseH > maxDim) {
+
+          const ratio = Math.min(maxDim / baseW, maxDim / baseH);
+
+          baseW *= ratio;
+
+          baseH *= ratio;
+
+        }
+
+
+
+        const finalW = baseW * scaleFactor;
+
+        const finalH = baseH * scaleFactor;
+
+        const leftEdge = -finalW / 2;
+
+        const topEdge = -finalH / 2;
+
+
+
+        if (frameState) {
+
+          let slotsToDraw: any[] = [];
+
+          if (frameState.elmId === 24) {
+
+            slotsToDraw = [
+
+              { url: frameState.slots[0], l: 0.070, t: 0.020, w: 0.845, h: 0.265 }, // Slot atas disesuaikan presisi
+
+              { url: frameState.slots[1], l: 0.070, t: 0.299, w: 0.850, h: 0.275 },
+
+              { url: frameState.slots[2], l: 0.080, t: 0.560, w: 0.840, h: 0.270 },
+
+            ];
+
+          } else if (frameState.elmId === 25) {
+
+            slotsToDraw = [
+
+              { url: frameState.slots[0], l: 0.055, t: 0.035, w: 0.885, h: 0.435 },
+
+            ];
+
+          }
+
+
+
+          for (const slot of slotsToDraw) {
+
+            if (slot.url) {
+
+              const slotImg = await loadImage(slot.url);
+
+              if (slotImg) {
+
+                const slotX = leftEdge + (slot.l * finalW);
+
+                const slotY = topEdge + (slot.t * finalH);
+
+                const slotW = slot.w * finalW;
+
+                const slotH = slot.h * finalH;
+
+                drawObjectCover(ctx, slotImg, slotX, slotY, slotW, slotH);
+
               }
-              if (sIdx === 1) {
-                slotOffsetX = -1;
-                slotOffsetY = -25;
-                boxW = 84;
-                boxH = 79;
-              }
-              if (sIdx === 2) {
-                slotOffsetX = -1;
-                slotOffsetY = 53;
-                boxW = 84;
-                boxH = 79;
-              }
-            } else if (frameState.elmId === 25) {
-              slotOffsetY = -64;
-              boxW = 104;
-              boxH = 108;
+
             }
 
-            allExportItems.push({
-              content: imgUrl,
-              x: l.x + slotOffsetX,
-              y: l.y + slotOffsetY,
-              scale: l.scale,
-              rotation: l.rotation,
-              opacity: 1,
-              zIndex: l.zIndex - 0.1,
-              isCover: true,
-              width: boxW,
-              height: boxH,
-            });
-          }
-        });
-      }
-      allExportItems.push(l);
-    });
-
-    allExportItems.sort((a, b) => a.zIndex - b.zIndex);
-
-    let loadedCount = 0;
-    if (allExportItems.length === 0) return;
-
-    allExportItems.forEach((item) => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.src = item.content;
-      img.onload = () => {
-        ctx.save();
-        ctx.translate(item.x * 2, item.y * 2);
-        ctx.rotate((item.rotation * Math.PI) / 180);
-        ctx.globalAlpha = item.opacity;
-
-        if (item.isCover && item.width && item.height) {
-          const targetW = item.width * 2 * item.scale;
-          const targetH = item.height * 2 * item.scale;
-          const imgAspect = img.width / img.height;
-          const boxAspect = targetW / targetH;
-
-          let renderW = targetW;
-          let renderH = targetH;
-          let offsetX = -targetW / 2;
-          let offsetY = -targetH / 2;
-
-          if (imgAspect > boxAspect) {
-            renderW = targetH * imgAspect;
-            offsetX = -renderW / 2;
-          } else {
-            renderH = targetW / imgAspect;
-            offsetY = -targetH / 2;
           }
 
-          ctx.beginPath();
-          ctx.rect(-targetW / 2, -targetH / 2, targetW, targetH);
-          ctx.clip();
-          ctx.drawImage(img, offsetX, offsetY, renderW, renderH);
-        } else {
-          const w = img.width * item.scale * 0.4;
-          const h = img.height * item.scale * 0.4;
-          ctx.drawImage(img, -w / 2, -h / 2, w, h);
         }
+
+
+
+        ctx.drawImage(frameImg, leftEdge, topEdge, finalW, finalH);
 
         ctx.restore();
 
-        loadedCount++;
-        if (loadedCount === allExportItems.length) {
-          const link = document.createElement('a');
-          link.download = `custom-design-${Date.now()}.png`;
-          link.href = canvas.toDataURL('image/png');
-          link.click();
-        }
-      };
-    });
-  };
+      }
 
-  const handleWhatsApp = () => {
-    const message = encodeURIComponent(`Halo, saya ingin memesan Custom Phone Case dengan catatan: ${noteInput || 'Tidak ada catatan'}`);
-    window.open(`https://wa.me/6281234567890?text=${message}`, '_blank');
-  };
 
-  const stickersList = Array.from({ length: 35 }, (_, i) => ({
-    id: i + 1,
-    src: `/elm${i + 1}.png`,
-  }));
+
+      const link = document.createElement('a');
+
+      link.download = `custom-case-design-${Date.now()}.png`;
+
+      link.href = canvas.toDataURL('image/png');
+
+      link.click();
+
+
+
+    } catch (error) {
+
+      console.error('Gagal memproses desain:', error);
+
+      alert('Gagal mengekspor gambar.');
+
+    } finally {
+
+      setSelectedLayerId(prevSelected);
+
+    }
+
+  };
+  const handleWhatsAppOrder = () => {
+    const phoneNumber = "62881025376311";
+    const message = `Halo, saya ingin memesan Custom Phone Case. Berikut adalah desain saya:`;
+    window.open(`https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`, "_blank");
+  };
 
   return (
-    <div className="min-h-screen bg-black text-white p-4 md:p-8 flex flex-col items-center font-sans relative selection:bg-pink-500 selection:text-black">
-      <input
-        type="file"
-        accept="image/*"
-        ref={fileInputRef}
-        onChange={handleImageUpload}
-        className="hidden"
-      />
-
-      <div className="w-full max-w-5xl flex justify-between items-center mb-6 border-b border-neutral-900 pb-3">
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-pink-400 animate-pulse" />
-          <span className="text-xs md:text-sm font-black tracking-widest text-pink-400">
-            LLOVEDBYUS DESIGN STUDIO
-          </span>
-        </div>
-        {onClose && (
-          <button
-            onClick={onClose}
-            className="text-xs uppercase tracking-wider bg-neutral-900 hover:bg-neutral-800 text-neutral-300 px-3.5 py-1.5 rounded-lg border border-neutral-800 transition-all flex items-center gap-1.5"
-          >
-            ✕ TUTUP STUDIO
-          </button>
-        )}
+    <div style={{ width: "100%", maxWidth: "850px", margin: "0 auto", padding: "20px 10px", color: "#f4f4f5", fontFamily: "sans-serif", boxSizing: "border-box" }}>
+      
+      <div style={{ textAlign: "center", marginBottom: "25px" }}>
+        <h2 style={{ fontSize: "26px", fontWeight: "900", textTransform: "uppercase", fontStyle: "italic", letterSpacing: "1px", margin: 0 }}>
+          Customize <span style={{ background: "linear-gradient(to right, #f4f4f5, #f472b6, #a1a1aa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{productTitle} {isTshirt ? `(${tshirtStyle})` : ""}</span>
+        </h2>
       </div>
 
-      <h1 className="text-xl md:text-3xl font-black italic tracking-wider mb-8 text-center bg-gradient-to-r from-white via-neutral-200 to-pink-400 bg-clip-text text-transparent">
-        {productTitle || 'Custom Phone Case'}
-      </h1>
-
-      <div className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* PREVIEW KIRI */}
-        <div className="lg:col-span-5 bg-neutral-950 border border-neutral-800 rounded-2xl p-6 flex flex-col items-center justify-center relative min-h-[550px] shadow-2xl">
-          <div
-            ref={containerRef}
-            onMouseMove={(e) => handleMove(e.clientX, e.clientY)}
-            onMouseUp={handleEnd}
-            onMouseLeave={handleEnd}
-            onWheel={handleWheel}
-            onTouchStart={(e) => {
-              if (e.touches.length === 1) {
-                handleStart(e.touches[0].clientX, e.touches[0].clientY, selectedLayerId || '', e);
-              }
+      <div style={{ display: "flex", flexDirection: "row", gap: "20px", alignItems: "flex-start", justifyContent: "center", flexWrap: "wrap" }}>
+        
+        <div style={{ width: "280px", backgroundColor: "#121318", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "20px", padding: "12px", display: "flex", flexDirection: "column", alignItems: "center", position: "relative", boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.5)", boxSizing: "border-box" }}>
+          
+          <div 
+            ref={mockupRef}
+            style={{ 
+              width: "256px", 
+              height: "400px", 
+              backgroundColor: "transparent", 
+              borderRadius: "14px", 
+              position: "relative", 
+              display: "flex", 
+              alignItems: "center", 
+              justifyContent: "center", 
+              touchAction: "none" 
             }}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleEnd}
-            className="relative w-[300px] h-[440px] flex items-center justify-center overflow-hidden select-none touch-none rounded-xl bg-neutral-900"
           >
-            <img
-              src={currentMockup.bg}
-              alt="Mockup Background"
-              className="absolute inset-0 w-full h-full object-contain pointer-events-none z-0"
-            />
+            
+            {isPhoneCase && activeTab === "template" ? (
+              <div 
+                style={{ 
+                  position: "absolute", 
+                  inset: 0, 
+                  width: "100%", 
+                  height: "100%", 
+                  zIndex: 20,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center"
+                }}
+              >
+                <img 
+                  src={`/template-${selectedTemplate}.png`} 
+                  alt={`Template ${selectedTemplate}`} 
+                  style={{ 
+                    width: "100%", 
+                    height: "100%", 
+                    objectFit: "contain",
+                    borderRadius: "14px"
+                  }} 
+                />
+              </div>
+            ) : (
+              <>
+                <img 
+                  src={mockupBase} 
+                  alt="Mockup Base" 
+                  style={{ 
+                    position: "absolute", 
+                    inset: 0, 
+                    width: "100%", 
+                    height: "100%", 
+                    objectFit: "contain", 
+                    zIndex: 10, 
+                    pointerEvents: "none" 
+                  }}
+                />
 
-            <div className="absolute inset-0 z-10 flex items-center justify-center">
-              {layers.map((layer) => {
-                const isSelected = selectedLayerId === layer.id;
-                const frameState = activeFrames.find((f) => f.frameInstanceId === layer.id);
+                <div 
+                  style={{
+                    position: "absolute",
+                    top: isPhoneCase ? "27px" : "85px",
+                    left: isPhoneCase ? "41px" : "55px",
+                    width: isPhoneCase ? "174px" : "146px",
+                    height: isPhoneCase ? "346px" : "235px",
+                    zIndex: 15,
+                    clipPath: isPhoneCase 
+                      ? "path('M 15 0 L 158 0 C 166 0 174 8 174 16 L 174 330 C 174 338 166 346 158 346 L 15 346 C 7 346 0 338 0 330 L 0 16 C 0 8 7 0 15 0 Z')" 
+                      : "inset(0px round 6px)",
+                    overflow: "hidden",
+                    touchAction: "none"
+                  }}
+                  onWheel={handleWheel}
+                  onTouchStart={handleTouchStartContainer}
+                  onClick={() => {
+                    setActiveSelection(null);
+                  }}
+                >
+                  {uploadedImage && (
+                    <div 
+                      style={{ 
+                        position: "absolute", 
+                        inset: 0, 
+                        cursor: "grab", 
+                        display: "flex", 
+                        alignItems: "center", 
+                        justifyContent: "center", 
+                        touchAction: "none" 
+                      }}
+                      onMouseDown={(e) => handleStartDragPhoto(e.clientX, e.clientY, e)}
+                      onTouchStart={(e) => { 
+                        if (e.touches.length === 1 && e.touches[0]) {
+                          handleStartDragPhoto(e.touches[0].clientX, e.touches[0].clientY, e);
+                        }
+                      }}
+                    >
+                      <img 
+                        src={uploadedImage} 
+                        alt="Uploaded Custom" 
+                        style={{
+                          transform: `translate(${position.x}px, ${position.y}px) scale(${scale}) rotate(${rotation}deg)`,
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                          pointerEvents: "none",
+                          userSelect: "none"
+                        }}
+                      />
+                    </div>
+                  )}
 
-                return (
-                  <div
-                    key={layer.id}
-                    onMouseDown={(e) => handleStart(e.clientX, e.clientY, layer.id, e)}
-                    style={{
-                      position: 'absolute',
-                      left: `${layer.x}px`,
-                      top: `${layer.y}px`,
-                      transform: `translate(-50%, -50%) rotate(${layer.rotation}deg) scale(${layer.scale})`,
-                      opacity: layer.opacity,
-                      zIndex: layer.zIndex,
-                      cursor: isDragging ? 'grabbing' : 'grab',
-                    }}
-                    className="p-1 transition-all"
-                  >
-                    {frameState && (
-                      <div className="absolute inset-0 pointer-events-auto z-0">
-                        {frameState.elmId === 24 && (
-                          <>
-                            {/* Kotak Atas */}
-                            <div 
-                              className="absolute flex items-center justify-center overflow-hidden bg-neutral-900 rounded-[1px]"
-                              style={{ top: FRAME24_PIXELS[0].top, left: FRAME24_PIXELS[0].left, width: FRAME24_PIXELS[0].width, height: FRAME24_PIXELS[0].height }}
-                            >
-                              {frameState.slots[0] ? (
-                                <img src={frameState.slots[0]} alt="Slot 0" className="absolute inset-0 w-full h-full object-cover" />
-                              ) : (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setUploadTarget({ frameInstanceId: layer.id, slotIdx: 0 });
-                                    fileInputRef.current?.click();
-                                  }}
-                                  className="bg-pink-500 hover:bg-pink-600 text-white rounded-full p-1 shadow transition-transform hover:scale-110 flex items-center justify-center z-10"
-                                >
-                                  <Plus className="w-2.5 h-2.5 stroke-[3]" />
-                                </button>
-                              )}
-                            </div>
-                            {/* Kotak Tengah */}
-                            <div 
-                              className="absolute flex items-center justify-center overflow-hidden bg-neutral-900 rounded-[1px]"
-                              style={{ top: FRAME24_PIXELS[1].top, left: FRAME24_PIXELS[1].left, width: FRAME24_PIXELS[1].width, height: FRAME24_PIXELS[1].height }}
-                            >
-                              {frameState.slots[1] ? (
-                                <img src={frameState.slots[1]} alt="Slot 1" className="absolute inset-0 w-full h-full object-cover" />
-                              ) : (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setUploadTarget({ frameInstanceId: layer.id, slotIdx: 1 });
-                                    fileInputRef.current?.click();
-                                  }}
-                                  className="bg-pink-500 hover:bg-pink-600 text-white rounded-full p-1 shadow transition-transform hover:scale-110 flex items-center justify-center z-10"
-                                >
-                                  <Plus className="w-2.5 h-2.5 stroke-[3]" />
-                                </button>
-                              )}
-                            </div>
-                            {/* Kotak Bawah */}
-                            <div 
-                              className="absolute flex items-center justify-center overflow-hidden bg-neutral-900 rounded-[1px]"
-                              style={{ top: FRAME24_PIXELS[2].top, left: FRAME24_PIXELS[2].left, width: FRAME24_PIXELS[2].width, height: FRAME24_PIXELS[2].height }}
-                            >
-                              {frameState.slots[2] ? (
-                                <img src={frameState.slots[2]} alt="Slot 2" className="absolute inset-0 w-full h-full object-cover" />
-                              ) : (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setUploadTarget({ frameInstanceId: layer.id, slotIdx: 2 });
-                                    fileInputRef.current?.click();
-                                  }}
-                                  className="bg-pink-500 hover:bg-pink-600 text-white rounded-full p-1 shadow transition-transform hover:scale-110 flex items-center justify-center z-10"
-                                >
-                                  <Plus className="w-2.5 h-2.5 stroke-[3]" />
-                                </button>
-                              )}
-                            </div>
-                          </>
-                        )}
+                  {placedElements.map((el) => {
+                    const isActive = activeSelection === el.id;
+                    const isElm24 = el.src.includes("elm24.png");
+                    const isElm25 = el.src.includes("elm25.png");
+                    const isElm32 = el.src.includes("elm32.png");
 
-                        {frameState.elmId === 25 && (
-                          <div className="absolute top-[6.2%] left-[10.2%] w-[79.5%] h-[42.6%] flex items-center justify-center overflow-hidden bg-neutral-900 rounded-[2px]">
-                            {frameState.slots[0] ? (
-                              <img src={frameState.slots[0]} alt="Slot 0" className="absolute inset-0 w-full h-full object-cover" />
-                            ) : (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setUploadTarget({ frameInstanceId: layer.id, slotIdx: 0 });
-                                  fileInputRef.current?.click();
-                                }}
-                                className="bg-pink-500 hover:bg-pink-600 text-white rounded-full p-1 shadow transition-transform hover:scale-110 flex items-center justify-center z-10"
-                              >
-                                <Plus className="w-3 h-3 stroke-[3]" />
-                              </button>
-                            )}
+                    const boxWidth = isElm24 ? "85px" : isElm25 ? "110px" : isElm32 ? "90px" : "100px";
+                    const boxHeight = isElm24 ? "210px" : isElm25 ? "145px" : isElm32 ? "125px" : "100px";
+
+                    return (
+                      <div
+                        key={el.id}
+                        onMouseDown={(e) => handleStartDragElement(el.id, e.clientX, e.clientY, e)}
+                        onTouchStart={(e) => {
+                          if (e.touches.length === 1 && e.touches[0]) {
+                            handleStartDragElement(el.id, e.touches[0].clientX, e.touches[0].clientY, e);
+                          }
+                        }}
+                        style={{
+                          position: "absolute",
+                          left: `${el.x}px`,
+                          top: `${el.y}px`,
+                          width: boxWidth,
+                          height: boxHeight,
+                          transform: `scale(${el.scale}) rotate(${el.rotation}deg)`,
+                          zIndex: 25,
+                          cursor: "grab",
+                          touchAction: "none"
+                        }}
+                      >
+                        {/* 1. ELM 24 (POSISI SLOT TETEP AKURAT SESUAI PERMINTAAN) */}
+                        {isElm24 && (
+                          <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "auto" }}>
+                            {[1, 2, 3].map((slotIdx) => {
+                              const topPos = slotIdx === 1 ? "1%" : slotIdx === 2 ? "29.5%" : "58%";
+                              const slotImg = el.slotImages?.[slotIdx];
+                              const slotT = el.slotTransforms?.[slotIdx] || { x: 0, y: 0, scale: 1 };
+
+                              return (
+                                <div 
+                                  key={slotIdx}
+                                  onWheel={(e) => slotImg && handleSlotWheel(el.id, slotIdx, e)}
+                                  onMouseDown={(e) => slotImg && handleStartSlotDrag(el.id, slotIdx, e.clientX, e.clientY, e)}
+                                  onTouchStart={(e) => {
+                                    if (slotImg && e.touches.length === 1 && e.touches[0]) {
+                                      handleStartSlotDrag(el.id, slotIdx, e.touches[0].clientX, e.touches[0].clientY, e);
+                                    }
+                                  }}
+                                  style={{ position: "absolute", top: topPos, left: "6%", right: "6%", height: "29.5%", backgroundColor: "#18181b", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", cursor: slotImg ? "grab" : "default" }}
+                                >
+                                  {slotImg ? (
+                                    <img 
+                                      src={slotImg} 
+                                      alt={`slot ${slotIdx}`} 
+                                      style={{ 
+                                        width: "100%", 
+                                        height: "100%", 
+                                        objectFit: "cover",
+                                        transform: `translate(${slotT.x}px, ${slotT.y}px) scale(${slotT.scale})`,
+                                        pointerEvents: "none" 
+                                      }} 
+                                    />
+                                  ) : (
+                                    <label style={{ cursor: "pointer", color: "#f472b6", fontSize: "16px", fontWeight: "bold" }}>
+                                      +
+                                      <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => handleSlotImageUpload(el.id, slotIdx, e)} />
+                                    </label>
+                                  )}
+                                </div>
+                              );
+                            })}
                           </div>
                         )}
+
+                        {/* 2. ELM 25 (POSISI SLOT TETEP AKURAT SESUAI PERMINTAAN) */}
+                        {isElm25 && (
+                          <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "auto" }}>
+                            {(() => {
+                              const slotImg = el.slotImages?.[1];
+                              const slotT = el.slotTransforms?.[1] || { x: 0, y: 0, scale: 1 };
+                              return (
+                                <div 
+                                  onWheel={(e) => slotImg && handleSlotWheel(el.id, 1, e)}
+                                  onMouseDown={(e) => slotImg && handleStartSlotDrag(el.id, 1, e.clientX, e.clientY, e)}
+                                  onTouchStart={(e) => {
+                                    if (slotImg && e.touches.length === 1 && e.touches[0]) {
+                                      handleStartSlotDrag(el.id, 1, e.touches[0].clientX, e.touches[0].clientY, e);
+                                    }
+                                  }}
+                                  style={{ position: "absolute", top: "2%", left: "14%", right: "14%", height: "46%", backgroundColor: "#18181b", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", cursor: slotImg ? "grab" : "default" }}
+                                >
+                                  {slotImg ? (
+                                    <img 
+                                      src={slotImg} 
+                                      alt="slot 1" 
+                                      style={{ 
+                                        width: "100%", 
+                                        height: "100%", 
+                                        objectFit: "cover",
+                                        transform: `translate(${slotT.x}px, ${slotT.y}px) scale(${slotT.scale})`,
+                                        pointerEvents: "none" 
+                                      }} 
+                                    />
+                                  ) : (
+                                    <label style={{ cursor: "pointer", color: "#f472b6", fontSize: "18px", fontWeight: "bold" }}>
+                                      +
+                                      <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => handleSlotImageUpload(el.id, 1, e)} />
+                                    </label>
+                                  )}
+                                </div>
+                              );
+                            })()}
+                          </div>
+                        )}
+
+                        {/* 3. ELM 32 (POSISI SLOT TETEP AKURAT SESUAI PERMINTAAN) */}
+                        {isElm32 && (
+                          <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "auto" }}>
+                            {(() => {
+                              const slotImg = el.slotImages?.[1];
+                              const slotT = el.slotTransforms?.[1] || { x: 0, y: 0, scale: 1 };
+                              return (
+                                <div 
+                                  onWheel={(e) => slotImg && handleSlotWheel(el.id, 1, e)}
+                                  onMouseDown={(e) => slotImg && handleStartSlotDrag(el.id, 1, e.clientX, e.clientY, e)}
+                                  onTouchStart={(e) => {
+                                    if (slotImg && e.touches.length === 1 && e.touches[0]) {
+                                      handleStartSlotDrag(el.id, 1, e.touches[0].clientX, e.touches[0].clientY, e);
+                                    }
+                                  }}
+                                  style={{ position: "absolute", top: "20%", left: "18%", right: "18%", height: "45%", backgroundColor: "#18181b", borderRadius: "50%", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", cursor: slotImg ? "grab" : "default" }}
+                                >
+                                  {slotImg ? (
+                                    <img 
+                                      src={slotImg} 
+                                      alt="slot 1" 
+                                      style={{ 
+                                        width: "100%", 
+                                        height: "100%", 
+                                        objectFit: "cover",
+                                        transform: `translate(${slotT.x}px, ${slotT.y}px) scale(${slotT.scale})`,
+                                        pointerEvents: "none" 
+                                      }} 
+                                    />
+                                  ) : (
+                                    <label style={{ cursor: "pointer", color: "#f472b6", fontSize: "18px", fontWeight: "bold" }}>
+                                      +
+                                      <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => handleSlotImageUpload(el.id, 1, e)} />
+                                    </label>
+                                  )}
+                                </div>
+                              );
+                            })()}
+                          </div>
+                        )}
+
+                        {/* Gambar Bingkai Utama PNG / Stiker Lain */}
+                        <img 
+                          src={el.src} 
+                          alt="element frame" 
+                          style={{ 
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            width: "100%", 
+                            height: "100%", 
+                            objectFit: "contain", 
+                            pointerEvents: "none",
+                            transform: `scaleX(${el.flipX ? -1 : 1}) scaleY(${el.flipY ? -1 : 1})`,
+                            zIndex: 2
+                          }} 
+                        />
+
+                        {isActive && (
+                          <button
+                            onClick={(e) => handleRemoveElement(el.id, e)}
+                            style={{
+                              position: "absolute",
+                              top: "-4px",
+                              right: "-4px",
+                              width: "20px",
+                              height: "20px",
+                              borderRadius: "50%",
+                              backgroundColor: "#f472b6",
+                              color: "#09090b",
+                              border: "none",
+                              fontSize: "11px",
+                              fontWeight: "900",
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              zIndex: 50,
+                              boxShadow: "0 2px 4px rgba(0,0,0,0.4)"
+                            }}
+                            title="Hapus"
+                          >
+                            ×
+                          </button>
+                        )}
                       </div>
-                    )}
+                    );
+                  })}
+                </div>
 
-                    <img
-                      src={layer.content}
-                      alt="Design Element"
-                      className="relative max-w-[150px] max-h-[150px] object-contain pointer-events-none drop-shadow-lg z-10"
-                    />
+                {mockupTp && (
+                  <img 
+                    src={mockupTp} 
+                    alt="Mockup Overlay" 
+                    style={{ 
+                      position: "absolute", 
+                      inset: 0, 
+                      width: "100%", 
+                      height: "100%", 
+                      objectFit: "contain", 
+                      zIndex: 35, 
+                      pointerEvents: "none" 
+                    }}
+                  />
+                )}
+              </>
+            )}
 
-                    {isSelected && (
-                      <button
-                        title="Hapus"
-                        onClick={(e) => removeLayerById(layer.id, e)}
-                        className="absolute -top-3 -right-3 bg-red-500 hover:bg-red-600 text-white p-1.5 rounded-full shadow-lg z-30 flex items-center justify-center"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
-            <img
-              src={currentMockup.fg}
-              alt="Mockup Foreground Transparent"
-              className="absolute inset-0 w-full h-full object-contain pointer-events-none z-20"
-            />
           </div>
+
         </div>
 
-        {/* PANEL KANAN */}
-        <div className="lg:col-span-7 flex flex-col gap-6">
-          <div className="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-4 flex gap-4">
-            <button
-              onClick={() => setActiveTab('upload')}
-              className={`flex-1 font-black py-3.5 px-6 rounded-xl text-center transition-all shadow-lg text-sm tracking-wide flex items-center justify-center gap-2 ${
-                activeTab === 'upload'
-                  ? 'bg-pink-400 text-black shadow-pink-500/20'
-                  : 'bg-neutral-900 text-neutral-400 hover:text-white border border-neutral-800'
-              }`}
-            >
-              <Upload className="w-4 h-4 stroke-[2.5]" />
-              UPLOAD FOTO
-            </button>
-            <button
-              onClick={() => {
-                setActiveTab('template');
-                if (selectedTemplateId === null) setSelectedTemplateId(1);
-              }}
-              className={`flex-1 font-black py-3.5 px-6 rounded-xl text-center transition-all text-sm tracking-wide flex items-center justify-center gap-2 border ${
-                activeTab === 'template'
-                  ? 'bg-pink-400 text-black border-pink-400 shadow-lg'
-                  : 'bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border-neutral-700'
-              }`}
-            >
-              <ImageIcon className="w-4 h-4" />
-              TEMPLATE
-            </button>
-          </div>
-
-          {activeTab === 'upload' ? (
-            <div className="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-5 flex flex-col gap-4">
-              <h3 className="text-xs font-black tracking-widest text-neutral-300 uppercase flex items-center gap-2">
-                <FileText className="w-3.5 h-3.5 text-pink-400" /> UPLOAD FOTO UTAMA
-              </h3>
-              <label className="bg-neutral-950 border border-neutral-800 hover:border-pink-500 rounded-xl p-4 flex items-center justify-between cursor-pointer transition-all group">
-                <span className="text-xs text-neutral-400 group-hover:text-white">Choose File No file chosen</span>
-                <span className="bg-neutral-900 text-neutral-300 text-xs px-4 py-2 rounded-lg font-bold group-hover:bg-pink-400 group-hover:text-black transition-colors">
-                  Browse
-                </span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
+        <div style={{ flex: "1", minWidth: "280px", display: "flex", flexDirection: "column", gap: "14px" }}>
+          
+          {isTshirt && (
+            <div style={{ backgroundColor: "#121318", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "14px", padding: "14px" }}>
+              <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase", marginBottom: "8px" }}>
+                Pilih Model & Warna Kaos
               </label>
-
-              {currentUploadedImage && (
-                <div className="flex gap-2 mt-1">
-                  <button
-                    onClick={handleRemoveBackground}
-                    disabled={isRemovingBg}
-                    className="flex-1 bg-pink-500/10 hover:bg-pink-500/20 border border-pink-500/30 text-pink-400 font-bold py-2.5 px-4 rounded-xl text-xs transition-all flex items-center justify-center gap-2"
-                  >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    {isRemovingBg ? 'AI Processing Background...' : 'Hapus Background AI Otomatis'}
-                  </button>
-                  <button
-                    onClick={handleResetBackground}
-                    title="Reset Background"
-                    className="bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-neutral-300 p-2.5 rounded-xl transition-all"
-                  >
-                    <RefreshCw className="w-4 h-4" />
-                  </button>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-5 flex flex-col gap-4">
-              <h3 className="text-xs font-black tracking-widest text-neutral-300 uppercase flex items-center gap-2">
-                <ImageIcon className="w-3.5 h-3.5 text-pink-400" /> PILIH 4 TEMPLATE SIAP PAKAI
-              </h3>
-              <div className="grid grid-cols-4 gap-3">
-                {[1, 2, 3, 4].map((num) => (
-                  <button
-                    key={num}
-                    onClick={() => setSelectedTemplateId(num)}
-                    className={`bg-neutral-950 border rounded-xl h-24 flex flex-col items-center justify-center p-2 transition-all relative group ${
-                      selectedTemplateId === num
-                        ? 'border-pink-500 ring-2 ring-pink-500/50 bg-pink-500/10'
-                        : 'border-neutral-800 hover:border-neutral-600'
-                    }`}
-                  >
-                    <img
-                      src={`/template-${num}.png`}
-                      alt={`Template ${num}`}
-                      className="max-h-16 max-w-full object-contain pointer-events-none group-hover:scale-105 transition-transform"
-                    />
-                  </button>
-                ))}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "6px" }}>
+                <button
+                  onClick={() => setTshirtStyle("white")}
+                  style={{
+                    padding: "10px 4px",
+                    borderRadius: "10px",
+                    fontSize: "9px",
+                    fontWeight: "900",
+                    textTransform: "uppercase",
+                    cursor: "pointer",
+                    border: tshirtStyle === "white" ? "1px solid #f472b6" : "1px solid rgba(255,255,255,0.1)",
+                    background: tshirtStyle === "white" ? "#f4f4f5" : "#18181b",
+                    color: tshirtStyle === "white" ? "#09090b" : "#a1a1aa",
+                    transition: "all 0.3s ease"
+                  }}
+                >
+                  White
+                </button>
+                <button
+                  onClick={() => setTshirtStyle("black")}
+                  style={{
+                    padding: "10px 4px",
+                    borderRadius: "10px",
+                    fontSize: "9px",
+                    fontWeight: "900",
+                    textTransform: "uppercase",
+                    cursor: "pointer",
+                    border: tshirtStyle === "black" ? "1px solid #f472b6" : "1px solid rgba(255,255,255,0.1)",
+                    background: tshirtStyle === "black" ? "#27272a" : "#18181b",
+                    color: tshirtStyle === "black" ? "#fff" : "#a1a1aa",
+                    transition: "all 0.3s ease"
+                  }}
+                >
+                  Black
+                </button>
+                <button
+                  onClick={() => setTshirtStyle("croptop")}
+                  style={{
+                    padding: "10px 4px",
+                    borderRadius: "10px",
+                    fontSize: "9px",
+                    fontWeight: "900",
+                    textTransform: "uppercase",
+                    cursor: "pointer",
+                    border: tshirtStyle === "croptop" ? "1px solid #f472b6" : "1px solid rgba(255,255,255,0.1)",
+                    background: tshirtStyle === "croptop" ? "#f472b6" : "#18181b",
+                    color: tshirtStyle === "croptop" ? "#09090b" : "#a1a1aa",
+                    transition: "all 0.3s ease"
+                  }}
+                >
+                  Crop Top
+                </button>
               </div>
             </div>
           )}
 
-          <div className="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-5 flex flex-col gap-3">
-            <h3 className="text-xs font-black tracking-widest text-neutral-300 uppercase flex items-center gap-2">
-              <Sparkles className="w-3.5 h-3.5 text-pink-400" /> TAMBAH STIKER & FRAME
-            </h3>
-            <div className="grid grid-cols-3 gap-3 max-h-[260px] overflow-y-auto pr-1">
-              {stickersList.map((stiker) => (
-                <button
-                  key={stiker.id}
-                  onClick={() => addStickerToCanvas(stiker.src, stiker.id)}
-                  className="bg-neutral-950 border border-neutral-800 hover:border-pink-500 rounded-xl h-24 flex flex-col items-center justify-center relative transition-all group shadow-inner p-2"
-                >
-                  <img
-                    src={stiker.src}
-                    alt="Sticker Icon"
-                    className="max-h-16 max-w-full object-contain pointer-events-none group-hover:scale-110 transition-transform"
-                    onError={(e) => {
-                      (e.target as HTMLElement).style.display = 'none';
-                    }}
-                  />
-                </button>
-              ))}
+          {isPhoneCase && (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", backgroundColor: "#18181b", padding: "5px", borderRadius: "14px", border: "1px solid rgba(255,255,255,0.1)" }}>
+              <button
+                onClick={() => setActiveTab("edit")}
+                style={{
+                  padding: "10px",
+                  borderRadius: "10px",
+                  fontSize: "10px",
+                  fontWeight: "900",
+                  textTransform: "uppercase",
+                  border: "none",
+                  cursor: "pointer",
+                  backgroundColor: activeTab === "edit" ? "#f472b6" : "transparent",
+                  color: activeTab === "edit" ? "#09090b" : "#a1a1aa",
+                  transition: "all 0.2s"
+                }}
+              >
+                Upload Foto
+              </button>
+              <button
+                onClick={() => setActiveTab("template")}
+                style={{
+                  padding: "10px",
+                  borderRadius: "10px",
+                  fontSize: "10px",
+                  fontWeight: "900",
+                  textTransform: "uppercase",
+                  border: "none",
+                  cursor: "pointer",
+                  backgroundColor: activeTab === "template" ? "#f472b6" : "transparent",
+                  color: activeTab === "template" ? "#09090b" : "#a1a1aa",
+                  transition: "all 0.2s"
+                }}
+              >
+                Template
+              </button>
             </div>
-          </div>
+          )}
 
-          <div className="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-5 flex flex-col gap-3">
-            <h3 className="text-xs font-black tracking-widest text-neutral-300 uppercase">
-              CATATAN / UKURAN & DETAIL
-            </h3>
-            <input
-              type="text"
-              placeholder="Contoh: iPhone 13 / Samsung S22"
-              value={noteInput}
-              onChange={(e) => setNoteInput(e.target.value)}
-              className="bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-pink-500 transition-colors"
+          {(!isPhoneCase || activeTab === "edit") && (
+            <div style={{ backgroundColor: "#121318", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "14px", padding: "16px", display: "flex", flexDirection: "column", gap: "14px" }}>
+              
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase" }}>
+                  Upload Foto Utama
+                </label>
+                <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                  <input 
+                    type="file" 
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    style={{ width: "100%", fontSize: "11px", color: "#a1a1aa" }}
+                  />
+                  {uploadedImage && (
+                    <button
+                      onClick={handleRemoveUploadedImage}
+                      style={{
+                        backgroundColor: "#27272a",
+                        color: "#f472b6",
+                        border: "1px solid rgba(244,114,182,0.3)",
+                        borderRadius: "8px",
+                        padding: "6px 12px",
+                        fontSize: "12px",
+                        fontWeight: "900",
+                        cursor: "pointer",
+                        whiteSpace: "nowrap"
+                      }}
+                      title="Hapus foto yang di-upload"
+                    >
+                      ✕ Hapus Foto
+                    </button>
+                  )}
+                </div>
+                {fileName && (
+                  <p style={{ fontSize: "10px", color: "#f472b6", fontWeight: "bold" }}>
+                    Foto terpilih: {fileName}
+                  </p>
+                )}
+
+                {uploadedImage && (
+                  <div style={{ display: "flex", gap: "6px", marginTop: "5px" }}>
+                    <button
+                      onClick={handleRemoveBackground}
+                      disabled={isRemovingBg}
+                      style={{
+                        flex: 1,
+                        padding: "10px",
+                        borderRadius: "10px",
+                        fontSize: "9px",
+                        fontWeight: "900",
+                        textTransform: "uppercase",
+                        backgroundColor: "#f472b6",
+                        color: "#09090b",
+                        border: "none",
+                        cursor: "pointer"
+                      }}
+                    >
+                      {isRemovingBg ? "Proses..." : "Hapus Background"}
+                    </button>
+                    <button
+                      onClick={handleResetBackground}
+                      style={{
+                        padding: "10px",
+                        borderRadius: "10px",
+                        fontSize: "9px",
+                        fontWeight: "bold",
+                        backgroundColor: "#27272a",
+                        color: "#a1a1aa",
+                        border: "none",
+                        cursor: "pointer"
+                      }}
+                    >
+                      Reset Background
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <hr style={{ border: "none", borderTop: "1px solid rgba(255,255,255,0.1)", margin: "4px 0" }} />
+
+              <div>
+                <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase", marginBottom: "8px" }}>
+                  TAMBAH STIKER & FRAME
+                </label>
+                <div style={{ maxHeight: "150px", overflowY: "auto", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px" }}>
+                  {Array.from({ length: 35 }, (_, i) => i + 1).map((num) => {
+                    const imageName = `elm${num}.png`;
+                    return (
+                      <div 
+                        key={num}
+                        onClick={() => handleAddElementToCase(imageName)}
+                        style={{ backgroundColor: "#18181b", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", padding: "6px", textAlign: "center", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                        title={`Klik pasang ${imageName}`}
+                      >
+                        <span style={{ fontSize: "9px", color: "#f472b6", marginRight: "4px" }}>{num}</span>
+                        <img src={`/${imageName}`} alt={`icon ${num}`} style={{ width: "30px", height: "30px", objectFit: "contain" }} onError={(e)=>{(e.target as HTMLElement).style.display='none'}} />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+            </div>
+          )}
+
+          {isPhoneCase && activeTab === "template" && (
+            <div style={{ backgroundColor: "#121318", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "14px", padding: "16px", display: "flex", flexDirection: "column", gap: "14px" }}>
+              <div>
+                <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase", marginBottom: "10px" }}>
+                  Pilih Template (1 - 4)
+                </label>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "8px" }}>
+                  {[1, 2, 3, 4].map((num) => (
+                    <button
+                      key={num}
+                      onClick={() => setSelectedTemplate(num)}
+                      style={{
+                        padding: "10px",
+                        borderRadius: "10px",
+                        fontSize: "10px",
+                        fontWeight: "900",
+                        textTransform: "uppercase",
+                        cursor: "pointer",
+                        border: selectedTemplate === num ? "1px solid #f472b6" : "1px solid rgba(255,255,255,0.1)",
+                        background: selectedTemplate === num ? "linear-gradient(to right, #f4f4f5, #f472b6)" : "#18181b",
+                        color: selectedTemplate === num ? "#09090b" : "#a1a1aa"
+                      }}
+                    >
+                      Template {num}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+            </div>
+          )}
+
+          <div style={{ backgroundColor: "#121318", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "14px", padding: "16px" }}>
+            <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase", marginBottom: "10px" }}>
+              Catatan / Ukuran & Detail
+            </label>
+            <input 
+              type="text" 
+              placeholder={isPhoneCase ? "Contoh: iPhone 13 / Samsung S22" : "Contoh: Size L / Warna Hitam"}
+              value={phoneModel}
+              onChange={(e) => setPhoneModel(e.target.value)}
+              style={{ width: "100%", backgroundColor: "#121318", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "10px", fontSize: "11px", color: "#f4f4f5", outline: "none", boxSizing: "border-box" }}
             />
           </div>
 
-          <button
-            onClick={handleDownload}
-            className="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-black py-3.5 px-4 rounded-xl text-center border border-neutral-700 transition-all text-xs tracking-widest flex items-center justify-center gap-2 shadow-lg"
-          >
-            <Download className="w-4 h-4" />
-            DOWNLOAD HASIL DESAIN (PNG)
-          </button>
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            <button 
+              onClick={handleDownloadDesign}
+              disabled={isDownloading}
+              style={{ width: "100%", background: "#27272a", color: "#f4f4f5", fontWeight: "900", padding: "12px", borderRadius: "14px", fontSize: "11px", textTransform: "uppercase", letterSpacing: "1px", border: "1px solid rgba(255,255,255,0.2)", cursor: "pointer" }}
+            >
+              {isDownloading ? "Menyimpan Gambar..." : "Download Hasil Desain (PNG)"}
+            </button>
 
-          <button
-            onClick={handleWhatsApp}
-            className="w-full bg-gradient-to-r from-pink-400 to-pink-500 hover:from-pink-500 hover:to-pink-600 text-black font-black py-4 px-4 rounded-xl text-center shadow-xl transition-all text-xs tracking-widest active:scale-95 flex items-center justify-center gap-2"
-          >
-            <MessageCircle className="w-4 h-4 fill-current" />
-            PESAN VIA WHATSAPP SEKARANG
-          </button>
+            <button 
+              onClick={handleWhatsAppOrder}
+              style={{ width: "100%", background: "linear-gradient(to right, #f4f4f5, #f472b6, #f4f4f5)", color: "#09090b", fontWeight: "900", padding: "14px", borderRadius: "14px", fontSize: "11px", textTransform: "uppercase", letterSpacing: "1px", border: "none", cursor: "pointer", boxShadow: "0 0 20px rgba(244,114,182,0.3)" }}
+            >
+              Pesan via WhatsApp Sekarang
+            </button>
+          </div>
+
         </div>
+
       </div>
     </div>
   );
