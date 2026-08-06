@@ -1319,7 +1319,7 @@ cursor: slotImg ? "grab" : "default"
                   TAMBAH STIKER & FRAME
                 </label>
                 <div style={{ maxHeight: "150px", overflowY: "auto", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px" }}>
-                  {Array.from({ length: 40 }, (_, i) => i + 1).map((num) => {
+                  {Array.from({ length: 55 }, (_, i) => i + 1).map((num) => {
                     const imageName = `elm${num}.png`;
                     return (
                       <div 
