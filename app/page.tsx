@@ -51,31 +51,31 @@ export default function Home() {
       id: 1, 
       name: "Custom Phone Case", 
       desc: "Protection case with custom photo support.", 
-      image: "/case.png" 
+      image: "products/case.png" 
     },
     { 
       id: 4, 
       name: "Custom T-Shirt", 
       desc: "Boxy fit premium cotton material.", 
-      image: "/t-shirt.png" 
+      image: "products/t-shirt.png" 
     },
     { 
       id: 2, 
       name: "Custom Sweatshirt", 
       desc: "Heavyweight cotton fleece material.", 
-      image: "/sweatshirt.png" 
+      image: "products/sweatshirt.png" 
     },
     { 
       id: 3, 
       name: "Custom Hoodie", 
       desc: "Cozy fleece hoodie with custom print.", 
-      image: "/hoodie.PNG" 
+      image: "products/hoodie.png" 
     },
     { 
       id: 5, 
       name: "Custom Tote Bag", 
       desc: "Sturdy canvas material with custom print.", 
-      image: "/totebag.png" 
+      image: "products/totebag.png" 
     },
   ];
 
@@ -95,7 +95,7 @@ export default function Home() {
       <div 
         className="fixed inset-0 w-full h-full -z-20 pointer-events-none"
         style={{
-          backgroundImage: "url('/background-web.png')",
+          backgroundImage: "url('backgrounds/background-web.png')",
           backgroundSize: "cover",
           backgroundPosition: "center",
           filter: "blur(12px) grayscale(100%) brightness(0.75)",
@@ -207,14 +207,22 @@ export default function Home() {
             LLOVEDBYUS STUDIO
           </span>
 
-          <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tight leading-[0.95] chrome-text italic">
-            Design It, <br />
-            Wear It, <br />
-            <span className="text-pink-300">Own It.</span>
+          <h1 className="text-5xl md:text-7xl font-black uppercase leading-[0.95] chrome-text italic">
+             <span className="tracking-[0.12em]"></span>
+            CUSTOM CULTURE <br />
+Be Uniq, <br />
+<span
+  className="italic chrome-text"
+  style={{
+    color: "#f472b6",
+    textShadow: "0 0 25px rgba(244,114,182,.6)"
+  }}
+>
+  Be You.</span>
           </h1>
 
           <p className="text-zinc-300 text-sm md:text-base max-w-md font-medium leading-relaxed drop-shadow">
-            Design custom phone cases, sweatshirts, hoodies, t-shirts, tote bags, and more products the way you want.
+            Design custom phone cases, casual wears, tote bags, and more products the way you want.
           </p>
 
           {/* TOMBOL BERUBAH MENJADI LINK SCROLL KE #products */}
@@ -223,7 +231,7 @@ export default function Home() {
               href="#products" 
               className="cute-click bg-gradient-to-r from-zinc-100 via-pink-200 to-zinc-200 hover:from-white hover:to-pink-100 text-zinc-950 font-black px-8 py-4 rounded-full text-xs uppercase tracking-widest shadow-[0_0_25px_rgba(244,114,182,0.3)] inline-block text-center cursor-pointer"
             >
-              Pick Product & Design
+              Pick Product & Start Design
             </a>
           </div>
         </div>
@@ -288,7 +296,7 @@ export default function Home() {
                 />
               </div>
               <h3 className="text-sm font-black uppercase tracking-wide text-zinc-200 group-hover:text-pink-300 transition text-center">{item.name}</h3>
-              <p className="text-xs text-zinc-400 text-center mt-1">{item.desc}</p>
+              <p className="text-xs text-zinc-400 text-center mt-1 min-h-[40px] flex items-center justify-center">{item.desc}</p>
               
               <span className="mt-3 text-[10px] font-extrabold bg-pink-500/10 text-pink-300 border border-pink-500/30 px-3 py-1 rounded-full uppercase tracking-widest group-hover:bg-pink-500 group-hover:text-zinc-950 transition">
                 Buka Studio Design
