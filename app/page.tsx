@@ -51,31 +51,31 @@ export default function Home() {
       id: 1, 
       name: "Custom Phone Case", 
       desc: "Protection case with custom photo support.", 
-      image: "products/case.png" 
+      image: "/products/case.png" 
     },
     { 
       id: 4, 
       name: "Custom T-Shirt", 
       desc: "Boxy fit premium cotton material.", 
-      image: "products/t-shirt.png" 
+      image: "/products/t-shirt.png" 
     },
     { 
       id: 2, 
       name: "Custom Sweatshirt", 
       desc: "Heavyweight cotton fleece material.", 
-      image: "products/sweatshirt.png" 
+      image: "/products/sweatshirt.png" 
     },
     { 
       id: 3, 
       name: "Custom Hoodie", 
       desc: "Cozy fleece hoodie with custom print.", 
-      image: "products/hoodie.png" 
+      image: "/products/hoodie.png" 
     },
     { 
       id: 5, 
       name: "Custom Tote Bag", 
       desc: "Sturdy canvas material with custom print.", 
-      image: "products/totebag.png" 
+      image: "/products/totebag.png" 
     },
   ];
 
@@ -339,7 +339,7 @@ Be Uniq, <br />
 
           {/* Instagram */}
           <a 
-            href="https://instagram.com/prellovedbyus" 
+            href="https://instagram.com/llovedbyus.co" 
             target="_blank" 
             rel="noopener noreferrer"
             className="cute-click group bg-[#121318]/80 backdrop-blur-md border border-zinc-800 hover:border-pink-500/60 rounded-3xl p-6 flex flex-col items-center transition-all duration-300 hover:shadow-[0_0_30px_rgba(244,114,182,0.15)]"
