@@ -61,24 +61,24 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
   const { mockupBase, mockupTp } = useMemo(() => {
     if (isPhoneCase) {
       return {
-        mockupBase: "/mockup-case.png",
-        mockupTp: "/mockup-case-transparent.png"
+        mockupBase: "/mockups/mockup-case.png",
+        mockupTp: "/mockups/mockup-case-transparent.png"
       };
     } else if (isTshirt) {
       if (tshirtStyle === "black") {
-        return { mockupBase: "/blackshirtmu.png", mockupTp: "/blackshirtmu-tp.png" };
+        return { mockupBase: "/mockups/blackshirtmu.png", mockupTp: "/mockups/blackshirtmu-tp.png" };
       } else if (tshirtStyle === "croptop") {
-        return { mockupBase: "/croptopmu.png", mockupTp: "/croptopmu-tp.png" };
+        return { mockupBase: "/mockups/croptopmu.png", mockupTp: "/mockups/croptopmu-tp.png" };
       }
-      return { mockupBase: "/t-shirtmu.png", mockupTp: "/t-shirtmu-tp.png" };
+      return { mockupBase: "/mockups/t-shirtmu.png", mockupTp: "/mockups/t-shirtmu-tp.png" };
     } else if (titleLower.includes("hoodie")) {
-      return { mockupBase: "/hoodiemu.png", mockupTp: "/hoodiemu-tp.png" };
+      return { mockupBase: "/mockups/hoodiemu.png", mockupTp: "/mockups/hoodiemu-tp.png" };
     } else if (titleLower.includes("sweatshirt")) {
-      return { mockupBase: "/sweatshirtmu.png", mockupTp: "/sweatshirtmu-tp.png" };
+      return { mockupBase: "/mockups/sweatshirtmu.png", mockupTp: "/mockups/sweatshirtmu-tp.png" };
     } else if (titleLower.includes("tote")) {
-      return { mockupBase: "/totebagmu.png", mockupTp: "/totebagmu-tp.png" };
+      return { mockupBase: "/mockups/totebagmu.png", mockupTp: "/mockups/totebagmu-tp.png" };
     }
-    return { mockupBase: "/mockup-case.png", mockupTp: "/mockup-case-transparent.png" };
+    return { mockupBase: "/mockups/mockup-case.png", mockupTp: "/mockups/mockup-case-transparent.png" };
   }, [isPhoneCase, isTshirt, tshirtStyle, titleLower]);
 
   useEffect(() => {
@@ -255,7 +255,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
   const handleAddElementToCase = (imageName: string) => {
     const newElement = {
       id: Date.now(),
-      src: `/${imageName}`,
+      src: `/elements/${imageName}`,
       x: 30,
       y: 30,
       scale: 1,
@@ -713,7 +713,7 @@ drawSlotImage(
                 }}
               >
                 <img 
-                  src={`/template-${selectedTemplate}.png`} 
+                  src={`/templates/template-${selectedTemplate}.png`}
                   alt={`Template ${selectedTemplate}`} 
                   style={{ 
                     width: "100%", 
@@ -1329,7 +1329,7 @@ cursor: slotImg ? "grab" : "default"
                         title={`Klik pasang ${imageName}`}
                       >
                         <span style={{ fontSize: "9px", color: "#f472b6", marginRight: "4px" }}>{num}</span>
-                        <img src={`/${imageName}`} alt={`icon ${num}`} style={{ width: "30px", height: "30px", objectFit: "contain" }} onError={(e)=>{(e.target as HTMLElement).style.display='none'}} />
+                        <img src={`/elements/${imageName}`} alt={`icon ${num}`} style={{ width: "30px", height: "30px", objectFit: "contain" }} onError={(e)=>{(e.target as HTMLElement).style.display='none'}} />
                       </div>
                     );
                   })}
