@@ -1318,7 +1318,7 @@ cursor: slotImg ? "grab" : "default"
                 <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase", marginBottom: "8px" }}>
                   TAMBAH STIKER & FRAME
                 </label>
-                <div style={{ maxHeight: "150px", overflowY: "auto", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px" }}>
+                <div className="sticker-scroll" style={{ maxHeight: "150px", overflowY: "auto", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px" }}>
                   {Array.from({ length: 55 }, (_, i) => i + 1).map((num) => {
                     const imageName = `elm${num}.png`;
                     return (
@@ -1328,8 +1328,8 @@ cursor: slotImg ? "grab" : "default"
                         style={{ backgroundColor: "#18181b", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", padding: "6px", textAlign: "center", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
                         title={`Klik pasang ${imageName}`}
                       >
-                        <span style={{ fontSize: "9px", color: "#f472b6", marginRight: "4px" }}>{num}</span>
-                        <img src={`/elements/${imageName}`} alt={`icon ${num}`} style={{ width: "30px", height: "30px", objectFit: "contain" }} onError={(e)=>{(e.target as HTMLElement).style.display='none'}} />
+                        
+                        <img src={`/elements/${imageName}`}  alt={`icon ${num}`} style={{ width: "40px", height: "30px", objectFit: "contain" }} onError={(e)=>{(e.target as HTMLElement).style.display='none'}} />
                       </div>
                     );
                   })}
