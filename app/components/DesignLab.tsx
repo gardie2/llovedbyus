@@ -56,6 +56,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
   const activeSlotDrag = useRef<{ elementId: number; slotIndex: number } | null>(null);
   const slotLastPos = useRef({ x: 0, y: 0 });
   const mockupRef = useRef<HTMLDivElement>(null);
+  const designAreaRef = useRef<HTMLDivElement>(null);
 
   const { mockupBase, mockupTp } = useMemo(() => {
     if (isPhoneCase) {
@@ -381,195 +382,289 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
   };
 
 const handleDownloadDesign = async () => {
+  if (!designAreaRef.current) return;
+
+  try {
+    setActiveSelection(null);
+    setIsDownloading(true);
+
+    const canvas = document.createElement("canvas");
+
+    const EXPORT_WIDTH = isPhoneCase ? 174 : 146;
+    const EXPORT_HEIGHT = isPhoneCase ? 346 : 235;
+    const SCALE = 4;
+
+    canvas.width = EXPORT_WIDTH * SCALE;
+    canvas.height = EXPORT_HEIGHT * SCALE;
+
+    const ctx = canvas.getContext("2d");
+
+    if (!ctx) throw new Error("Canvas tidak tersedia");
+
+function drawSlotImage(
+  ctx: CanvasRenderingContext2D,
+  img: HTMLImageElement,
+  frameX: number,
+  frameY: number,
+  frameW: number,
+  frameH: number,
+  transform: {
+    x: number;
+    y: number;
+    scale: number;
+  }
+) {
+  ctx.save();
+
+  // clip area frame
+  ctx.beginPath();
+  if (frameW === 44 && frameH === 40) {
+  ctx.ellipse(
+    frameX + frameW / 2,
+    frameY + frameH / 2,
+    frameW / 2,
+    frameH / 2,
+    0,
+    0,
+    Math.PI * 2
+  );
+} else {
+  ctx.rect(frameX, frameY, frameW, frameH);
+}
+  ctx.clip();
+
+  // object-fit: cover
+  const imgRatio = img.width / img.height;
+  const frameRatio = frameW / frameH;
+
+  let drawW: number;
+  let drawH: number;
+
+  if (imgRatio > frameRatio) {
+    drawH = frameH;
+    drawW = drawH * imgRatio;
+  } else {
+    drawW = frameW;
+    drawH = drawW / imgRatio;
+  }
+
+  const centerX = frameX + frameW / 2;
+  const centerY = frameY + frameH / 2;
+
+  // sama seperti CSS transform-origin:center
+  ctx.translate(centerX + transform.x, centerY + transform.y);
+  ctx.scale(transform.scale, transform.scale);
+
+  ctx.drawImage(
+    img,
+    -drawW / 2,
+    -drawH / 2,
+    drawW,
+    drawH
+  );
+
+  ctx.restore();
+}
+
+
+    ctx.scale(SCALE, SCALE);
+
+    const loadImage = (src: string) =>
+      new Promise<HTMLImageElement>((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = src;
+      });
+
+    // Background transparan
+    ctx.clearRect(0, 0, EXPORT_WIDTH, EXPORT_HEIGHT);
+
+    // =========================
+    // FOTO UTAMA
+    // =========================
 
-    const prevSelected = selectedLayerId;
+    if (uploadedImage) {
+      const img = await loadImage(uploadedImage);
 
-    setSelectedLayerId(null);
+      ctx.save();
 
+      ctx.translate(
+        EXPORT_WIDTH / 2 + position.x,
+        EXPORT_HEIGHT / 2 + position.y
+      );
 
+      ctx.rotate((rotation * Math.PI) / 180);
 
-    try {
+      ctx.scale(scale, scale);
 
-      const canvas = document.createElement('canvas');
+      const ratio = Math.max(
+        EXPORT_WIDTH / img.width,
+        EXPORT_HEIGHT / img.height
+      );
 
-      const width = 208;
+      const drawWidth = img.width * ratio;
+      const drawHeight = img.height * ratio;
 
-      const height = 432;
+      ctx.drawImage(
+        img,
+        -drawWidth / 2,
+        -drawHeight / 2,
+        drawWidth,
+        drawHeight
+      );
 
-      const scaleFactor = 4; // Kualitas HD Tajam
-
-
-
-      canvas.width = width * scaleFactor;
-
-      canvas.height = height * scaleFactor;
-
-      const ctx = canvas.getContext('2d', { willReadFrequently: true });
-
-      if (!ctx) return;
-
-
-
-      ctx.fillStyle = '#ffffff';
-
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-
-
-      // If we're exporting a template, draw the selected template background first
-      if (activeTab === 'template' && resolvedProductType === 'phone-case' && selectedTemplateId) {
-        const tplImg = await loadImage(getBackgroundMockup());
-        if (tplImg) {
-          // draw template to cover the canvas with the same cropping logic
-          drawObjectCover(ctx, tplImg, 0, 0, canvas.width, canvas.height);
-        }
-      }
-
-      const renderLayers = [...layers].sort((a, b) => a.zIndex - b.zIndex);
-
-
-
-      for (const layer of renderLayers) {
-
-        const frameImg = await loadImage(layer.content);
-
-        if (!frameImg) continue;
-
-
-
-        const frameState = activeFrames.find((f) => f.frameInstanceId === layer.id);
-
-
-
-        ctx.save();
-
-        ctx.translate(layer.x * scaleFactor, layer.y * scaleFactor);
-
-        ctx.rotate((layer.rotation * Math.PI) / 180);
-
-        ctx.scale(layer.scale, layer.scale);
-
-        ctx.globalAlpha = layer.opacity;
-
-
-
-        let baseW = frameImg.width;
-
-        let baseH = frameImg.height;
-
-        const maxDim = 130;
-
-
-
-        if (baseW > maxDim || baseH > maxDim) {
-
-          const ratio = Math.min(maxDim / baseW, maxDim / baseH);
-
-          baseW *= ratio;
-
-          baseH *= ratio;
-
-        }
-
-
-
-        const finalW = baseW * scaleFactor;
-
-        const finalH = baseH * scaleFactor;
-
-        const leftEdge = -finalW / 2;
-
-        const topEdge = -finalH / 2;
-
-
-
-        if (frameState) {
-
-          let slotsToDraw: any[] = [];
-
-          if (frameState.elmId === 24) {
-
-            slotsToDraw = [
-
-              { url: frameState.slots[0], l: 0.070, t: 0.020, w: 0.845, h: 0.265 }, // Slot atas disesuaikan presisi
-
-              { url: frameState.slots[1], l: 0.070, t: 0.299, w: 0.850, h: 0.275 },
-
-              { url: frameState.slots[2], l: 0.080, t: 0.560, w: 0.840, h: 0.270 },
-
-            ];
-
-          } else if (frameState.elmId === 25) {
-
-            slotsToDraw = [
-
-              { url: frameState.slots[0], l: 0.055, t: 0.035, w: 0.885, h: 0.435 },
-
-            ];
-
-          }
-
-
-
-          for (const slot of slotsToDraw) {
-
-            if (slot.url) {
-
-              const slotImg = await loadImage(slot.url);
-
-              if (slotImg) {
-
-                const slotX = leftEdge + (slot.l * finalW);
-
-                const slotY = topEdge + (slot.t * finalH);
-
-                const slotW = slot.w * finalW;
-
-                const slotH = slot.h * finalH;
-
-                drawObjectCover(ctx, slotImg, slotX, slotY, slotW, slotH);
-
-              }
-
-            }
-
-          }
-
-        }
-
-
-
-        ctx.drawImage(frameImg, leftEdge, topEdge, finalW, finalH);
-
-        ctx.restore();
-
-      }
-
-
-
-      const link = document.createElement('a');
-
-      link.download = `custom-case-design-${Date.now()}.png`;
-
-      link.href = canvas.toDataURL('image/png');
-
-      link.click();
-
-
-
-    } catch (error) {
-
-      console.error('Gagal memproses desain:', error);
-
-      alert('Gagal mengekspor gambar.');
-
-    } finally {
-
-      setSelectedLayerId(prevSelected);
-
+      ctx.restore();
     }
 
-  };
+    // =========================
+    // STICKER / FRAME
+    // =========================
+
+    for (const el of placedElements) {
+      const img = await loadImage(el.src);
+
+      const isElm24 = el.src.includes("elm24.png");
+      const isElm25 = el.src.includes("elm25.png");
+      const isElm32 = el.src.includes("elm32.png");
+
+      const boxWidth = 100;
+      const boxHeight = 100;
+      console.log(el);
+      ctx.save();
+
+      ctx.translate(
+        el.x + boxWidth / 2,
+        el.y + boxHeight / 2
+      );
+
+      ctx.rotate((el.rotation * Math.PI) / 180);
+      ctx.scale(
+        el.scale * (el.flipX ? -1 : 1),
+        el.scale * (el.flipY ? -1 : 1)
+      );
+
+      // ==========================
+      // GAMBAR FOTO DI DALAM FRAME
+      // ==========================
+
+      if (isElm24) {
+        for (const slotIdx of [1, 2, 3]) {
+          const slotImg = el.slotImages?.[slotIdx];
+          if (!slotImg) continue;
+
+          const slotT = el.slotTransforms?.[slotIdx] || {
+            x: 0,
+            y: 0,
+            scale: 1,
+          };
+
+          const sImg = await loadImage(slotImg);
+
+          const frameX = -18;
+const frameW = 36;
+const frameH = 28;
+
+const frameY =
+  slotIdx === 1
+    ? -48
+    : slotIdx === 2
+    ? -20
+    : 8;
+
+drawSlotImage(
+  ctx,
+  sImg,
+  frameX,
+  frameY,
+  frameW,
+  frameH,
+  slotT
+);
+        }
+      }
+
+      if (isElm25) {
+        const slotImg = el.slotImages?.[1];
+
+        if (slotImg) {
+          const slotT = el.slotTransforms?.[1] || {
+            x: 0,
+            y: 0,
+            scale: 1,
+          };
+
+          const sImg = await loadImage(slotImg);
+
+         drawSlotImage(
+  ctx,
+  sImg,
+  -24,
+  -45,
+  48,
+  42,
+  slotT
+);
+        }
+      }
+if (isElm32) {
+  const slotImg = el.slotImages?.[1];
+
+  if (slotImg) {
+    const slotT = el.slotTransforms?.[1] || {
+      x: 0,
+      y: 0,
+      scale: 1,
+    };
+
+    const sImg = await loadImage(slotImg);
+
+drawSlotImage(
+  ctx,
+  sImg,
+  -23,
+  -26,
+  44,
+  40,
+  slotT
+);
+  }
+}
+      ctx.drawImage(
+        img,
+        -boxWidth / 2,
+        -boxHeight / 2,
+        boxWidth,
+        boxHeight
+      );
+
+      ctx.restore();
+    }
+
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+
+      const url = URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `Custom-Design-${Date.now()}.png`;
+
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      URL.revokeObjectURL(url);
+    }, "image/png");
+  } catch (err) {
+    console.error(err);
+    alert("Gagal menyimpan gambar desain.");
+  } finally {
+    setIsDownloading(false);
+  }
+};
+
   const handleWhatsAppOrder = () => {
     const phoneNumber = "62881025376311";
     const message = `Halo, saya ingin memesan Custom Phone Case. Berikut adalah desain saya:`;
@@ -581,7 +676,7 @@ const handleDownloadDesign = async () => {
       
       <div style={{ textAlign: "center", marginBottom: "25px" }}>
         <h2 style={{ fontSize: "26px", fontWeight: "900", textTransform: "uppercase", fontStyle: "italic", letterSpacing: "1px", margin: 0 }}>
-          Customize <span style={{ background: "linear-gradient(to right, #f4f4f5, #f472b6, #a1a1aa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{productTitle} {isTshirt ? `(${tshirtStyle})` : ""}</span>
+          Design <span style={{ background: "linear-gradient(to right, #f4f4f5, #f472b6, #a1a1aa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{productTitle} {isTshirt ? `(${tshirtStyle})` : ""}</span>
         </h2>
       </div>
 
@@ -645,6 +740,7 @@ const handleDownloadDesign = async () => {
                 />
 
                 <div 
+                ref={designAreaRef}
                   style={{
                     position: "absolute",
                     top: isPhoneCase ? "27px" : "85px",
@@ -652,9 +748,7 @@ const handleDownloadDesign = async () => {
                     width: isPhoneCase ? "174px" : "146px",
                     height: isPhoneCase ? "346px" : "235px",
                     zIndex: 15,
-                    clipPath: isPhoneCase 
-                      ? "path('M 15 0 L 158 0 C 166 0 174 8 174 16 L 174 330 C 174 338 166 346 158 346 L 15 346 C 7 346 0 338 0 330 L 0 16 C 0 8 7 0 15 0 Z')" 
-                      : "inset(0px round 6px)",
+                    borderRadius: isPhoneCase ? "20px" : "6px",
                     overflow: "hidden",
                     touchAction: "none"
                   }}
@@ -703,8 +797,8 @@ const handleDownloadDesign = async () => {
                     const isElm25 = el.src.includes("elm25.png");
                     const isElm32 = el.src.includes("elm32.png");
 
-                    const boxWidth = isElm24 ? "85px" : isElm25 ? "110px" : isElm32 ? "90px" : "100px";
-                    const boxHeight = isElm24 ? "210px" : isElm25 ? "145px" : isElm32 ? "125px" : "100px";
+                    const boxWidth = "100px";
+                    const boxHeight = "100px";
 
                     return (
                       <div
@@ -727,51 +821,130 @@ const handleDownloadDesign = async () => {
                           touchAction: "none"
                         }}
                       >
-                        {/* 1. ELM 24 (POSISI SLOT TETEP AKURAT SESUAI PERMINTAAN) */}
-                        {isElm24 && (
-                          <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "auto" }}>
-                            {[1, 2, 3].map((slotIdx) => {
-                              const topPos = slotIdx === 1 ? "1%" : slotIdx === 2 ? "29.5%" : "58%";
-                              const slotImg = el.slotImages?.[slotIdx];
-                              const slotT = el.slotTransforms?.[slotIdx] || { x: 0, y: 0, scale: 1 };
+                        
+                         {isElm24 && (
+  <div
+    style={{
+      position: "absolute",
+      inset: 0,
+      zIndex: 1,
+      pointerEvents: "auto",
+    }}
+  >
+    {(() => {
+      const SLOT_STYLE = {
+        1: {
+          top: "2px",
+          left: "32px",
+          width: "36px",
+          height: "28px",
+        },
+        2: {
+          top: "29px",
+          left: "32px",
+          width: "36px",
+          height: "28px",
+        },
+        3: {
+          top: "57px",
+          left: "32px",
+          width: "36px",
+          height: "28px",
+        },
+      };
 
-                              return (
-                                <div 
-                                  key={slotIdx}
-                                  onWheel={(e) => slotImg && handleSlotWheel(el.id, slotIdx, e)}
-                                  onMouseDown={(e) => slotImg && handleStartSlotDrag(el.id, slotIdx, e.clientX, e.clientY, e)}
-                                  onTouchStart={(e) => {
-                                    if (slotImg && e.touches.length === 1 && e.touches[0]) {
-                                      handleStartSlotDrag(el.id, slotIdx, e.touches[0].clientX, e.touches[0].clientY, e);
-                                    }
-                                  }}
-                                  style={{ position: "absolute", top: topPos, left: "6%", right: "6%", height: "29.5%", backgroundColor: "#18181b", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", cursor: slotImg ? "grab" : "default" }}
-                                >
-                                  {slotImg ? (
-                                    <img 
-                                      src={slotImg} 
-                                      alt={`slot ${slotIdx}`} 
-                                      style={{ 
-                                        width: "100%", 
-                                        height: "100%", 
-                                        objectFit: "cover",
-                                        transform: `translate(${slotT.x}px, ${slotT.y}px) scale(${slotT.scale})`,
-                                        pointerEvents: "none" 
-                                      }} 
-                                    />
-                                  ) : (
-                                    <label style={{ cursor: "pointer", color: "#f472b6", fontSize: "16px", fontWeight: "bold" }}>
-                                      +
-                                      <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => handleSlotImageUpload(el.id, slotIdx, e)} />
-                                    </label>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
+      return [1, 2, 3].map((slotIdx) => {
+        const slotImg = el.slotImages?.[slotIdx];
+        const slotT = el.slotTransforms?.[slotIdx] || {
+          x: 0,
+          y: 0,
+          scale: 1,
+        };
+
+        const style = SLOT_STYLE[slotIdx as 1 | 2 | 3];
+
+        return (
+          <div
+            key={slotIdx}
+            onWheel={(e) =>
+              slotImg && handleSlotWheel(el.id, slotIdx, e)
+            }
+            onMouseDown={(e) =>
+              slotImg &&
+              handleStartSlotDrag(
+                el.id,
+                slotIdx,
+                e.clientX,
+                e.clientY,
+                e
+              )
+            }
+            onTouchStart={(e) => {
+              if (
+                slotImg &&
+                e.touches.length === 1 &&
+                e.touches[0]
+              ) {
+                handleStartSlotDrag(
+                  el.id,
+                  slotIdx,
+                  e.touches[0].clientX,
+                  e.touches[0].clientY,
+                  e
+                );
+              }
+            }}
+            style={{
+              position: "absolute",
+              ...style,
+              backgroundColor: "#18181b",
+              overflow: "hidden",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: slotImg ? "grab" : "default",
+            }}
+          >
+            {slotImg ? (
+              <img
+                src={slotImg}
+                alt={`slot ${slotIdx}`}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  transform: `translate(${slotT.x}px, ${slotT.y}px) scale(${slotT.scale})`,
+                  pointerEvents: "none",
+                }}
+              />
+            ) : (
+              <label
+                style={{
+                  cursor: "pointer",
+                  color: "#f472b6",
+                  fontSize: "16px",
+                  fontWeight: "bold",
+                }}
+              >
+                +
+                <input
+                  type="file"
+                  accept="image/*"
+                  style={{ display: "none" }}
+                  onChange={(e) =>
+                    handleSlotImageUpload(el.id, slotIdx, e)
+                  }
+                />
+              </label>
+            )}
+          </div>
+        );
+      });
+    })()}
+  </div>
+
                         )}
 
-                        {/* 2. ELM 25 (POSISI SLOT TETEP AKURAT SESUAI PERMINTAAN) */}
                         {isElm25 && (
                           <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "auto" }}>
                             {(() => {
@@ -786,7 +959,19 @@ const handleDownloadDesign = async () => {
                                       handleStartSlotDrag(el.id, 1, e.touches[0].clientX, e.touches[0].clientY, e);
                                     }
                                   }}
-                                  style={{ position: "absolute", top: "2%", left: "14%", right: "14%", height: "46%", backgroundColor: "#18181b", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", cursor: slotImg ? "grab" : "default" }}
+                                  style={{
+position: "absolute",
+top: "6px",
+left: "26px",
+width: "48px",
+height: "42px",
+backgroundColor: "#18181b",
+overflow: "hidden",
+display: "flex",
+alignItems: "center",
+justifyContent: "center",
+cursor: slotImg ? "grab" : "default"
+}}
                                 >
                                   {slotImg ? (
                                     <img 
@@ -812,48 +997,69 @@ const handleDownloadDesign = async () => {
                           </div>
                         )}
 
-                        {/* 3. ELM 32 (POSISI SLOT TETEP AKURAT SESUAI PERMINTAAN) */}
                         {isElm32 && (
-                          <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "auto" }}>
-                            {(() => {
-                              const slotImg = el.slotImages?.[1];
-                              const slotT = el.slotTransforms?.[1] || { x: 0, y: 0, scale: 1 };
-                              return (
-                                <div 
-                                  onWheel={(e) => slotImg && handleSlotWheel(el.id, 1, e)}
-                                  onMouseDown={(e) => slotImg && handleStartSlotDrag(el.id, 1, e.clientX, e.clientY, e)}
-                                  onTouchStart={(e) => {
-                                    if (slotImg && e.touches.length === 1 && e.touches[0]) {
-                                      handleStartSlotDrag(el.id, 1, e.touches[0].clientX, e.touches[0].clientY, e);
-                                    }
-                                  }}
-                                  style={{ position: "absolute", top: "20%", left: "18%", right: "18%", height: "45%", backgroundColor: "#18181b", borderRadius: "50%", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", cursor: slotImg ? "grab" : "default" }}
-                                >
-                                  {slotImg ? (
-                                    <img 
-                                      src={slotImg} 
-                                      alt="slot 1" 
-                                      style={{ 
-                                        width: "100%", 
-                                        height: "100%", 
-                                        objectFit: "cover",
-                                        transform: `translate(${slotT.x}px, ${slotT.y}px) scale(${slotT.scale})`,
-                                        pointerEvents: "none" 
-                                      }} 
-                                    />
-                                  ) : (
-                                    <label style={{ cursor: "pointer", color: "#f472b6", fontSize: "18px", fontWeight: "bold" }}>
-                                      +
-                                      <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => handleSlotImageUpload(el.id, 1, e)} />
-                                    </label>
-                                  )}
-                                </div>
-                              );
-                            })()}
-                          </div>
-                        )}
+  <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "auto" }}>
+    {(() => {
+      const slotImg = el.slotImages?.[1];
+      const slotT = el.slotTransforms?.[1] || {
+  x: 0,
+  y: 0,
+  scale: 1,
+};
 
-                        {/* Gambar Bingkai Utama PNG / Stiker Lain */}
+      return (
+        <div
+          onWheel={(e) => slotImg && handleSlotWheel(el.id, 1, e)}
+          onMouseDown={(e) => slotImg && handleStartSlotDrag(el.id, 1, e.clientX, e.clientY, e)}
+          onTouchStart={(e) => {
+            if (slotImg && e.touches.length === 1 && e.touches[0]) {
+              handleStartSlotDrag(el.id, 1, e.touches[0].clientX, e.touches[0].clientY, e);
+            }
+          }}
+          style={{
+  position: "absolute",
+  top: "23px",
+  left: "27px",
+  width: "44px",
+  height: "40px",
+  borderRadius: "50%",
+  backgroundColor: "#18181b",
+  overflow: "hidden",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  cursor: slotImg ? "grab" : "default",
+          }}
+        >
+          {slotImg ? (
+            <img
+              src={slotImg}
+              alt="slot 1"
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                transform: `translate(${slotT.x}px, ${slotT.y}px) scale(${slotT.scale})`,
+                pointerEvents: "none",
+              }}
+            />
+          ) : (
+            <label style={{ cursor: "pointer", color: "#f472b6", fontSize: "18px", fontWeight: "bold" }}>
+              +
+              <input
+                type="file"
+                accept="image/*"
+                style={{ display: "none" }}
+                onChange={(e) => handleSlotImageUpload(el.id, 1, e)}
+              />
+            </label>
+          )}
+        </div>
+      );
+    })()}
+  </div>
+)}
+
                         <img 
                           src={el.src} 
                           alt="element frame" 
@@ -873,6 +1079,7 @@ const handleDownloadDesign = async () => {
                         {isActive && (
                           <button
                             onClick={(e) => handleRemoveElement(el.id, e)}
+                            className="remove-btn"
                             style={{
                               position: "absolute",
                               top: "-4px",
@@ -1112,7 +1319,7 @@ const handleDownloadDesign = async () => {
                   TAMBAH STIKER & FRAME
                 </label>
                 <div style={{ maxHeight: "150px", overflowY: "auto", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px" }}>
-                  {Array.from({ length: 35 }, (_, i) => i + 1).map((num) => {
+                  {Array.from({ length: 40 }, (_, i) => i + 1).map((num) => {
                     const imageName = `elm${num}.png`;
                     return (
                       <div 
