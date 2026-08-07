@@ -41,3 +41,35 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(244,114,182,.45);
 }
+.preview-image{
+    transition:
+        opacity .28s ease,
+        transform .28s ease,
+        filter .28s ease;
+}
+
+.preview-image:hover{
+    transform:scale(1.01);
+}
+@keyframes elementFade {
+  0% {
+    opacity: 0;
+    filter: brightness(2);
+  }
+
+  100% {
+    opacity: 1;
+    filter: brightness(1);
+  }
+}
+@keyframes elementFade {
+  from {
+    opacity: 0;
+    filter: brightness(2);
+  }
+
+  to {
+    opacity: 1;
+    filter: brightness(1);
+  }
+}

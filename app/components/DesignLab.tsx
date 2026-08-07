@@ -23,7 +23,8 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
   const [isRemovingBg, setIsRemovingBg] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   
-  const [placedElements, setPlacedElements] = useState<Array<{ 
+  const [placedElements, setPlacedElements] = useState<Array<{
+    animation: string; 
     id: number; 
     src: string; 
     x: number; 
@@ -37,7 +38,7 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
   }>>([]);
   
   const [activeSelection, setActiveSelection] = useState<"photo" | number | null>("photo");
-
+  const [clickedIcon, setClickedIcon] = useState<string | null>(null);
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [rotation, setRotation] = useState(0);
@@ -256,12 +257,13 @@ export default function DesignLab({ productTitle = "Custom Phone Case" }: Design
     const newElement = {
       id: Date.now(),
       src: `/elements/${imageName}`,
-      x: 30,
-      y: 30,
+      x: 40,
+      y: 160,
       scale: 1,
       rotation: 0,
       flipX: false,
       flipY: false,
+      animation: "pop",
       slotImages: {},
       slotTransforms: {},
     };
@@ -667,7 +669,7 @@ drawSlotImage(
 
   const handleWhatsAppOrder = () => {
     const phoneNumber = "62881025376311";
-    const message = `Halo, saya ingin memesan Custom Phone Case. Berikut adalah desain saya:`;
+    const message = `Halo min, saya ingin memesan Custom Produk. Berikut adalah desain saya:`;
     window.open(`https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`, "_blank");
   };
 
@@ -1211,7 +1213,7 @@ cursor: slotImg ? "grab" : "default"
                   transition: "all 0.2s"
                 }}
               >
-                Upload Foto
+                CUSTOMIZE
               </button>
               <button
                 onClick={() => setActiveTab("template")}
@@ -1238,7 +1240,7 @@ cursor: slotImg ? "grab" : "default"
               
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase" }}>
-                  Upload Foto Utama
+                  Upload Foto Dari Galeri
                 </label>
                 <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
                   <input 
@@ -1324,8 +1326,25 @@ cursor: slotImg ? "grab" : "default"
                     return (
                       <div 
                         key={num}
-                        onClick={() => handleAddElementToCase(imageName)}
-                        style={{ backgroundColor: "#18181b", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", padding: "6px", textAlign: "center", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                        onClick={() => {
+  setClickedIcon(imageName);
+
+  setTimeout(() => {
+    handleAddElementToCase(imageName);
+    setClickedIcon(null);
+  }, 150);
+}}
+                        style={{
+  backgroundColor:"#18181b",
+  border:"1px solid rgba(255,255,255,0.1)",
+  display:"flex",
+  alignItems:"center",
+  justifyContent:"center",
+  borderRadius:"8px",
+  transform: clickedIcon === imageName ? "scale(1.2)" : "scale(1)",
+  transition:"transform 0.2s ease",
+  cursor:"pointer",
+}}
                         title={`Klik pasang ${imageName}`}
                       >
                         
@@ -1345,22 +1364,44 @@ cursor: slotImg ? "grab" : "default"
                 <label style={{ display: "block", fontSize: "10px", fontWeight: "900", letterSpacing: "1px", color: "#d4d4d8", textTransform: "uppercase", marginBottom: "10px" }}>
                   Pilih Template (1 - 4)
                 </label>
+                
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "8px" }}>
-                  {[1, 2, 3, 4].map((num) => (
+                  {[1, 2, 3, 4].map((num) => (  
                     <button
                       key={num}
-                      onClick={() => setSelectedTemplate(num)}
-                      style={{
-                        padding: "10px",
-                        borderRadius: "10px",
-                        fontSize: "10px",
-                        fontWeight: "900",
-                        textTransform: "uppercase",
-                        cursor: "pointer",
-                        border: selectedTemplate === num ? "1px solid #f472b6" : "1px solid rgba(255,255,255,0.1)",
-                        background: selectedTemplate === num ? "linear-gradient(to right, #f4f4f5, #f472b6)" : "#18181b",
-                        color: selectedTemplate === num ? "#09090b" : "#a1a1aa"
-                      }}
+                      onClick={() => {
+    setSelectedTemplate(num);
+  }}
+  style={{
+    padding: "10px",
+    borderRadius: "10px",
+    fontSize: "10px",
+    fontWeight: "900",
+    textTransform: "uppercase",
+    cursor: "pointer",
+
+    border: selectedTemplate === num 
+      ? "1px solid #f472b6" 
+      : "1px solid rgba(255,255,255,0.1)",
+
+    background: selectedTemplate === num
+      ? "linear-gradient(to right, #f4f4f5, #f472b6)"
+      : "#18181b",
+
+    color: selectedTemplate === num
+      ? "#09090b"
+      : "#a1a1aa",
+
+    transform: selectedTemplate === num 
+      ? "scale(1.05)" 
+      : "scale(1)",
+
+    boxShadow: selectedTemplate === num
+      ? "0 0 20px rgba(244,114,182,0.35)"
+      : "none",
+
+    transition: "all 0.3s ease",
+  }}
                     >
                       Template {num}
                     </button>
@@ -1377,7 +1418,13 @@ cursor: slotImg ? "grab" : "default"
             </label>
             <input 
               type="text" 
-              placeholder={isPhoneCase ? "Contoh: iPhone 13 / Samsung S22" : "Contoh: Size L / Warna Hitam"}
+              placeholder={
+  isPhoneCase && activeTab === "template"
+    ? "Contoh: iPhone 13 - desain template 2, foto ini ya"
+    : isPhoneCase
+      ? "Contoh: iPhone 13 / Samsung S22"
+      : "Contoh: Size L / Warna Hitam"
+}
               value={phoneModel}
               onChange={(e) => setPhoneModel(e.target.value)}
               style={{ width: "100%", backgroundColor: "#121318", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "10px", fontSize: "11px", color: "#f4f4f5", outline: "none", boxSizing: "border-box" }}
@@ -1390,14 +1437,14 @@ cursor: slotImg ? "grab" : "default"
               disabled={isDownloading}
               style={{ width: "100%", background: "#27272a", color: "#f4f4f5", fontWeight: "900", padding: "12px", borderRadius: "14px", fontSize: "11px", textTransform: "uppercase", letterSpacing: "1px", border: "1px solid rgba(255,255,255,0.2)", cursor: "pointer" }}
             >
-              {isDownloading ? "Menyimpan Gambar..." : "Download Hasil Desain (PNG)"}
+              {isDownloading ? "Menyimpan Gambar..." : "Download Hasil Desain"}
             </button>
 
             <button 
               onClick={handleWhatsAppOrder}
               style={{ width: "100%", background: "linear-gradient(to right, #f4f4f5, #f472b6, #f4f4f5)", color: "#09090b", fontWeight: "900", padding: "14px", borderRadius: "14px", fontSize: "11px", textTransform: "uppercase", letterSpacing: "1px", border: "none", cursor: "pointer", boxShadow: "0 0 20px rgba(244,114,182,0.3)" }}
             >
-              Pesan via WhatsApp Sekarang
+              Pesan & Kirim Hasil Desain via WhatsApp Sekarang
             </button>
           </div>
 

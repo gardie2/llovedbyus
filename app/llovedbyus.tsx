@@ -19,25 +19,29 @@ export default function Home() {
       id: 1, 
       name: "Custom Phone Case", 
       desc: "Protection case with custom photo support.", 
-      image: "/case.png" 
+      image: "/case.png", 
+      price: "RP. 39.000"
     },
     { 
       id: 2, 
       name: "Sweatshirt", 
       desc: "Heavyweight cotton fleece material.", 
-      image: "/sweatshirt.png" 
+      image: "/sweatshirt.png", 
+      price: "RP. 59.000"
     },
     { 
       id: 3, 
       name: "T-Shirt", 
       desc: "Boxy fit premium cotton material.", 
-      image: "/t-shirt.png" 
+      image: "/t-shirt.png", 
+      price: "RP. 49.000"
     },
     { 
       id: 4, 
       name: "Tote Bag", 
       desc: "Sturdy canvas material with custom print.", 
-      image: "/totebag.png" 
+      image: "/totebag.png", 
+      price: "RP. 69.000"
     },
   ];
 
@@ -155,6 +159,9 @@ export default function Home() {
               </div>
               <h3 className="text-sm font-black uppercase tracking-wide text-zinc-200 group-hover:text-pink-300 transition">{item.name}</h3>
               <p className="text-xs text-zinc-500 text-center mt-1">{item.desc}</p>
+              <p className="text-sm text-zinc-300 font-bold mt-4">
+  {item.price}
+</p>
               {item.id === 1 && (
                 <span className="mt-3 text-[10px] font-extrabold bg-pink-500/10 text-pink-300 border border-pink-500/30 px-3 py-1 rounded-full uppercase tracking-widest group-hover:bg-pink-500 group-hover:text-zinc-950 transition">
                   Buka Studio Design ✦
@@ -186,7 +193,7 @@ export default function Home() {
               🛍️
             </div>
             <h3 className="text-sm font-black uppercase tracking-wide text-zinc-200 group-hover:text-pink-300 transition">Shopee Store</h3>
-            <p className="text-[11px] text-zinc-500 mt-1">Belanja via e-commerce</p>
+            <p className="text-[11px] text-zinc-500 mt-1">Belanja via E-commerce</p>
           </a>
 
           <a 
@@ -212,7 +219,7 @@ export default function Home() {
               💬
             </div>
             <h3 className="text-sm font-black uppercase tracking-wide text-zinc-200 group-hover:text-pink-300 transition">WhatsApp Admin</h3>
-            <p className="text-[11px] text-zinc-500 mt-1">Chat & konsultasi pesanan</p>
+            <p className="text-[11px] text-zinc-500 mt-1">Chat & konsultasi desain</p>
           </a>
 
         </div>

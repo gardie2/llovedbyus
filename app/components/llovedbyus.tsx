@@ -393,7 +393,7 @@ export default function DesignLab({ productTitle, onClose }: DesignLabProps) {
   };
 
   const handleWhatsApp = () => {
-    const message = encodeURIComponent(`Halo, saya ingin memesan custom case dengan catatan: ${noteInput || 'Tidak ada catatan'}`);
+    const message = encodeURIComponent(`Halo min, saya ingin memesan Custom Produk dengan catatan: ${noteInput || 'Tidak ada catatan'}`);
     window.open(`https://wa.me/6281234567890?text=${message}`, '_blank');
   };
 
@@ -573,7 +573,7 @@ export default function DesignLab({ productTitle, onClose }: DesignLabProps) {
         <div className="lg:col-span-7 flex flex-col gap-6">
           <div className="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-4 flex gap-4">
             <label className="flex-1 bg-pink-400 hover:bg-pink-500 text-black font-black py-3.5 px-6 rounded-xl text-center cursor-pointer transition-all shadow-lg text-sm tracking-wide">
-              UPLOAD FOTO
+              CUSTOMIZE
               <input
                 type="file"
                 accept="image/*"
@@ -655,7 +655,7 @@ export default function DesignLab({ productTitle, onClose }: DesignLabProps) {
             className="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-black py-3.5 px-4 rounded-xl text-center border border-neutral-700 transition-all text-xs tracking-widest flex items-center justify-center gap-2 shadow-lg"
           >
             <Download className="w-4 h-4" />
-            DOWNLOAD HASIL DESAIN (PNG)
+            DOWNLOAD HASIL DESAIN
           </button>
 
           <button

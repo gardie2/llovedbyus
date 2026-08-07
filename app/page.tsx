@@ -51,31 +51,36 @@ export default function Home() {
       id: 1, 
       name: "Custom Phone Case", 
       desc: "Protection case with custom photo support.", 
-      image: "/products/case.png" 
+      image: "/products/case.png" ,
+      price: "Rp. 39,000"
     },
     { 
       id: 4, 
       name: "Custom T-Shirt", 
       desc: "Boxy fit premium cotton material.", 
-      image: "/products/t-shirt.png" 
+      image: "/products/t-shirt.png",
+      price: "Rp. 49,000"
     },
     { 
       id: 2, 
       name: "Custom Sweatshirt", 
       desc: "Heavyweight cotton fleece material.", 
-      image: "/products/sweatshirt.png" 
+      image: "/products/sweatshirt.png" ,
+      price: "Rp. 79,000"
     },
     { 
       id: 3, 
       name: "Custom Hoodie", 
       desc: "Cozy fleece hoodie with custom print.", 
-      image: "/products/hoodie.png" 
+      image: "/products/hoodie.png",
+      price: "Rp. 99,000"
     },
     { 
       id: 5, 
       name: "Custom Tote Bag", 
       desc: "Sturdy canvas material with custom print.", 
-      image: "/products/totebag.png" 
+      image: "/products/totebag.png" ,
+      price: "Rp. 49,000"
     },
   ];
 
@@ -256,7 +261,7 @@ Be Uniq, <br />
               {[...Array(4)].map((_, i) => (
                 <div key={i} className="flex items-center gap-8 mx-6 text-xl md:text-2xl italic outline-marquee-text">
                   <span>DESIGN YOUR OWN STUFF</span>
-                  <span className="text-pink-400/60 not-italic">✦</span>
+                  <span className="text-pink-400/60 not-italic">────୨ৎ────  </span>
                 </div>
               ))}
             </div>
@@ -297,6 +302,9 @@ Be Uniq, <br />
               </div>
               <h3 className="text-sm font-black uppercase tracking-wide text-zinc-200 group-hover:text-pink-300 transition text-center">{item.name}</h3>
               <p className="text-xs text-zinc-400 text-center mt-1 min-h-[40px] flex items-center justify-center">{item.desc}</p>
+              <p className="text-sm text-zinc-300 font-bold mt-4">
+  {item.price}
+</p>
               
               <span className="mt-3 text-[10px] font-extrabold bg-pink-500/10 text-pink-300 border border-pink-500/30 px-3 py-1 rounded-full uppercase tracking-widest group-hover:bg-pink-500 group-hover:text-zinc-950 transition">
                 Buka Studio Design
@@ -334,7 +342,7 @@ Be Uniq, <br />
               <img src="/shopee.png" alt="Shopee Logo" className="w-full h-full object-contain" />
             </div>
             <h3 className="text-sm font-black uppercase tracking-wide text-zinc-200 group-hover:text-pink-300 transition">Shopee Store</h3>
-            <p className="text-[11px] text-zinc-400 mt-1">Belanja via e-commerce</p>
+            <p className="text-[11px] text-zinc-400 mt-1">Belanja via E-commerce</p>
           </a>
 
           {/* Instagram */}
@@ -362,7 +370,7 @@ Be Uniq, <br />
               <img src="/whatsapp.png" alt="WhatsApp Logo" className="w-full h-full object-contain" />
             </div>
             <h3 className="text-sm font-black uppercase tracking-wide text-zinc-200 group-hover:text-pink-300 transition">WhatsApp Admin</h3>
-            <p className="text-[11px] text-zinc-400 mt-1">Chat & konsultasi pesanan</p>
+            <p className="text-[11px] text-zinc-400 mt-1">Chat & konsultasi desain</p>
           </a>
 
         </div>
