@@ -7,7 +7,7 @@ export default function Footer() {
         
         {/* KONTROL / SOSIAL MEDIA CONNECT WITH US */}
         <div>
-          <p className="text-xs font-black tracking-widest text-zinc-300 uppercase mb-4">
+          <p className="block text-xs font-black tracking-widest text-zinc-300 uppercase mb-4">
             Connect With Us
           </p>
           <div className="flex justify-center items-center gap-6">

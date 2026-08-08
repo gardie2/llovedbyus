@@ -280,12 +280,12 @@ Be Uniq, <br />
           productsReveal.isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
         }`}
       >
-        <div className="text-center mb-12">
-          <span className="text-xs font-bold tracking-[0.25em] bg-gradient-to-r from-zinc-300 via-pink-300 to-zinc-400 bg-clip-text text-transparent uppercase">
-            PRODUCTS
-          </span>
-          <h2 className="text-3xl md:text-4xl font-black uppercase tracking-wider mt-1 italic chrome-text">
-            Explore Our Products
+          <div className="text-center mb-12">
+            <span className="block text-xs font-bold tracking-[0.25em] bg-gradient-to-r from-zinc-300 via-pink-300 to-zinc-400 bg-clip-text text-transparent uppercase">
+              PRODUCTS
+            </span>
+            <h2 className="text-3xl md:text-4xl font-black uppercase tracking-wider mt-1 italic chrome-text">
+              Explore Our Products
           </h2>
         </div>
 
@@ -325,7 +325,7 @@ Be Uniq, <br />
           socialsReveal.isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
         }`}
       >
-        <span className="text-xs font-bold tracking-[0.25em] bg-gradient-to-r from-zinc-300 via-pink-300 to-zinc-400 bg-clip-text text-transparent uppercase">
+        <span className="block text-xs font-bold tracking-[0.25em] bg-gradient-to-r from-zinc-300 via-pink-300 to-zinc-400 bg-clip-text text-transparent uppercase">
           CONNECT WITH US
         </span>
         <h2 className="text-3xl md:text-4xl font-black uppercase tracking-wider mt-1 italic chrome-text mb-10">
