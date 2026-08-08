@@ -118,9 +118,11 @@ export default function Home() {
         }
 
         .chrome-text {
-          font-weight: 900;
-          text-transform: uppercase;
-          background: linear-gradient(
+          display: inline-block;
+  padding-right: 8px;
+  font-weight: 900;
+  text-transform: uppercase;
+  background: linear-gradient(
             to bottom,
             #ffffff 0%,
             #e2e8f0 35%,
@@ -183,10 +185,11 @@ export default function Home() {
       <nav className="bg-[#0d0e12]/80 backdrop-blur-xl border-b border-zinc-800/80 sticky top-0 z-50 py-4 px-6">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Link href="/" className="flex flex-col group">
-            <div className="flex items-center gap-1 font-black text-2xl tracking-tighter uppercase italic">
-              <span className="chrome-text">LL</span>
-              <span className="chrome-text text-pink-300">OVEDBYUS</span>
-            </div>
+            <div className="flex items-center gap-1 font-black text-2xl tracking-tight uppercase italic whitespace-nowrap overflow-visible">
+  <span className="chrome-text inline-block overflow-visible">
+    LLOVEDBYUS
+  </span>
+</div>
             <span className="text-[8px] font-bold tracking-[0.3em] text-zinc-400 -mt-1 uppercase">
               STORE
             </span>

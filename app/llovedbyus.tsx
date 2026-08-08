@@ -60,14 +60,11 @@ export default function Home() {
       <nav className="bg-[#0d0e12]/90 backdrop-blur-xl border-b border-zinc-800/80 sticky top-0 z-50 py-4 px-6">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Link href="/" className="flex flex-col group">
-            <div className="flex items-center gap-1 font-black text-2xl tracking-tighter uppercase italic">
-              <span className="bg-gradient-to-r from-zinc-100 via-zinc-300 to-zinc-400 bg-clip-text text-transparent drop-shadow-[0_2px_10px_rgba(255,255,255,0.2)]">
-                LL
-              </span>
-              <span className="bg-gradient-to-r from-pink-300 via-zinc-200 to-pink-400 bg-clip-text text-transparent drop-shadow-[0_0_12px_rgba(244,114,182,0.4)]">
-                OVEDBYUS
-              </span>
-            </div>
+            <div className="flex items-center gap-1 font-black text-2xl tracking-tight uppercase italic whitespace-nowrap overflow-visible">
+  <span className="chrome-text inline-block overflow-visible">
+    LLOVEDBYUS
+  </span>
+</div>
             <span className="text-[8px] font-bold tracking-[0.3em] text-zinc-400 -mt-1 uppercase">
               STORE
             </span>
